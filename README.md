@@ -1,7 +1,6 @@
-
 # Jemp
 
-Jemp is a templating language for JSON.
+Jemp is a JSON templating engine with conditionals, loops, and custom functions.
 
 ## Objectives
 
@@ -10,22 +9,25 @@ Jemp is a templating language for JSON.
 - User friendly error codes and messages
 - Custom functions
 
-## 2 Phase build and run
+## Parse and Render
 
-- Build phase: Templates are parsed and compiled into an optimized format for faster execution
-- Run phase: The compiled template is used to generate the final output
+$$\begin{align*}
+& \textbf{Let:} \\[0.5em]
+& D = \text{Data} \\
+& T = \text{Template} \\
+& F = \text{Custom Functions} \\
+& A = \text{AST (Abstract Syntax Tree)} \\
+& R = \text{Result} \\[1em]
+& \textbf{Then:} \\[0.5em]
+& A = \mathtt{Parse}(T, F) \\
+& R = \mathtt{Render}(A, D, F) \\[1em]
+& \textbf{Or by composition:} \\[0.5em]
+& R = \mathtt{Render}(\mathtt{Parse}(T, F), D, F) \\
+\end{align*}$$
 
-- Flow: Template -> Compiled Template -> Output
-  - Template focuses on human readibility
-  - Compiled template focuses on performance. It is consumed by javascript
+During `Parse` phase, the objective is to do all the performance critical work and validation. `Parse` only makes use of `Custom Functions` for validation purpose. This should be done at build time. The `AST` should require minimal time to be rendered.
 
-## Why not use json-e?
-
-I was using `json-e` before starting to work on Jemp. Below are the main downsides I experienced with `json-e`:
-
-* Unclear error messages. When my templating had an error, it was hard for me to understand where the error was coming from.
-* No support for custom functions. I needed to use custom functions to transform my data for maximum flexibility.
-* Conditional statements lacked a `if, elseif, else` functionality. `$switch` came close, but it allows only one truthy condition.
+During `Render` phase, the objective is to do the actual rendering. This should be done at runtime, and should be as fast as possible.
 
 # Features
 
@@ -302,7 +304,7 @@ Register additional functions when creating the template engine.
 
 ```javascript
 const engine = new Jemp({
-  functions: {
+  customFunctions: {
     substring: (str, start, end) => {
       return str.substring(start, end);
     },
@@ -364,3 +366,14 @@ template:
 
 The library will try to throw errors whenever an invalid expression is encountered.
 The library will try to give as much information as possible when an error occurs.
+
+
+## Alternative libraries
+
+If you are looking for a more battle tested and feature rich library, we recommend [json-e](https://github.com/json-e/json-e).
+
+We were using `json-e` before, and the reason we decided to build our own library was because of following limitations with `json-e`:
+
+* Unclear error messages. When my templating had an error, it was hard for me to understand where the error was coming from.
+* No support for custom functions. We needed custom functions to transform data in arbitrary ways for maximum flexibility.
+* Conditional statements lacked a `if, elseif, else` functionality. `$switch` came close, but it allows only one truthy condition.
