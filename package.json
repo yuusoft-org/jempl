@@ -14,8 +14,8 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "puty": "^0.0.2",
-    "vitest": "^3.2.1"
+    "puty": "~0.0.2",
+    "vitest": "~3.2.1"
   },
   "scripts": {
     "test": "bunx vitest run --reporter=verbose",

@@ -3,8 +3,8 @@
   "workspaces": {
     "": {
       "devDependencies": {
-        "puty": "^0.0.2",
-        "vitest": "^3.2.1",
+        "puty": "~0.0.2",
+        "vitest": "~3.2.1",
       },
     },
   },
