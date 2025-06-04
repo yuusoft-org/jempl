@@ -1,4 +1,4 @@
-import parse from './parse.js';
+import parse from './parse/index.js';
 import render from './render.js';
 import * as defaultFunctions from './functions.js';
 
