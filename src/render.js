@@ -1,14 +1,257 @@
 
+import { NodeType, BinaryOp, UnaryOp } from './parse/constants.js';
+
 /**
  * Renders an AST template and data into a JSON object
- * @param {Object} ast 
- * @param {Object} functions custom functions
- * @param {Object} data 
+ * @param {Object} input - Object containing ast, functions, and data
  * @returns {Object} rendered data
  */
-const render = (ast, functions, data) => {
-  // TODO
-  return data
-}
+const render = (input) => {
+  const { ast, functions, data } = input;
+  return renderNode(ast, functions, data, {});
+};
+
+/**
+ * Renders a single AST node
+ * @param {Object} node 
+ * @param {Object} functions 
+ * @param {Object} data 
+ * @param {Object} scope - local scope for loops
+ * @returns {any} rendered value
+ */
+const renderNode = (node, functions, data, scope) => {
+  switch (node.type) {
+    case NodeType.LITERAL:
+      return node.value;
+
+    case NodeType.VARIABLE:
+      return getVariableValue(node.path, data, scope);
+
+    case NodeType.INTERPOLATION:
+      return renderInterpolation(node.parts, functions, data, scope);
+
+    case NodeType.FUNCTION:
+      return renderFunction(node, functions, data, scope);
+
+    case NodeType.BINARY:
+      return renderBinaryOperation(node, functions, data, scope);
+
+    case NodeType.UNARY:
+      return renderUnaryOperation(node, functions, data, scope);
+
+    case NodeType.CONDITIONAL:
+      return renderConditional(node, functions, data, scope);
+
+    case NodeType.LOOP:
+      return renderLoop(node, functions, data, scope);
+
+    case NodeType.OBJECT:
+      return renderObject(node, functions, data, scope);
+
+    case NodeType.ARRAY:
+      return renderArray(node, functions, data, scope);
+
+    default:
+      throw new Error(`Unknown node type: ${node.type}`);
+  }
+};
+
+/**
+ * Gets a variable value from data or scope using dot notation
+ */
+const getVariableValue = (path, data, scope) => {
+  if (!path) return "undefined";
+  
+  // Check local scope first (for loop variables)
+  if (scope.hasOwnProperty(path)) {
+    return scope[path];
+  }
+  
+  // Split path and traverse
+  const parts = path.split('.');
+  let current = data;
+  
+  for (const part of parts) {
+    if (current == null) return "undefined";
+    // Check scope first for each part
+    if (scope.hasOwnProperty(part)) {
+      current = scope[part];
+    } else {
+      current = current[part];
+    }
+  }
+  
+  return current === undefined ? "undefined" : current;
+};
+
+/**
+ * Renders string interpolation
+ */
+const renderInterpolation = (parts, functions, data, scope) => {
+  let result = '';
+  
+  for (const part of parts) {
+    if (typeof part === 'string') {
+      result += part;
+    } else if (part.var) {
+      const value = getVariableValue(part.var, data, scope);
+      result += value != null ? String(value) : '';
+    } else if (part.func) {
+      // Handle function calls in interpolation
+      const funcResult = functions[part.func]?.(...(part.args || []));
+      result += funcResult != null ? String(funcResult) : '';
+    }
+  }
+  
+  return result;
+};
+
+/**
+ * Renders function calls
+ */
+const renderFunction = (node, functions, data, scope) => {
+  const func = functions[node.name];
+  if (!func) {
+    throw new Error(`Function '${node.name}' is not defined`);
+  }
+  
+  const args = node.args.map(arg => renderNode(arg, functions, data, scope));
+  return func(...args);
+};
+
+/**
+ * Renders binary operations
+ */
+const renderBinaryOperation = (node, functions, data, scope) => {
+  const left = renderNode(node.left, functions, data, scope);
+  const right = renderNode(node.right, functions, data, scope);
+  
+  switch (node.op) {
+    case BinaryOp.EQ:
+      return left == right;
+    case BinaryOp.NEQ:
+      return left != right;
+    case BinaryOp.GT:
+      return left > right;
+    case BinaryOp.LT:
+      return left < right;
+    case BinaryOp.GTE:
+      return left >= right;
+    case BinaryOp.LTE:
+      return left <= right;
+    case BinaryOp.AND:
+      return left && right;
+    case BinaryOp.OR:
+      return left || right;
+    case BinaryOp.IN:
+      return Array.isArray(right) ? right.includes(left) : false;
+    default:
+      throw new Error(`Unknown binary operator: ${node.op}`);
+  }
+};
+
+/**
+ * Renders unary operations
+ */
+const renderUnaryOperation = (node, functions, data, scope) => {
+  const operand = renderNode(node.operand, functions, data, scope);
+  
+  switch (node.op) {
+    case UnaryOp.NOT:
+      return !operand;
+    default:
+      throw new Error(`Unknown unary operator: ${node.op}`);
+  }
+};
+
+/**
+ * Renders conditional statements
+ */
+const renderConditional = (node, functions, data, scope) => {
+  for (let i = 0; i < node.conditions.length; i++) {
+    const condition = node.conditions[i];
+    
+    // null condition means else branch
+    if (condition === null || renderNode(condition, functions, data, scope)) {
+      return renderNode(node.bodies[i], functions, data, scope);
+    }
+  }
+  
+  // No condition matched, return empty object
+  return {};
+};
+
+/**
+ * Renders loops
+ */
+const renderLoop = (node, functions, data, scope) => {
+  const iterable = renderNode(node.iterable, functions, data, scope);
+  
+  if (!Array.isArray(iterable)) {
+    return [];
+  }
+  
+  const results = [];
+  
+  for (let i = 0; i < iterable.length; i++) {
+    const newScope = { ...scope };
+    newScope[node.itemVar] = iterable[i];
+    
+    if (node.indexVar) {
+      newScope[node.indexVar] = i;
+    }
+    
+    const rendered = renderNode(node.body, functions, data, newScope);
+    results.push(rendered);
+  }
+  
+  return results;
+};
+
+/**
+ * Renders objects
+ */
+const renderObject = (node, functions, data, scope) => {
+  const result = {};
+  
+  for (const prop of node.properties) {
+    if (prop.key.startsWith('$if ')) {
+      const rendered = renderNode(prop.value, functions, data, scope);
+      
+      // Merge rendered object into result
+      if (typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered)) {
+        Object.assign(result, rendered);
+      }
+    } else if (prop.key.startsWith('$for ')) {
+      // This is a loop inside an object - it should not set any properties directly
+      // The parent object property should get the loop result
+      // Skip this - it will be handled by the parent context
+    } else {
+      const propValue = prop.value;
+      
+      // Check if this property contains a loop
+      if (propValue && propValue.type === NodeType.OBJECT && propValue.properties) {
+        const loopProp = propValue.properties.find(p => p.key.startsWith('$for '));
+        if (loopProp) {
+          // This property contains a loop - render the loop and assign the result
+          result[prop.key] = renderNode(loopProp.value, functions, data, scope);
+        } else {
+          result[prop.key] = renderNode(prop.value, functions, data, scope);
+        }
+      } else {
+        result[prop.key] = renderNode(prop.value, functions, data, scope);
+      }
+    }
+  }
+  
+  return result;
+};
+
+/**
+ * Renders arrays
+ */
+const renderArray = (node, functions, data, scope) => {
+  return node.items.map(item => renderNode(item, functions, data, scope));
+};
 
 export default render;

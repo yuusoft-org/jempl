@@ -1,4 +1,4 @@
-file: '../src/parse/index.js'
+file: '../../src/parse/index.js'
 group: parse
 suites: [variables]
 ---
