@@ -355,3 +355,37 @@ out:
           - rtgl-text: "Project Beta"
           - rtgl-text: "Second project"
           - rtgl-text: 1
+---
+case: conditional rendering issue - filter buttons (exact failing syntax)  
+in:
+  - template:
+      - rtgl-view#footer d=h jc=space-between p=md c=mu-fg :
+          - rtgl-text: "${activeCount} ${itemText} left"
+          - $if isAllFilter:
+              - rtgl-button#filter-all v=pr: "All"
+            $else:
+              - rtgl-button#filter-all v=lk: "All"
+          - $if isActiveFilter:
+              - rtgl-button#filter-active v=pr: "Active"
+            $else:
+              - rtgl-button#filter-active v=lk: "Active"
+          - $if isCompletedFilter:
+              - rtgl-button#filter-completed v=pr: "Completed"
+            $else:
+              - rtgl-button#filter-completed v=lk: "Completed"
+          - rtgl-button#clear-completed v=lk: "Clear completed (${completedCount})"
+    data:
+      activeCount: 2
+      itemText: "items"
+      isAllFilter: true
+      isActiveFilter: false
+      isCompletedFilter: false
+      completedCount: 1
+    functions: {}
+out:
+  - rtgl-view#footer d=h jc=space-between p=md c=mu-fg :
+      - rtgl-text: "2 items left"
+      - rtgl-button#filter-all v=pr: "All"
+      - rtgl-button#filter-active v=lk: "Active"
+      - rtgl-button#filter-completed v=lk: "Completed"
+      - rtgl-button#clear-completed v=lk: "Clear completed (1)"
