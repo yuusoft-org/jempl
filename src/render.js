@@ -202,7 +202,13 @@ const renderLoop = (node, functions, data, scope) => {
     }
     
     const rendered = renderNode(node.body, functions, data, newScope);
-    results.push(rendered);
+    
+    // If the body is an array with a single item, unwrap it
+    if (Array.isArray(rendered) && rendered.length === 1) {
+      results.push(rendered[0]);
+    } else {
+      results.push(rendered);
+    }
   }
   
   return results;
@@ -251,7 +257,19 @@ const renderObject = (node, functions, data, scope) => {
  * Renders arrays
  */
 const renderArray = (node, functions, data, scope) => {
-  return node.items.map(item => renderNode(item, functions, data, scope));
+  const results = [];
+  
+  for (const item of node.items) {
+    if (item.type === NodeType.LOOP) {
+      // Keep loop results as a single array item
+      const loopResults = renderNode(item, functions, data, scope);
+      results.push(loopResults);
+    } else {
+      results.push(renderNode(item, functions, data, scope));
+    }
+  }
+  
+  return results;
 };
 
 export default render;

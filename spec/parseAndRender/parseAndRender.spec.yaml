@@ -1,5 +1,5 @@
-file: '../../src/renderAndParse.js'
-group: renderAndParse
+file: '../../src/parseAndRender.js'
+group: parseAndRender
 suites: [e2e]
 ---
 ### End-to-End Tests
@@ -328,3 +328,30 @@ out:
     stats:
       total: 3
       premium: 2
+---
+case: loop inside array syntax
+in:
+  - template:
+      rtgl-view#projects:
+        - $for p, i in projects:
+            - rtgl-view:
+              - rtgl-text: "${p.title}"
+              - rtgl-text: "${p.description}"
+              - rtgl-text: "${i}"
+    data:
+      projects:
+        - title: "Project Alpha"
+          description: "First project"
+        - title: "Project Beta"
+          description: "Second project"
+    functions: {}
+out:
+  rtgl-view#projects:
+    - - rtgl-view:
+          - rtgl-text: "Project Alpha"
+          - rtgl-text: "First project"
+          - rtgl-text: 0
+      - rtgl-view:
+          - rtgl-text: "Project Beta"
+          - rtgl-text: "Second project"
+          - rtgl-text: 1
