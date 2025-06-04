@@ -1,8 +1,21 @@
 {
+  "name": "jemp",
+  "version": "0.0.1",
+  "description": "A JSON templating engine with conditionals, loops, and custom functions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yuusoft-org/jemp.git"
+  },
+  "license": "MIT",
   "type": "module",
   "dependencies": {},
   "devDependencies": {
     "puty": "^0.0.1",
     "vitest": "^3.2.1"
+  },
+  "scripts": {
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest watch",
+    "test:coverage": "bunx vitest run --coverage"
   }
 }

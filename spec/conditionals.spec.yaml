@@ -1,0 +1,868 @@
+file: '../src/parse/index.js'
+group: parse
+suites: [conditionals]
+---
+### Conditionals
+suite: conditionals
+exportName: default
+---
+case: simple if condition
+in:
+  - $if age >= 18:
+      status: "adult"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if age >= 18"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 4
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 18
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "adult"
+        id: null
+---
+case: if else condition
+in:
+  - $if isActive:
+      status: "active"
+    $else:
+      status: "inactive"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if isActive"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "isActive"
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "active"
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "inactive"
+        id: null
+---
+case: if elif else chain
+in:
+  - $if score >= 90:
+      grade: "A"
+    $elif score >= 80:
+      grade: "B"
+    $elif score >= 70:
+      grade: "C"
+    $else:
+      grade: "F"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if score >= 90"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 4
+            left:
+              type: 1
+              path: "score"
+            right:
+              type: 0
+              value: 90
+          - type: 4
+            op: 4
+            left:
+              type: 1
+              path: "score"
+            right:
+              type: 0
+              value: 80
+          - type: 4
+            op: 4
+            left:
+              type: 1
+              path: "score"
+            right:
+              type: 0
+              value: 70
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: grade
+                value:
+                  type: 0
+                  value: "A"
+          - type: 8
+            fast: true
+            properties:
+              - key: grade
+                value:
+                  type: 0
+                  value: "B"
+          - type: 8
+            fast: true
+            properties:
+              - key: grade
+                value:
+                  type: 0
+                  value: "C"
+          - type: 8
+            fast: true
+            properties:
+              - key: grade
+                value:
+                  type: 0
+                  value: "F"
+        id: null
+---
+case: comparison operators
+in:
+  - $if age == 18:
+      message: "exactly eighteen"
+    $if#op1 age != 18:
+      message: "not eighteen"
+    $if#op2 age > 18:
+      message: "over eighteen"
+    $if#op3 age < 18:
+      message: "under eighteen"
+    $if#op4 age <= 18:
+      message: "eighteen or under"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if age == 18"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 0
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 18
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 0
+                  value: "exactly eighteen"
+        id: null
+    - key: "$if#op1 age != 18"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 1
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 18
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 0
+                  value: "not eighteen"
+        id: "op1"
+    - key: "$if#op2 age > 18"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 2
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 18
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 0
+                  value: "over eighteen"
+        id: "op2"
+    - key: "$if#op3 age < 18"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 3
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 18
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 0
+                  value: "under eighteen"
+        id: "op3"
+    - key: "$if#op4 age <= 18"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 5
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 18
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 0
+                  value: "eighteen or under"
+        id: "op4"
+---
+case: logical operators
+in:
+  - $if age >= 18 && hasLicense:
+      status: "can drive"
+    $if#logic1 age < 16 || !hasPermission:
+      status: "cannot enter"
+    $if#logic2 name in validNames:
+      status: "authorized"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if age >= 18 && hasLicense"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 6
+            left:
+              type: 4
+              op: 4
+              left:
+                type: 1
+                path: "age"
+              right:
+                type: 0
+                value: 18
+            right:
+              type: 1
+              path: "hasLicense"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "can drive"
+        id: null
+    - key: "$if#logic1 age < 16 || !hasPermission"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 7
+            left:
+              type: 4
+              op: 3
+              left:
+                type: 1
+                path: "age"
+              right:
+                type: 0
+                value: 16
+            right:
+              type: 5
+              op: 0
+              operand:
+                type: 1
+                path: "hasPermission"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "cannot enter"
+        id: "logic1"
+    - key: "$if#logic2 name in validNames"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 8
+            left:
+              type: 1
+              path: "name"
+            right:
+              type: 1
+              path: "validNames"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "authorized"
+        id: "logic2"
+---
+case: negation operator
+in:
+  - $if !isDeleted:
+      status: "active"
+    $if#neg1 !user.isBlocked:
+      message: "welcome"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if !isDeleted"
+      value:
+        type: 6
+        conditions:
+          - type: 5
+            op: 0
+            operand:
+              type: 1
+              path: "isDeleted"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "active"
+        id: null
+    - key: "$if#neg1 !user.isBlocked"
+      value:
+        type: 6
+        conditions:
+          - type: 5
+            op: 0
+            operand:
+              type: 1
+              path: "user.isBlocked"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 0
+                  value: "welcome"
+        id: "neg1"
+---
+case: conditions with variables in content
+in:
+  - $if user.isAdmin:
+      message: "Hello ${user.name}, you are an admin"
+      permissions: ["read", "write", "delete"]
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if user.isAdmin"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "user.isAdmin"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: message
+                value:
+                  type: 2
+                  parts:
+                    - "Hello "
+                    - {var: "user.name"}
+                    - ", you are an admin"
+              - key: permissions
+                value:
+                  type: 9
+                  fast: true
+                  items:
+                    - type: 0
+                      value: "read"
+                    - type: 0
+                      value: "write"
+                    - type: 0
+                      value: "delete"
+        id: null
+---
+case: nested conditionals
+in:
+  - $if user.isActive:
+      $if user.isAdmin:
+        role: "admin"
+      $else:
+        role: "user"
+    $else:
+      role: "inactive"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if user.isActive"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "user.isActive"
+          - null
+        bodies:
+          - type: 8
+            fast: false
+            properties:
+              - key: "$if user.isAdmin"
+                value:
+                  type: 6
+                  conditions:
+                    - type: 1
+                      path: "user.isAdmin"
+                    - null
+                  bodies:
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: role
+                          value:
+                            type: 0
+                            value: "admin"
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: role
+                          value:
+                            type: 0
+                            value: "user"
+                  id: null
+          - type: 8
+            fast: true
+            properties:
+              - key: role
+                value:
+                  type: 0
+                  value: "inactive"
+        id: null
+---
+case: conditionals in arrays
+in:
+  - items:
+      - name: "always shown"
+      - $if showOptional:
+          name: "conditional item"
+      - name: "also always shown"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 8
+            fast: true
+            properties:
+              - key: name
+                value:
+                  type: 0
+                  value: "always shown"
+          - type: 8
+            fast: false
+            properties:
+              - key: "$if showOptional"
+                value:
+                  type: 6
+                  conditions:
+                    - type: 1
+                      path: "showOptional"
+                  bodies:
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: name
+                          value:
+                            type: 0
+                            value: "conditional item"
+                  id: null
+          - type: 8
+            fast: true
+            properties:
+              - key: name
+                value:
+                  type: 0
+                  value: "also always shown"
+---
+case: conditions with literal values
+in:
+  - $if true:
+      always: "shown"
+    $if#lit1 false:
+      never: "shown"
+    $if#lit2 null:
+      falsy: "value"
+    $if#lit3 0:
+      zero: "falsy"
+    $if#lit4 "":
+      empty: "string"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if true"
+      value:
+        type: 6
+        conditions:
+          - type: 0
+            value: true
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: always
+                value:
+                  type: 0
+                  value: "shown"
+        id: null
+    - key: "$if#lit1 false"
+      value:
+        type: 6
+        conditions:
+          - type: 0
+            value: false
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: never
+                value:
+                  type: 0
+                  value: "shown"
+        id: "lit1"
+    - key: "$if#lit2 null"
+      value:
+        type: 6
+        conditions:
+          - type: 0
+            value: null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: falsy
+                value:
+                  type: 0
+                  value: "value"
+        id: "lit2"
+    - key: "$if#lit3 0"
+      value:
+        type: 6
+        conditions:
+          - type: 0
+            value: 0
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: zero
+                value:
+                  type: 0
+                  value: "falsy"
+        id: "lit3"
+    - key: "$if#lit4 \"\""
+      value:
+        type: 6
+        conditions:
+          - type: 0
+            value: ""
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: empty
+                value:
+                  type: 0
+                  value: "string"
+        id: "lit4"
+---
+case: complex conditions with parentheses
+in:
+  - $if (age >= 18 && hasLicense) || isEmergency:
+      canDrive: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if (age >= 18 && hasLicense) || isEmergency"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 7
+            left:
+              type: 4
+              op: 6
+              left:
+                type: 4
+                op: 4
+                left:
+                  type: 1
+                  path: "age"
+                right:
+                  type: 0
+                  value: 18
+              right:
+                type: 1
+                path: "hasLicense"
+            right:
+              type: 1
+              path: "isEmergency"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: canDrive
+                value:
+                  type: 0
+                  value: true
+        id: null
+---
+case: multiple conditionals with ID syntax
+in:
+  - name: "${name}"
+    $if#1 isAdult:
+      welcome: "You are an adult"
+    $elif#1 age > 60:
+      welcome: "You are too old"
+    $else#1:
+      welcome: "You are too young"
+    $if#2 isAdult:
+      welcome2: "You are an adult"
+    $elif#2 age > 60:
+      welcome2: "You are too old"
+    $else#2:
+      welcome2: "You are too young"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: name
+      value:
+        type: 1
+        path: "name"
+    - key: "$if#1 isAdult"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "isAdult"
+          - type: 4
+            op: 2
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 60
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: welcome
+                value:
+                  type: 0
+                  value: "You are an adult"
+          - type: 8
+            fast: true
+            properties:
+              - key: welcome
+                value:
+                  type: 0
+                  value: "You are too old"
+          - type: 8
+            fast: true
+            properties:
+              - key: welcome
+                value:
+                  type: 0
+                  value: "You are too young"
+        id: "1"
+    - key: "$if#2 isAdult"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "isAdult"
+          - type: 4
+            op: 2
+            left:
+              type: 1
+              path: "age"
+            right:
+              type: 0
+              value: 60
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: welcome2
+                value:
+                  type: 0
+                  value: "You are an adult"
+          - type: 8
+            fast: true
+            properties:
+              - key: welcome2
+                value:
+                  type: 0
+                  value: "You are too old"
+          - type: 8
+            fast: true
+            properties:
+              - key: welcome2
+                value:
+                  type: 0
+                  value: "You are too young"
+        id: "2"
+---
+case: simple conditional with ID
+in:
+  - $if#test user.isActive:
+      status: "active"
+    $else#test:
+      status: "inactive"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if#test user.isActive"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "user.isActive"
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "active"
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "inactive"
+        id: "test"
+---
+case: mixed regular and ID conditionals
+in:
+  - $if normalCondition:
+      normal: "value"
+    $if#special specialCondition:
+      special: "value"
+    $else#special:
+      special: "default"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if normalCondition"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "normalCondition"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: normal
+                value:
+                  type: 0
+                  value: "value"
+        id: null
+    - key: "$if#special specialCondition"
+      value:
+        type: 6
+        conditions:
+          - type: 1
+            path: "specialCondition"
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: special
+                value:
+                  type: 0
+                  value: "value"
+          - type: 8
+            fast: true
+            properties:
+              - key: special
+                value:
+                  type: 0
+                  value: "default"
+        id: "special"
