@@ -1,0 +1,345 @@
+file: '../src/parse/index.js'
+group: parse
+suites: [variables]
+---
+### Variables
+suite: variables
+exportName: default
+---
+case: simple variable
+in:
+  - name: "${userName}"
+    count: "${totalCount}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: name
+      value:
+        type: 1
+        path: "userName"
+    - key: count
+      value:
+        type: 1
+        path: "totalCount"
+---
+case: nested variable access
+in:
+  - profile: "${user.profile.name}"
+    address: "${user.address.city}"
+    deep: "${company.department.team.lead.name}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: profile
+      value:
+        type: 1
+        path: "user.profile.name"
+    - key: address
+      value:
+        type: 1
+        path: "user.address.city"
+    - key: deep
+      value:
+        type: 1
+        path: "company.department.team.lead.name"
+---
+case: string interpolation with multiple variables
+in:
+  - greeting: "Hello ${firstName} ${lastName}!"
+    message: "You have ${count} new messages from ${sender}"
+    complex: "${user.name} (${user.email}) - Status: ${user.status}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: greeting
+      value:
+        type: 2
+        parts:
+          - "Hello "
+          - {var: "firstName"}
+          - " "
+          - {var: "lastName"}
+          - "!"
+    - key: message
+      value:
+        type: 2
+        parts:
+          - "You have "
+          - {var: "count"}
+          - " new messages from "
+          - {var: "sender"}
+    - key: complex
+      value:
+        type: 2
+        parts:
+          - {var: "user.name"}
+          - " ("
+          - {var: "user.email"}
+          - ") - Status: "
+          - {var: "user.status"}
+---
+case: variables with whitespace
+in:
+  - trimmed: "${  name  }"
+    multiSpace: "${ user . profile . name }"
+    newlines: "${userName}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: trimmed
+      value:
+        type: 1
+        path: "name"
+    - key: multiSpace
+      value:
+        type: 1
+        path: "user . profile . name"
+    - key: newlines
+      value:
+        type: 1
+        path: "userName"
+---
+case: empty and edge case variables
+in:
+  - empty: "${}"
+    singleChar: "${a}"
+    numbers: "${user123}"
+    underscore: "${_private}"
+    dollarSign: "${$value}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: empty
+      value:
+        type: 1
+        path: ""
+    - key: singleChar
+      value:
+        type: 1
+        path: "a"
+    - key: numbers
+      value:
+        type: 1
+        path: "user123"
+    - key: underscore
+      value:
+        type: 1
+        path: "_private"
+    - key: dollarSign
+      value:
+        type: 1
+        path: "$value"
+---
+case: variables in arrays
+in:
+  - items:
+      - "${item1}"
+      - "${item2}"
+      - "literal value"
+      - "prefix ${item3} suffix"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: true
+        items:
+          - type: 1
+            path: "item1"
+          - type: 1
+            path: "item2"
+          - type: 0
+            value: "literal value"
+          - type: 2
+            parts:
+              - "prefix "
+              - {var: "item3"}
+              - " suffix"
+---
+case: nested objects with variables
+in:
+  - user:
+      name: "${firstName} ${lastName}"
+      details:
+        age: "${age}"
+        location: "${city}, ${country}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: user
+      value:
+        type: 8
+        fast: true
+        properties:
+          - key: name
+            value:
+              type: 2
+              parts:
+                - {var: "firstName"}
+                - " "
+                - {var: "lastName"}
+          - key: details
+            value:
+              type: 8
+              fast: true
+              properties:
+                - key: age
+                  value:
+                    type: 1
+                    path: "age"
+                - key: location
+                  value:
+                    type: 2
+                    parts:
+                      - {var: "city"}
+                      - ", "
+                      - {var: "country"}
+---
+case: special characters in variable names
+in:
+  - hyphen: "${user-name}"
+    colon: "${user:id}"
+    at: "${user@email}"
+    brackets: "${items[0]}"
+    parens: "${func()}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: hyphen
+      value:
+        type: 1
+        path: "user-name"
+    - key: colon
+      value:
+        type: 1
+        path: "user:id"
+    - key: at
+      value:
+        type: 1
+        path: "user@email"
+    - key: brackets
+      value:
+        type: 1
+        path: "items[0]"
+    - key: parens
+      value:
+        type: 1
+        path: "func()"
+---
+case: incomplete variable syntax
+in:
+  - unclosed: "${name"
+    unopened: "name}"
+    dollarOnly: "$name"
+    bracesOnly: "{name}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: unclosed
+      value:
+        type: 0
+        value: "${name"
+    - key: unopened
+      value:
+        type: 0
+        value: "name}"
+    - key: dollarOnly
+      value:
+        type: 0
+        value: "$name"
+    - key: bracesOnly
+      value:
+        type: 0
+        value: "{name}"
+---
+case: multiple variables no spacing
+in:
+  - adjacent: "${first}${second}"
+    triple: "${a}${b}${c}"
+    withText: "text${var1}more${var2}end"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: adjacent
+      value:
+        type: 2
+        parts:
+          - {var: "first"}
+          - {var: "second"}
+    - key: triple
+      value:
+        type: 2
+        parts:
+          - {var: "a"}
+          - {var: "b"}
+          - {var: "c"}
+    - key: withText
+      value:
+        type: 2
+        parts:
+          - "text"
+          - {var: "var1"}
+          - "more"
+          - {var: "var2"}
+          - "end"
+---
+case: escaped dollar signs
+in:
+  - escaped: "\\${notVariable}"
+    mixed: "\\${escaped} but ${real}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: escaped
+      value:
+        type: 2
+        parts:
+          - "\\"
+          - {var: "notVariable"}
+    - key: mixed
+      value:
+        type: 2
+        parts:
+          - "\\"
+          - {var: "escaped"}
+          - " but "
+          - {var: "real"}
+---
+case: numeric and boolean values
+in:
+  - number: 42
+    float: 3.14
+    boolean: true
+    nullValue: null
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: number
+      value:
+        type: 0
+        value: 42
+    - key: float
+      value:
+        type: 0
+        value: 3.14
+    - key: boolean
+      value:
+        type: 0
+        value: true
+    - key: nullValue
+      value:
+        type: 0
+        value: null
