@@ -10,11 +10,11 @@
   "type": "module",
   "dependencies": {},
   "devDependencies": {
-    "puty": "^0.0.1",
+    "puty": "^0.0.2",
     "vitest": "^3.2.1"
   },
   "scripts": {
-    "test": "bunx vitest run",
+    "test": "bunx vitest run --reporter=verbose",
     "test:watch": "bunx vitest watch",
     "test:coverage": "bunx vitest run --coverage"
   }
