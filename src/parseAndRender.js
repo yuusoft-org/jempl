@@ -7,7 +7,7 @@ import * as defaultFunctions from './functions.js';
  * @param {Object} input - Object containing template, data, and optional functions
  * @returns {Object} rendered data
  */
-const renderAndParse = (input) => {
+const parseAndRender = (input) => {
   const { template, data, functions = {} } = input;
   
   // Merge default functions with custom functions
@@ -20,4 +20,4 @@ const renderAndParse = (input) => {
   return render({ ast, functions: allFunctions, data });
 };
 
-export default renderAndParse;
+export default parseAndRender;
