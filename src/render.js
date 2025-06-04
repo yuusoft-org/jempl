@@ -1,5 +1,4 @@
-
-import { NodeType, BinaryOp, UnaryOp } from './parse/constants.js';
+import { NodeType, BinaryOp, UnaryOp } from "./parse/constants.js";
 
 /**
  * Renders an AST template and data into a JSON object
@@ -13,9 +12,9 @@ const render = (input) => {
 
 /**
  * Renders a single AST node
- * @param {Object} node 
- * @param {Object} functions 
- * @param {Object} data 
+ * @param {Object} node
+ * @param {Object} functions
+ * @param {Object} data
  * @param {Object} scope - local scope for loops
  * @returns {any} rendered value
  */
@@ -61,16 +60,16 @@ const renderNode = (node, functions, data, scope) => {
  */
 const getVariableValue = (path, data, scope) => {
   if (!path) return "undefined";
-  
+
   // Check local scope first (for loop variables)
   if (scope.hasOwnProperty(path)) {
     return scope[path];
   }
-  
+
   // Split path and traverse
-  const parts = path.split('.');
+  const parts = path.split(".");
   let current = data;
-  
+
   for (const part of parts) {
     if (current == null) return "undefined";
     // Check scope first for each part
@@ -80,7 +79,7 @@ const getVariableValue = (path, data, scope) => {
       current = current[part];
     }
   }
-  
+
   return current === undefined ? "undefined" : current;
 };
 
@@ -88,21 +87,21 @@ const getVariableValue = (path, data, scope) => {
  * Renders string interpolation
  */
 const renderInterpolation = (parts, functions, data, scope) => {
-  let result = '';
-  
+  let result = "";
+
   for (const part of parts) {
-    if (typeof part === 'string') {
+    if (typeof part === "string") {
       result += part;
     } else if (part.var) {
       const value = getVariableValue(part.var, data, scope);
-      result += value != null ? String(value) : '';
+      result += value != null ? String(value) : "";
     } else if (part.func) {
       // Handle function calls in interpolation
       const funcResult = functions[part.func]?.(...(part.args || []));
-      result += funcResult != null ? String(funcResult) : '';
+      result += funcResult != null ? String(funcResult) : "";
     }
   }
-  
+
   return result;
 };
 
@@ -114,8 +113,8 @@ const renderFunction = (node, functions, data, scope) => {
   if (!func) {
     throw new Error(`Function '${node.name}' is not defined`);
   }
-  
-  const args = node.args.map(arg => renderNode(arg, functions, data, scope));
+
+  const args = node.args.map((arg) => renderNode(arg, functions, data, scope));
   return func(...args);
 };
 
@@ -125,7 +124,7 @@ const renderFunction = (node, functions, data, scope) => {
 const renderBinaryOperation = (node, functions, data, scope) => {
   const left = renderNode(node.left, functions, data, scope);
   const right = renderNode(node.right, functions, data, scope);
-  
+
   switch (node.op) {
     case BinaryOp.EQ:
       return left == right;
@@ -155,7 +154,7 @@ const renderBinaryOperation = (node, functions, data, scope) => {
  */
 const renderUnaryOperation = (node, functions, data, scope) => {
   const operand = renderNode(node.operand, functions, data, scope);
-  
+
   switch (node.op) {
     case UnaryOp.NOT:
       return !operand;
@@ -170,13 +169,13 @@ const renderUnaryOperation = (node, functions, data, scope) => {
 const renderConditional = (node, functions, data, scope) => {
   for (let i = 0; i < node.conditions.length; i++) {
     const condition = node.conditions[i];
-    
+
     // null condition means else branch
     if (condition === null || renderNode(condition, functions, data, scope)) {
       return renderNode(node.bodies[i], functions, data, scope);
     }
   }
-  
+
   // No condition matched, return empty object
   return {};
 };
@@ -186,23 +185,23 @@ const renderConditional = (node, functions, data, scope) => {
  */
 const renderLoop = (node, functions, data, scope) => {
   const iterable = renderNode(node.iterable, functions, data, scope);
-  
+
   if (!Array.isArray(iterable)) {
     return [];
   }
-  
+
   const results = [];
-  
+
   for (let i = 0; i < iterable.length; i++) {
     const newScope = Object.create(scope);
     newScope[node.itemVar] = iterable[i];
-    
+
     if (node.indexVar) {
       newScope[node.indexVar] = i;
     }
-    
+
     const rendered = renderNode(node.body, functions, data, newScope);
-    
+
     // If the body is an array with a single item, unwrap it
     if (Array.isArray(rendered) && rendered.length === 1) {
       results.push(rendered[0]);
@@ -210,7 +209,7 @@ const renderLoop = (node, functions, data, scope) => {
       results.push(rendered);
     }
   }
-  
+
   return results;
 };
 
@@ -221,44 +220,62 @@ const renderObject = (node, functions, data, scope) => {
   const result = {};
   let conditionalResult = null;
   let hasNonConditionalProperties = false;
-  
+
   // Check if this object has only conditional properties
   for (const prop of node.properties) {
-    if (!prop.key.startsWith('$if ') && !prop.key.match(/^\$if\s+\w+.*:?$/) && 
-        !prop.key.startsWith('$elif') && !prop.key.startsWith('$else') && 
-        !prop.key.startsWith('$for ')) {
+    if (
+      !prop.key.startsWith("$if ") &&
+      !prop.key.match(/^\$if\s+\w+.*:?$/) &&
+      !prop.key.startsWith("$elif") &&
+      !prop.key.startsWith("$else") &&
+      !prop.key.startsWith("$for ")
+    ) {
       hasNonConditionalProperties = true;
       break;
     }
   }
-  
+
   for (const prop of node.properties) {
-    if (prop.key.startsWith('$if ') || prop.key.match(/^\$if\s+\w+.*:?$/)) {
+    if (prop.key.startsWith("$if ") || prop.key.match(/^\$if\s+\w+.*:?$/)) {
       const rendered = renderNode(prop.value, functions, data, scope);
-      
+
       // If object has only conditionals and the result is non-object, replace the entire object
-      if (!hasNonConditionalProperties && rendered !== null && rendered !== undefined) {
+      if (
+        !hasNonConditionalProperties &&
+        rendered !== null &&
+        rendered !== undefined
+      ) {
         // If the result is an array with a single item, unwrap it
         if (Array.isArray(rendered) && rendered.length === 1) {
           return rendered[0];
         }
         return rendered;
       }
-      
+
       // Otherwise merge rendered object into result
-      if (typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered)) {
+      if (
+        typeof rendered === "object" &&
+        rendered !== null &&
+        !Array.isArray(rendered)
+      ) {
         Object.assign(result, rendered);
       }
-    } else if (prop.key.startsWith('$for ')) {
+    } else if (prop.key.startsWith("$for ")) {
       // This is a loop inside an object - it should not set any properties directly
       // The parent object property should get the loop result
       // Skip this - it will be handled by the parent context
     } else {
       const propValue = prop.value;
-      
+
       // Check if this property contains a loop
-      if (propValue && propValue.type === NodeType.OBJECT && propValue.properties) {
-        const loopProp = propValue.properties.find(p => p.key.startsWith('$for '));
+      if (
+        propValue &&
+        propValue.type === NodeType.OBJECT &&
+        propValue.properties
+      ) {
+        const loopProp = propValue.properties.find((p) =>
+          p.key.startsWith("$for "),
+        );
         if (loopProp) {
           // This property contains a loop - render the loop and assign the result
           result[prop.key] = renderNode(loopProp.value, functions, data, scope);
@@ -266,11 +283,15 @@ const renderObject = (node, functions, data, scope) => {
           result[prop.key] = renderNode(prop.value, functions, data, scope);
         }
       } else {
-        result[prop.key] = renderNode(prop.value, functions, data, scope);
+        // Render the key if it contains variables
+        const renderedKey = prop.parsedKey
+          ? renderNode(prop.parsedKey, functions, data, scope)
+          : prop.key;
+        result[renderedKey] = renderNode(prop.value, functions, data, scope);
       }
     }
   }
-  
+
   return result;
 };
 
@@ -279,7 +300,7 @@ const renderObject = (node, functions, data, scope) => {
  */
 const renderArray = (node, functions, data, scope) => {
   const results = [];
-  
+
   for (const item of node.items) {
     if (item.type === NodeType.LOOP) {
       // Keep loop results as a single array item
@@ -289,7 +310,7 @@ const renderArray = (node, functions, data, scope) => {
       results.push(renderNode(item, functions, data, scope));
     }
   }
-  
+
   return results;
 };
 
