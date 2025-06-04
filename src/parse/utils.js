@@ -85,7 +85,7 @@ export const parseObject = (obj, functions) => {
     const [key, value] = entries[i];
     
     // Check if this is a conditional structure
-    if (key.startsWith('$if ') || key.match(/^\$if#\w+\s/)) {
+    if (key.startsWith('$if ') || key.match(/^\$if#\w+\s/) || key.match(/^\$if\s+\w+.*:$/)) {
       const conditional = parseConditional(entries, i, functions);
       properties.push({
         key,
@@ -158,6 +158,11 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
   } else {
     // Regular $if: "$if age > 18" -> expr="age > 18"
     conditionExpr = ifKey.substring(4); // Remove '$if '
+    
+    // Handle YAML syntax with trailing colon: "$if isAllFilter:" -> "isAllFilter"
+    if (conditionExpr.endsWith(':')) {
+      conditionExpr = conditionExpr.slice(0, -1).trim();
+    }
   }
   
   const ifCondition = parseConditionExpression(conditionExpr);
@@ -175,8 +180,12 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       // Look for $elif#ID or $else#ID with matching ID
       if (key.startsWith(`$elif#${conditionId} `)) {
         elifConditionExpr = key.substring(`$elif#${conditionId} `.length);
+        // Handle YAML syntax with trailing colon
+        if (elifConditionExpr.endsWith(':')) {
+          elifConditionExpr = elifConditionExpr.slice(0, -1).trim();
+        }
         isMatching = true;
-      } else if (key === `$else#${conditionId}`) {
+      } else if (key === `$else#${conditionId}` || key === `$else#${conditionId}:`) {
         isMatching = true;
         elifConditionExpr = null; // else branch
       }
@@ -184,8 +193,12 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       // Look for plain $elif or $else
       if (key.startsWith('$elif ')) {
         elifConditionExpr = key.substring(6); // Remove '$elif '
+        // Handle YAML syntax with trailing colon
+        if (elifConditionExpr.endsWith(':')) {
+          elifConditionExpr = elifConditionExpr.slice(0, -1).trim();
+        }
         isMatching = true;
-      } else if (key === '$else') {
+      } else if (key === '$else' || key === '$else:') {
         isMatching = true;
         elifConditionExpr = null; // else branch
       }

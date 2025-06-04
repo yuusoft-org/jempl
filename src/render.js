@@ -219,12 +219,33 @@ const renderLoop = (node, functions, data, scope) => {
  */
 const renderObject = (node, functions, data, scope) => {
   const result = {};
+  let conditionalResult = null;
+  let hasNonConditionalProperties = false;
+  
+  // Check if this object has only conditional properties
+  for (const prop of node.properties) {
+    if (!prop.key.startsWith('$if ') && !prop.key.match(/^\$if\s+\w+.*:?$/) && 
+        !prop.key.startsWith('$elif') && !prop.key.startsWith('$else') && 
+        !prop.key.startsWith('$for ')) {
+      hasNonConditionalProperties = true;
+      break;
+    }
+  }
   
   for (const prop of node.properties) {
-    if (prop.key.startsWith('$if ')) {
+    if (prop.key.startsWith('$if ') || prop.key.match(/^\$if\s+\w+.*:?$/)) {
       const rendered = renderNode(prop.value, functions, data, scope);
       
-      // Merge rendered object into result
+      // If object has only conditionals and the result is non-object, replace the entire object
+      if (!hasNonConditionalProperties && rendered !== null && rendered !== undefined) {
+        // If the result is an array with a single item, unwrap it
+        if (Array.isArray(rendered) && rendered.length === 1) {
+          return rendered[0];
+        }
+        return rendered;
+      }
+      
+      // Otherwise merge rendered object into result
       if (typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered)) {
         Object.assign(result, rendered);
       }
