@@ -32,14 +32,34 @@ export const parseValue = (value, functions) => {
  * @returns {Object} Array AST node
  */
 export const parseArray = (arr, functions) => {
-  const items = arr.map(item => parseValue(item, functions));
-  const hasDynamicContent = items.some(item => 
-    item.type === NodeType.FUNCTION ||
-    item.type === NodeType.CONDITIONAL ||
-    item.type === NodeType.LOOP ||
-    (item.type === NodeType.OBJECT && !item.fast) ||
-    (item.type === NodeType.ARRAY && !item.fast)
-  );
+  const items = [];
+  let hasDynamicContent = false;
+  
+  for (let i = 0; i < arr.length; i++) {
+    const item = arr[i];
+    
+    // Check if this is a loop in array syntax
+    if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+      const keys = Object.keys(item);
+      if (keys.length === 1 && keys[0].startsWith('$for ')) {
+        const loop = parseLoop(keys[0], item[keys[0]], functions);
+        items.push(loop);
+        hasDynamicContent = true;
+        continue;
+      }
+    }
+    
+    const parsedItem = parseValue(item, functions);
+    items.push(parsedItem);
+    
+    if (parsedItem.type === NodeType.FUNCTION ||
+        parsedItem.type === NodeType.CONDITIONAL ||
+        parsedItem.type === NodeType.LOOP ||
+        (parsedItem.type === NodeType.OBJECT && !parsedItem.fast) ||
+        (parsedItem.type === NodeType.ARRAY && !parsedItem.fast)) {
+      hasDynamicContent = true;
+    }
+  }
   
   return {
     type: NodeType.ARRAY,
