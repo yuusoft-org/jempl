@@ -1,5 +1,6 @@
 import parse from './parse/index.js';
 import render from './render.js';
+import renderAndParse from './renderAndParse.js';
 import * as defaultFunctions from './functions.js';
 
 class Jemp {
@@ -16,9 +17,8 @@ class Jemp {
     return render(ast, this.customFunctions, data);
   }
 
-  parseAndRender = (template, data) => {
-    const ast = this.parse(template);
-    return this.render(ast, data);
+  renderAndParse = (template, data) => {
+    return renderAndParse({ template, data, functions: this.customFunctions });
   }
 }
 

@@ -1,0 +1,330 @@
+file: '../../src/renderAndParse.js'
+group: renderAndParse
+suites: [e2e]
+---
+### End-to-End Tests
+suite: e2e
+exportName: default
+---
+case: simple variable replacement
+in:
+  - template:
+      name: "${firstName} ${lastName}"
+      age: "${age}"
+    data:
+      firstName: "John"
+      lastName: "Doe" 
+      age: 30
+    functions: {}
+out:
+  name: "John Doe"
+  age: 30
+---
+case: nested object with variables
+in:
+  - template:
+      user:
+        profile:
+          displayName: "${user.name}"
+          email: "${user.email}"
+        settings:
+          theme: "${preferences.theme}"
+    data:
+      user:
+        name: "Alice Smith"
+        email: "alice@example.com"
+      preferences:
+        theme: "dark"
+    functions: {}
+out:
+  user:
+    profile:
+      displayName: "Alice Smith"
+      email: "alice@example.com"
+    settings:
+      theme: "dark"
+---
+case: array with string interpolation
+in:
+  - template:
+      - "Hello ${name}!"
+      - "You have ${count} messages"
+      - "${status}"
+    data:
+      name: "Bob"
+      count: 5
+      status: "online"
+    functions: {}
+out:
+  - "Hello Bob!"
+  - "You have 5 messages"
+  - "online"
+---
+case: conditional rendering - if true
+in:
+  - template:
+      $if age >= 18:
+        status: "adult"
+        canVote: true
+      $else:
+        status: "minor"
+        canVote: false
+    data:
+      age: 25
+    functions: {}
+out:
+  status: "adult"
+  canVote: true
+---
+case: conditional rendering - if false
+in:
+  - template:
+      $if age >= 18:
+        status: "adult"
+        permissions: ["vote", "drive"]
+      $else:
+        status: "minor"
+        permissions: ["school"]
+    data:
+      age: 16
+    functions: {}
+out:
+  status: "minor"
+  permissions: ["school"]
+---
+case: conditional with comparison operators
+in:
+  - template:
+      $if score > 90:
+        grade: "A"
+      $elif score > 80:
+        grade: "B" 
+      $elif score > 70:
+        grade: "C"
+      $else:
+        grade: "F"
+    data:
+      score: 85
+    functions: {}
+out:
+  grade: "B"
+---
+case: simple loop
+in:
+  - template:
+      users:
+        $for user in users:
+          name: "${user.name}"
+          role: "${user.role}"
+    data:
+      users:
+        - name: "Alice"
+          role: "admin"
+        - name: "Bob" 
+          role: "user"
+        - name: "Carol"
+          role: "moderator"
+    functions: {}
+out:
+  users:
+    - name: "Alice"
+      role: "admin"
+    - name: "Bob"
+      role: "user" 
+    - name: "Carol"
+      role: "moderator"
+---
+case: loop with index
+in:
+  - template:
+      items:
+        $for item, index in items:
+          id: "${index}"
+          value: "${item}"
+          position: "Item #${index}"
+    data:
+      items: ["apple", "banana", "cherry"]
+    functions: {}
+out:
+  items:
+    - id: 0
+      value: "apple"
+      position: "Item #0"
+    - id: 1
+      value: "banana"
+      position: "Item #1"
+    - id: 2
+      value: "cherry"
+      position: "Item #2"
+---
+case: nested conditionals and loops
+in:
+  - template:
+      report:
+        activeUsers:
+          $for user in activeUsers:
+            name: "${user.name}"
+            lastLogin: "${user.lastLogin}"
+        stats:
+          total: "${totalUsers}"
+    data:
+      activeUsers:
+        - name: "Alice"
+          lastLogin: "2023-12-20"
+        - name: "Carol"
+          lastLogin: "2023-12-22"
+      totalUsers: 3
+    functions: {}
+out:
+  report:
+    activeUsers:
+      - name: "Alice"
+        lastLogin: "2023-12-20"
+      - name: "Carol"
+        lastLogin: "2023-12-22"
+    stats:
+      total: 3
+---
+case: complex string interpolation
+in:
+  - template:
+      summary: "User ${user.name} (ID: ${user.id}) has ${user.postCount} posts and ${user.followerCount} followers"
+      details:
+        - "Email: ${user.email}"
+        - "Joined: ${user.joinDate}"
+        - "Status: ${user.status}"
+    data:
+      user:
+        id: 123
+        name: "John Doe"
+        email: "john@example.com"
+        joinDate: "2023-01-15"
+        status: "Active"
+        postCount: 2
+        followerCount: 3
+    functions: {}
+out:
+  summary: "User John Doe (ID: 123) has 2 posts and 3 followers"
+  details:
+    - "Email: john@example.com"
+    - "Joined: 2023-01-15"
+    - "Status: Active"
+---
+case: missing variables handling
+in:
+  - template:
+      name: "${name}"
+      missing: "${nonexistent}"
+      nested: "${user.profile.missing}"
+    data:
+      name: "Alice"
+    functions: {}
+out:
+  name: "Alice"
+  missing: "undefined"
+  nested: "undefined"
+---
+case: boolean and numeric literals
+in:
+  - template:
+      config:
+        enabled: true
+        port: 8080
+        timeout: 30.5
+        debug: false
+        name: "${appName}"
+    data:
+      appName: "MyApp"
+    functions: {}
+out:
+  config:
+    enabled: true
+    port: 8080
+    timeout: 30.5
+    debug: false
+    name: "MyApp"
+---
+case: mixed array types
+in:
+  - template:
+      - 1
+      - "${name}"
+      - true
+      - "Count: ${count}"
+      - null
+    data:
+      name: "test"
+      count: 42
+    functions: {}
+out:
+  - 1
+  - "test"
+  - true
+  - "Count: 42"
+  - null
+---
+case: empty template and data
+in:
+  - template: {}
+    data: {}
+    functions: {}
+out: {}
+---
+case: logical operators in conditionals
+in:
+  - template:
+      $if isAdmin && isActive:
+        access: "full"
+      $elif isUser && isActive:
+        access: "limited"
+      $else:
+        access: "none"
+    data:
+      isAdmin: false
+      isUser: true
+      isActive: true
+    functions: {}
+out:
+  access: "limited"
+---
+case: nested objects with loops and conditionals
+in:
+  - template:
+      dashboard:
+        users:
+          $for user in users:
+            name: "${user.name}"
+            $if user.premium:
+              badge: "Premium"
+              features: ["advanced", "priority"]
+            $else:
+              badge: "Standard" 
+              features: ["basic"]
+        stats:
+          total: "${users.length}"
+          premium: "${premiumCount}"
+    data:
+      users:
+        - name: "Alice"
+          premium: true
+        - name: "Bob"
+          premium: false
+        - name: "Carol"
+          premium: true
+      premiumCount: 2
+    functions: {}
+out:
+  dashboard:
+    users:
+      - name: "Alice"
+        badge: "Premium"
+        features: ["advanced", "priority"]
+      - name: "Bob"
+        badge: "Standard"
+        features: ["basic"]
+      - name: "Carol"
+        badge: "Premium"
+        features: ["advanced", "priority"]
+    stats:
+      total: 3
+      premium: 2
