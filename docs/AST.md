@@ -1,4 +1,4 @@
-# Jemp AST (Abstract Syntax Tree) Format
+# Jempl AST (Abstract Syntax Tree) Format
 
 The AST is designed to be:
 - Fast to traverse and render

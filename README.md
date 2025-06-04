@@ -1,6 +1,6 @@
-# Jemp
+# Jempl
 
-Jemp is a JSON templating engine with conditionals, loops, and custom functions.
+Jempl is a JSON templating engine with conditionals, loops, and custom functions.
 
 ## Objectives
 
@@ -296,27 +296,6 @@ The library ships with the following built-in functions:
 ```javascript
 // Date/Time functions
 now() // Returns current timestamp
-```
-
-### Custom Function Registration
-
-Register additional functions when creating the template engine.
-
-```javascript
-const engine = new Jemp({
-  customFunctions: {
-    substring: (str, start, end) => {
-      return str.substring(start, end);
-    },
-    structuredName: (fullName) => {
-      const [firstName, lastName] = fullName.split(', ');
-      return {
-        firstName,
-        lastName
-      };
-    }
-  }
-});
 ```
 
 ### Usage in Templates

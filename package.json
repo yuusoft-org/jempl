@@ -1,5 +1,5 @@
 {
-  "name": "jemp",
+  "name": "jempl",
   "version": "0.0.1",
   "description": "A JSON templating engine with conditionals, loops, and custom functions",
   "main": "src/index.js",
@@ -9,7 +9,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yuusoft-org/jemp.git"
+    "url": "https://github.com/yuusoft-org/jempl.git"
   },
   "license": "MIT",
   "dependencies": {},
