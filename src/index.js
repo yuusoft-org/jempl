@@ -1,3 +1,5 @@
-import Jemp from './jemp.js';
+import render from './render.js';
+import parse from './parse.js';
+import renderAndParse from './renderAndParse.js';
 
-export default Jemp;
+export { render, renderAndParse, parse };
