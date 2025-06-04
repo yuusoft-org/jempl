@@ -1,4 +1,4 @@
-import { NodeType } from './constants.js';
+import { NodeType, BinaryOp, UnaryOp } from './constants.js';
 import { parseStringValue } from './variables.js';
 
 /**
@@ -58,27 +58,331 @@ export const parseObject = (obj, functions) => {
   const properties = [];
   let hasDynamicContent = false;
   
-  for (const [key, value] of Object.entries(obj)) {
-    const parsedValue = parseValue(value, functions);
+  const entries = Object.entries(obj);
+  let i = 0;
+  
+  while (i < entries.length) {
+    const [key, value] = entries[i];
     
-    // Check if this property has complex dynamic content (conditionals/loops/functions)
-    if (parsedValue.type === NodeType.FUNCTION ||
-        parsedValue.type === NodeType.CONDITIONAL ||
-        parsedValue.type === NodeType.LOOP ||
-        (parsedValue.type === NodeType.OBJECT && !parsedValue.fast) ||
-        (parsedValue.type === NodeType.ARRAY && !parsedValue.fast)) {
+    // Check if this is a conditional structure
+    if (key.startsWith('$if ') || key.match(/^\$if#\w+\s/)) {
+      const conditional = parseConditional(entries, i, functions);
+      properties.push({
+        key,
+        value: conditional.node
+      });
       hasDynamicContent = true;
+      i = conditional.nextIndex;
+    // Check if this is a loop structure
+    } else if (key.startsWith('$for ')) {
+      const loop = parseLoop(key, value, functions);
+      properties.push({
+        key,
+        value: loop
+      });
+      hasDynamicContent = true;
+      i++;
+    } else {
+      const parsedValue = parseValue(value, functions);
+      
+      // Check if this property has complex dynamic content (conditionals/loops/functions)
+      if (parsedValue.type === NodeType.FUNCTION ||
+          parsedValue.type === NodeType.CONDITIONAL ||
+          parsedValue.type === NodeType.LOOP ||
+          (parsedValue.type === NodeType.OBJECT && !parsedValue.fast) ||
+          (parsedValue.type === NodeType.ARRAY && !parsedValue.fast)) {
+        hasDynamicContent = true;
+      }
+      
+      properties.push({
+        key,
+        value: parsedValue
+      });
+      i++;
     }
-    
-    properties.push({
-      key,
-      value: parsedValue
-    });
   }
   
   return {
     type: NodeType.OBJECT,
     properties,
     fast: !hasDynamicContent
+  };
+};
+
+/**
+ * Parses a conditional structure ($if, $elif, $else)
+ * @param {Array} entries - Object entries array
+ * @param {number} startIndex - Starting index of the $if statement
+ * @param {Object} functions - Custom functions object
+ * @returns {Object} { node: ConditionalNode, nextIndex: number }
+ */
+export const parseConditional = (entries, startIndex, functions = {}) => {
+  const conditions = [];
+  const bodies = [];
+  let currentIndex = startIndex;
+  
+  // Parse $if (with or without #ID)
+  const [ifKey, ifValue] = entries[currentIndex];
+  let conditionId = null;
+  let conditionExpr;
+  
+  if (ifKey.startsWith('$if#')) {
+    // Extract ID and condition: "$if#1 age > 18" -> id="1", expr="age > 18"
+    const match = ifKey.match(/^\$if#(\w+)\s+(.+)$/);
+    if (match) {
+      conditionId = match[1];
+      conditionExpr = match[2];
+    } else {
+      throw new Error(`Invalid conditional syntax: ${ifKey}`);
+    }
+  } else {
+    // Regular $if: "$if age > 18" -> expr="age > 18"
+    conditionExpr = ifKey.substring(4); // Remove '$if '
+  }
+  
+  const ifCondition = parseConditionExpression(conditionExpr);
+  conditions.push(ifCondition);
+  bodies.push(parseValue(ifValue, functions));
+  currentIndex++;
+  
+  // Parse $elif chains (with matching ID if present)
+  while (currentIndex < entries.length) {
+    const [key, value] = entries[currentIndex];
+    let isMatching = false;
+    let elifConditionExpr;
+    
+    if (conditionId) {
+      // Look for $elif#ID or $else#ID with matching ID
+      if (key.startsWith(`$elif#${conditionId} `)) {
+        elifConditionExpr = key.substring(`$elif#${conditionId} `.length);
+        isMatching = true;
+      } else if (key === `$else#${conditionId}`) {
+        isMatching = true;
+        elifConditionExpr = null; // else branch
+      }
+    } else {
+      // Look for plain $elif or $else
+      if (key.startsWith('$elif ')) {
+        elifConditionExpr = key.substring(6); // Remove '$elif '
+        isMatching = true;
+      } else if (key === '$else') {
+        isMatching = true;
+        elifConditionExpr = null; // else branch
+      }
+    }
+    
+    if (isMatching) {
+      if (elifConditionExpr === null) {
+        conditions.push(null); // null represents else branch
+      } else {
+        const elifCondition = parseConditionExpression(elifConditionExpr);
+        conditions.push(elifCondition);
+      }
+      bodies.push(parseValue(value, functions));
+      currentIndex++;
+      
+      // Break after else
+      if (elifConditionExpr === null) {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  
+  return {
+    node: {
+      type: NodeType.CONDITIONAL,
+      conditions,
+      bodies,
+      id: conditionId
+    },
+    nextIndex: currentIndex
+  };
+};
+
+/**
+ * Parses a condition expression into an AST node
+ * @param {string} expr - The condition expression
+ * @returns {Object} AST node representing the condition
+ */
+export const parseConditionExpression = (expr) => {
+  expr = expr.trim();
+  
+  // Handle parentheses first
+  if (expr.startsWith('(') && expr.endsWith(')')) {
+    return parseConditionExpression(expr.slice(1, -1));
+  }
+  
+  // Handle logical OR (||) - lowest precedence
+  const orMatch = findOperatorOutsideParens(expr, '||');
+  if (orMatch !== -1) {
+    return {
+      type: NodeType.BINARY,
+      op: BinaryOp.OR,
+      left: parseConditionExpression(expr.substring(0, orMatch).trim()),
+      right: parseConditionExpression(expr.substring(orMatch + 2).trim())
+    };
+  }
+  
+  // Handle logical AND (&&)
+  const andMatch = findOperatorOutsideParens(expr, '&&');
+  if (andMatch !== -1) {
+    return {
+      type: NodeType.BINARY,
+      op: BinaryOp.AND,
+      left: parseConditionExpression(expr.substring(0, andMatch).trim()),
+      right: parseConditionExpression(expr.substring(andMatch + 2).trim())
+    };
+  }
+  
+  // Handle comparison operators
+  const compOps = [
+    { op: '>=', type: BinaryOp.GTE },
+    { op: '<=', type: BinaryOp.LTE },
+    { op: '==', type: BinaryOp.EQ },
+    { op: '!=', type: BinaryOp.NEQ },
+    { op: '>', type: BinaryOp.GT },
+    { op: '<', type: BinaryOp.LT },
+    { op: ' in ', type: BinaryOp.IN }
+  ];
+  
+  for (const { op, type } of compOps) {
+    const opMatch = findOperatorOutsideParens(expr, op);
+    if (opMatch !== -1) {
+      return {
+        type: NodeType.BINARY,
+        op: type,
+        left: parseConditionExpression(expr.substring(0, opMatch).trim()),
+        right: parseConditionExpression(expr.substring(opMatch + op.length).trim())
+      };
+    }
+  }
+  
+  // Handle unary NOT (!)
+  if (expr.startsWith('!')) {
+    return {
+      type: NodeType.UNARY,
+      op: UnaryOp.NOT,
+      operand: parseConditionExpression(expr.substring(1).trim())
+    };
+  }
+  
+  // Handle literals and variables
+  return parseAtomicExpression(expr);
+};
+
+/**
+ * Finds an operator outside of parentheses
+ * @param {string} expr - The expression to search
+ * @param {string} operator - The operator to find
+ * @returns {number} Index of the operator, or -1 if not found
+ */
+export const findOperatorOutsideParens = (expr, operator) => {
+  let parenDepth = 0;
+  let i = 0;
+  
+  while (i <= expr.length - operator.length) {
+    if (expr[i] === '(') {
+      parenDepth++;
+    } else if (expr[i] === ')') {
+      parenDepth--;
+    } else if (parenDepth === 0 && expr.substring(i, i + operator.length) === operator) {
+      return i;
+    }
+    i++;
+  }
+  
+  return -1;
+};
+
+/**
+ * Parses an atomic expression (variable, number, boolean, string)
+ * @param {string} expr - The expression to parse
+ * @returns {Object} AST node
+ */
+export const parseAtomicExpression = (expr) => {
+  expr = expr.trim();
+  
+  // Boolean literals
+  if (expr === 'true') {
+    return { type: NodeType.LITERAL, value: true };
+  }
+  if (expr === 'false') {
+    return { type: NodeType.LITERAL, value: false };
+  }
+  if (expr === 'null') {
+    return { type: NodeType.LITERAL, value: null };
+  }
+  
+  // String literals (quoted)
+  if ((expr.startsWith('"') && expr.endsWith('"')) || 
+      (expr.startsWith("'") && expr.endsWith("'"))) {
+    return { type: NodeType.LITERAL, value: expr.slice(1, -1) };
+  }
+  
+  // Empty string literal
+  if (expr === '""' || expr === "''") {
+    return { type: NodeType.LITERAL, value: "" };
+  }
+  
+  // Number literals
+  const num = Number(expr);
+  if (!isNaN(num) && isFinite(num)) {
+    return { type: NodeType.LITERAL, value: num };
+  }
+  
+  // Variable reference
+  return { type: NodeType.VARIABLE, path: expr };
+};
+
+/**
+ * Parses a loop structure ($for)
+ * @param {string} key - The loop key (e.g., "$for p, i in people")
+ * @param {any} value - The loop body
+ * @param {Object} functions - Custom functions object
+ * @returns {Object} Loop AST node
+ */
+export const parseLoop = (key, value, functions) => {
+  // Parse the loop syntax: "$for p, i in people" or "$for p in people"
+  const loopExpr = key.substring(5).trim(); // Remove '$for '
+  
+  // Split on ' in ' to separate variables from iterable
+  const inMatch = loopExpr.match(/^(.+?)\s+in\s+(.+)$/);
+  if (!inMatch) {
+    throw new Error(`Invalid loop syntax: ${key}`);
+  }
+  
+  const varsExpr = inMatch[1].trim();
+  const iterableExpr = inMatch[2].trim();
+  
+  // Parse variables: "p, i" or "p"
+  let itemVar, indexVar = null;
+  if (varsExpr.includes(',')) {
+    const vars = varsExpr.split(',').map(v => v.trim());
+    if (vars.length !== 2) {
+      throw new Error(`Invalid loop variables: ${varsExpr}. Expected format: "item" or "item, index"`);
+    }
+    itemVar = vars[0];
+    indexVar = vars[1];
+  } else {
+    itemVar = varsExpr;
+  }
+  
+  // Parse the iterable (variable reference)
+  const iterable = {
+    type: NodeType.VARIABLE,
+    path: iterableExpr
+  };
+  
+  // Parse the loop body
+  const body = parseValue(value, functions);
+  
+  return {
+    type: NodeType.LOOP,
+    itemVar,
+    indexVar,
+    iterable,
+    body
   };
 };

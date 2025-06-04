@@ -1,0 +1,542 @@
+file: '../src/parse/index.js'
+group: parse
+suites: [loops]
+---
+### Loops
+suite: loops
+exportName: default
+---
+case: simple for loop with item variable only
+in:
+  - people:
+      $for p in people:
+        - name: "${p.name}"
+          age: "${p.age}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: people
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for p in people"
+            value:
+              type: 7
+              itemVar: "p"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "people"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "p.name"
+                      - key: age
+                        value:
+                          type: 1
+                          path: "p.age"
+---
+case: for loop with item and index variables
+in:
+  - people:
+      $for p, i in people:
+        - name: "${p.name}"
+          age: "${p.age}"
+          index: "${i}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: people
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for p, i in people"
+            value:
+              type: 7
+              itemVar: "p"
+              indexVar: "i"
+              iterable:
+                type: 1
+                path: "people"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "p.name"
+                      - key: age
+                        value:
+                          type: 1
+                          path: "p.age"
+                      - key: index
+                        value:
+                          type: 1
+                          path: "i"
+---
+case: for loop with string interpolation
+in:
+  - items:
+      $for item, idx in items:
+        - description: "Item ${idx}: ${item.name} (${item.type})"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item, idx in items"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: "idx"
+              iterable:
+                type: 1
+                path: "items"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: description
+                        value:
+                          type: 2
+                          parts:
+                            - "Item "
+                            - {var: "idx"}
+                            - ": "
+                            - {var: "item.name"}
+                            - " ("
+                            - {var: "item.type"}
+                            - ")"
+---
+case: for loop with object body (not array)
+in:
+  - $for user in users:
+      name: "${user.name}"
+      status: "active"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$for user in users"
+      value:
+        type: 7
+        itemVar: "user"
+        indexVar: null
+        iterable:
+          type: 1
+          path: "users"
+        body:
+          type: 8
+          fast: true
+          properties:
+            - key: name
+              value:
+                type: 1
+                path: "user.name"
+            - key: status
+              value:
+                type: 0
+                value: "active"
+---
+case: for loop with nested object structure
+in:
+  - groups:
+      $for group, gIdx in groups:
+        - name: "${group.name}"
+          members:
+            $for member, mIdx in group.members:
+              - name: "${member.name}"
+                position: "${mIdx}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: groups
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for group, gIdx in groups"
+            value:
+              type: 7
+              itemVar: "group"
+              indexVar: "gIdx"
+              iterable:
+                type: 1
+                path: "groups"
+              body:
+                type: 9
+                fast: false
+                items:
+                  - type: 8
+                    fast: false
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "group.name"
+                      - key: members
+                        value:
+                          type: 8
+                          fast: false
+                          properties:
+                            - key: "$for member, mIdx in group.members"
+                              value:
+                                type: 7
+                                itemVar: "member"
+                                indexVar: "mIdx"
+                                iterable:
+                                  type: 1
+                                  path: "group.members"
+                                body:
+                                  type: 9
+                                  fast: true
+                                  items:
+                                    - type: 8
+                                      fast: true
+                                      properties:
+                                        - key: name
+                                          value:
+                                            type: 1
+                                            path: "member.name"
+                                        - key: position
+                                          value:
+                                            type: 1
+                                            path: "mIdx"
+---
+case: for loop with conditionals inside
+in:
+  - users:
+      $for user in users:
+        - name: "${user.name}"
+          $if user.isActive:
+            status: "active"
+          $else:
+            status: "inactive"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: users
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for user in users"
+            value:
+              type: 7
+              itemVar: "user"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "users"
+              body:
+                type: 9
+                fast: false
+                items:
+                  - type: 8
+                    fast: false
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "user.name"
+                      - key: "$if user.isActive"
+                        value:
+                          type: 6
+                          conditions:
+                            - type: 1
+                              path: "user.isActive"
+                            - null
+                          bodies:
+                            - type: 8
+                              fast: true
+                              properties:
+                                - key: status
+                                  value:
+                                    type: 0
+                                    value: "active"
+                            - type: 8
+                              fast: true
+                              properties:
+                                - key: status
+                                  value:
+                                    type: 0
+                                    value: "inactive"
+                          id: null
+---
+case: for loop with literal values
+in:
+  - items:
+      $for item in items:
+        - value: "${item}"
+          static: "literal"
+          number: 42
+          boolean: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item in items"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "items"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: value
+                        value:
+                          type: 1
+                          path: "item"
+                      - key: static
+                        value:
+                          type: 0
+                          value: "literal"
+                      - key: number
+                        value:
+                          type: 0
+                          value: 42
+                      - key: boolean
+                        value:
+                          type: 0
+                          value: true
+---
+case: for loop iterating over complex variable path
+in:
+  - results:
+      $for entry, idx in data.items.filtered:
+        - index: "${idx}"
+          name: "${entry.name}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: results
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for entry, idx in data.items.filtered"
+            value:
+              type: 7
+              itemVar: "entry"
+              indexVar: "idx"
+              iterable:
+                type: 1
+                path: "data.items.filtered"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: index
+                        value:
+                          type: 1
+                          path: "idx"
+                      - key: name
+                        value:
+                          type: 1
+                          path: "entry.name"
+---
+case: for loop with empty body array
+in:
+  - container:
+      $for item in items: []
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: container
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item in items"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "items"
+              body:
+                type: 9
+                fast: true
+                items: []
+---
+case: for loop with single item not in array
+in:
+  - $for item in items:
+      name: "${item.name}"
+      single: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$for item in items"
+      value:
+        type: 7
+        itemVar: "item"
+        indexVar: null
+        iterable:
+          type: 1
+          path: "items"
+        body:
+          type: 8
+          fast: true
+          properties:
+            - key: name
+              value:
+                type: 1
+                path: "item.name"
+            - key: single
+              value:
+                type: 0
+                value: true
+---
+case: for loop with whitespace in variable names
+in:
+  - items:
+      $for  currentItem ,  index  in  itemList :
+        - item: "${currentItem}"
+          pos: "${index}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for  currentItem ,  index  in  itemList"
+            value:
+              type: 7
+              itemVar: "currentItem"
+              indexVar: "index"
+              iterable:
+                type: 1
+                path: "itemList"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: item
+                        value:
+                          type: 1
+                          path: "currentItem"
+                      - key: pos
+                        value:
+                          type: 1
+                          path: "index"
+---
+case: multiple for loops in same object
+in:
+  - users:
+      $for user in activeUsers:
+        - name: "${user.name}"
+          status: "active"
+    admins:
+      $for admin in adminUsers:
+        - name: "${admin.name}"
+          role: "admin"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: users
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for user in activeUsers"
+            value:
+              type: 7
+              itemVar: "user"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "activeUsers"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "user.name"
+                      - key: status
+                        value:
+                          type: 0
+                          value: "active"
+    - key: admins
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for admin in adminUsers"
+            value:
+              type: 7
+              itemVar: "admin"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "adminUsers"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "admin.name"
+                      - key: role
+                        value:
+                          type: 0
+                          value: "admin"
