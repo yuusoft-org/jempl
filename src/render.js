@@ -194,7 +194,7 @@ const renderLoop = (node, functions, data, scope) => {
   const results = [];
   
   for (let i = 0; i < iterable.length; i++) {
-    const newScope = { ...scope };
+    const newScope = Object.create(scope);
     newScope[node.itemVar] = iterable[i];
     
     if (node.indexVar) {
