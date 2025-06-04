@@ -1,5 +1,5 @@
 import render from './render.js';
-import parse from './parse.js';
-import renderAndParse from './renderAndParse.js';
+import parse from './parse/index.js';
+import parseAndRender from './parseAndRender.js';
 
-export { render, renderAndParse, parse };
+export { render, parseAndRender, parse };
