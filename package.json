@@ -1,6 +1,6 @@
 {
   "name": "jempl",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A JSON templating engine with conditionals, loops, and custom functions",
   "main": "src/index.js",
   "type": "module",
@@ -20,6 +20,8 @@
   "scripts": {
     "test": "bunx vitest run --reporter=verbose",
     "test:watch": "bunx vitest watch",
-    "test:coverage": "bunx vitest run --coverage"
+    "test:coverage": "bunx vitest run --coverage",
+    "lint": "bunx prettier src -c",
+    "lint:fix": "bunx prettier src -w"
   }
 }

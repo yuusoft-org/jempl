@@ -368,3 +368,25 @@ in:
       isDisabled: false
 out:
   enabled: true
+---
+case: object keys with variables
+in:
+  - ast:
+      type: 8
+      fast: true
+      properties:
+        - key: "input placeholder=\"${placeholderText}\""
+          parsedKey:
+            type: 2
+            parts:
+              - "input placeholder=\""
+              - {var: "placeholderText"}
+              - "\""
+          value:
+            type: 0
+            value: null
+    functions: {}
+    data:
+      placeholderText: "Enter your name"
+out:
+  "input placeholder=\"Enter your name\"": null

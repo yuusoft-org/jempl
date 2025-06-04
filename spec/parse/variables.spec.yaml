@@ -343,3 +343,21 @@ out:
       value:
         type: 0
         value: null
+---
+case: object keys with variables
+in:
+  - input placeholder="${placeholderText}":
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: input placeholder="${placeholderText}"
+      parsedKey:
+        type: 2
+        parts:
+          - "input placeholder=\""
+          - {var: "placeholderText"}
+          - "\""
+      value:
+        type: 0
+        value: null

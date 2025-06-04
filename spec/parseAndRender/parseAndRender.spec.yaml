@@ -389,3 +389,13 @@ out:
       - rtgl-button#filter-active v=lk: "Active"
       - rtgl-button#filter-completed v=lk: "Completed"
       - rtgl-button#clear-completed v=lk: "Clear completed (1)"
+---
+case: placeholder attribute with variable
+in:
+  - template:
+      - input placeholder="${placeholderText}":
+    data:
+      placeholderText: "What needs to be done?"
+    functions: {}
+out:
+  - input placeholder="What needs to be done?":
