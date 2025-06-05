@@ -1,0 +1,172 @@
+file: '../customFunctions.js'
+group: parseAndRender
+suites: [customFunctions]
+---
+### Custom Functions Tests
+suite: customFunctions
+exportName: default
+---
+case: math functions - add
+in:
+  - template:
+      sum: "${add(10, 20)}"
+      result: "${add(a, b)}"
+    data:
+      a: 5
+      b: 3
+out:
+  sum: 30
+  result: 8
+---
+case: math functions - multiply
+in:
+  - template:
+      product: "${multiply(5, 6)}"
+      calculation: "${multiply(x, y)}"
+    data:
+      x: 7
+      y: 4
+out:
+  product: 30
+  calculation: 28
+---
+case: string functions - capitalize
+in:
+  - template:
+      name: "${capitalize(firstName)}"
+      greeting: "Hello ${capitalize(name)}!"
+    data:
+      firstName: "john"
+      name: "alice"
+out:
+  name: "John"
+  greeting: "Hello Alice!"
+---
+case: string functions - uppercase and length
+in:
+  - template:
+      greeting: "${uppercase(message)}"
+      count: "${length(text)}"
+    data:
+      message: "hello there"
+      text: "testing"
+out:
+  greeting: "HELLO THERE"
+  count: 7
+---
+case: collection functions - join and size
+in:
+  - template:
+      list: "${join(hobbies, ', ')}"
+      arraySize: "${size(hobbies)}"
+    data:
+      hobbies: ["reading", "coding", "hiking"]
+out:
+  list: "reading, coding, hiking"
+  arraySize: 3
+---
+case: nested function calls
+in:
+  - template:
+      result: "${multiply(add(5, 3), 2)}"
+      processed: "${uppercase(capitalize(name))}"
+    data:
+      name: "johnsmith"
+out:
+  result: 16
+  processed: "JOHNSMITH"
+---
+case: functions in string interpolation
+in:
+  - template:
+      summary: "${name} has ${size(hobbies)} hobbies: ${join(hobbies, ', ')}"
+    data:
+      name: "Alice"
+      hobbies: ["reading", "coding", "hiking"]
+out:
+  summary: "Alice has 3 hobbies: reading, coding, hiking"
+---
+case: functions returning objects - createUser
+in:
+  - template:
+      user: "${createUser(name, age)}"
+      profile: "${createUser(firstName, userAge)}"
+    data:
+      name: "Alice"
+      age: 25
+      firstName: "Bob"
+      userAge: 17
+out:
+  user:
+    name: "Alice"
+    age: 25
+    isAdult: true
+    metadata:
+      createdAt: 1640995200000
+      version: 1
+  profile:
+    name: "Bob"
+    age: 17
+    isAdult: false
+    metadata:
+      createdAt: 1640995200000
+      version: 1
+---
+case: functions returning objects - getStats
+in:
+  - template:
+      stats: "${getStats(hobbies)}"
+      emptyStats: "${getStats(activities)}"
+      nullStats: "${getStats(missing)}"
+    data:
+      hobbies: ["reading", "coding"]
+      activities: []
+out:
+  stats:
+    count: 2
+    isEmpty: false
+    summary: "2 items"
+  emptyStats:
+    count: 0
+    isEmpty: true
+    summary: "0 items"
+  nullStats:
+    count: 0
+    isEmpty: true
+    summary: "0 items"
+---
+case: nested objects with object-returning functions
+in:
+  - template:
+      data:
+        user: "${createUser(name, age)}"
+        statistics: "${getStats(items)}"
+        nested:
+          profile: "${createUser(firstName, years)}"
+    data:
+      name: "Charlie"
+      age: 30
+      items: ["a", "b", "c"]
+      firstName: "Diana"
+      years: 22
+out:
+  data:
+    user:
+      name: "Charlie"
+      age: 30
+      isAdult: true
+      metadata:
+        createdAt: 1640995200000
+        version: 1
+    statistics:
+      count: 3
+      isEmpty: false
+      summary: "3 items"
+    nested:
+      profile:
+        name: "Diana"
+        age: 22
+        isAdult: true
+        metadata:
+          createdAt: 1640995200000
+          version: 1

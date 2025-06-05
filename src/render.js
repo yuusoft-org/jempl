@@ -93,12 +93,13 @@ const renderInterpolation = (parts, functions, data, scope) => {
     if (typeof part === "string") {
       result += part;
     } else if (part.var) {
+      // Variable format: { var: "path" } - used for variables in interpolation
       const value = getVariableValue(part.var, data, scope);
       result += value != null ? String(value) : "";
-    } else if (part.func) {
-      // Handle function calls in interpolation
-      const funcResult = functions[part.func]?.(...(part.args || []));
-      result += funcResult != null ? String(funcResult) : "";
+    } else {
+      // AST node format: full nodes (functions, etc.)
+      const value = renderNode(part, functions, data, scope);
+      result += value != null ? String(value) : "";
     }
   }
 
