@@ -13,7 +13,7 @@ The AST is designed to be:
 3. **Pre-validated**: All validation happens during parse phase
 4. **Flat Structure**: Minimize nesting where possible for performance
 5. **Memory Efficiency**: Compact representations and shared strings
-6. **Fast Path Detection**: Mark simple templates for optimized rendering
+6. **Fast Path Detection**: Mark objects/arrays without dynamic content for optimized rendering
 
 ## Node Type Constants
 
@@ -64,22 +64,21 @@ For string interpolation like `"Hello ${name}, you are ${age} years old"`.
 
 ```yaml
 type: 2  # INTERPOLATION
-parts: [string | {var: string} | {func: string, args: [...]}]
-# Compact representation mixing strings and variable/function references
-# Example: ["Hello ", {var: "name"}, ", you are ", {var: "age"}, " years old"]
+parts: [string | Node]
+# Array mixing strings and AST nodes (variables, functions, etc.)
+# Example: ["Hello ", {type: 1, path: "name"}, ", you are ", {type: 1, path: "age"}, " years old"]
 pos: # optional
   line: number
   col: number
 ```
 
 ### 4. Function Call Node
-For function invocations like `${substring(name, 0, 5)}`.
+For function invocations like `${now()}` or `${add(5, 3)}`.
 
 ```yaml
 type: 3  # FUNCTION
 name: string
 args: [Node]  # Arguments can be any node type
-arity: number  # Expected argument count for fast validation
 pos: # optional
   line: number
   col: number
@@ -185,9 +184,11 @@ properties:
     value:
       type: 2  # INTERPOLATION
       parts:
-        - {var: "firstName"}
+        - type: 1  # VARIABLE
+          path: "firstName"
         - " "
-        - {var: "lastName"}
+        - type: 1  # VARIABLE
+          path: "lastName"
   - key: age
     value:
       type: 1  # VARIABLE
@@ -276,7 +277,6 @@ properties:
                   value:
                     type: 3  # FUNCTION
                     name: uppercase
-                    arity: 1
                     args:
                       - type: 1  # VARIABLE
                         path: "user.name"
@@ -290,11 +290,10 @@ properties:
 
 1. **Constant Folding**: During parse, evaluate constant expressions
 2. **String Paths**: Store paths as strings, split only when needed
-3. **Function Validation**: Store arity for fast argument count validation
-4. **Type Hints**: Optional hints on variables for better optimization
-5. **Fast Path Detection**: Mark simple templates without dynamic features
-6. **Numeric Types**: Use integers instead of strings for faster switching
-7. **Compact Interpolation**: Efficient representation for mixed string/variable content
+3. **Type Hints**: Optional hints on variables for better optimization
+4. **Fast Path Detection**: Mark objects/arrays without conditionals, loops, or functions as `fast: true`
+5. **Numeric Types**: Use integers instead of strings for faster switching
+6. **Interpolation**: Efficient representation mixing strings and AST nodes
 
 ## Error Handling
 
@@ -317,7 +316,6 @@ Error at line 5, column 12: Variable 'username' is not defined in the provided d
 ```javascript
 const options = {
   trackPositions: false,  // Disable for production
-  optimizeFast: true,     // Enable fast path detection
-  validateFunctions: true // Validate function names and arity
+  optimizeFast: true      // Enable fast path detection
 }
 ```
