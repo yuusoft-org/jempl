@@ -53,20 +53,33 @@ const result = parseAndRender(template, data);
 
 ## Parse and Render
 
+**Let:**
+
 ```math
-\begin{array}{l}
-\textbf{Let:} \\
-D = \text{Data} \\
-T = \text{Template} \\
-F = \text{Custom Functions} \\
-A = \text{AST (Abstract Syntax Tree)} \\
-R = \text{Result} \\[1em]
-\textbf{Then:} \\
-A = \mathtt{Parse}(T, F) \\
-R = \mathtt{Render}(A, D, F) \\[1em]
-\textbf{Or by composition:} \\
-R = \mathtt{Render}(\mathtt{Parse}(T, F), D, F)
-\end{array}
+\begin{align}
+&D = \text{Data} \\
+&T = \text{Template} \\
+&F = \text{Custom Functions} \\
+&A = \text{AST (Abstract Syntax Tree)} \\
+&R = \text{Result}
+\end{align}
+```
+
+**Then:**
+
+```math
+\begin{align}
+&A = \mathtt{Parse}(T, F) \\
+&R = \mathtt{Render}(A, D, F)
+\end{align}
+```
+
+**Or by composition:**
+
+```math
+\begin{align}
+&R = \mathtt{Render}(\mathtt{Parse}(T, F), D, F)
+\end{align}
 ```
 
 During `Parse` phase, the objective is to do all the performance critical work and validation. `Parse` only makes use of `Custom Functions` for validation purpose. This should be done at build time. The `AST` should require minimal time to be rendered.
