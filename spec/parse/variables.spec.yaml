@@ -298,24 +298,37 @@ case: escaped dollar signs
 in:
   - escaped: "\\${notVariable}"
     mixed: "\\${escaped} but ${real}"
+    doubleEscaped: "\\\\${actualVariable}"
+    onlyEscape: "\\${}"
+    multipleEscapes: "\\${one} and \\${two}"
 out:
   type: 8
   fast: true
   properties:
     - key: escaped
       value:
-        type: 2
-        parts:
-          - "\\"
-          - {var: "notVariable"}
+        type: 0
+        value: "${notVariable}"
     - key: mixed
       value:
         type: 2
         parts:
-          - "\\"
-          - {var: "escaped"}
-          - " but "
+          - "${escaped} but "
           - {var: "real"}
+    - key: doubleEscaped
+      value:
+        type: 2
+        parts:
+          - "\\"
+          - {var: "actualVariable"}
+    - key: onlyEscape
+      value:
+        type: 0
+        value: "${}"
+    - key: multipleEscapes
+      value:
+        type: 0
+        value: "${one} and ${two}"
 ---
 case: numeric and boolean values
 in:

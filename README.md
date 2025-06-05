@@ -265,19 +265,21 @@ output:
 
 ## Escaping
 
-To output literal `${` in strings, use `$${`:
+To output literal `${` in strings, use `\${`:
 
 ```yaml
 data:
   price: 100
 
 template:
-  message: "The price is $${price} (literal)"
+  message: "The price is \\${price} (literal)"
   actual: "The actual price is ${price}"
+  doubleEscape: "Backslash and variable: \\\\${price}"
 
 output:
   message: "The price is ${price} (literal)"
   actual: "The actual price is 100"
+  doubleEscape: "Backslash and variable: \\100"
 ```
 
 ## Custom Functions
