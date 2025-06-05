@@ -93,7 +93,20 @@ Notice that
 
 - When a variable is the entire value (e.g., `age: "${age}"`), the original type is preserved
 - When a variable is part of a string (e.g., `"I am ${age} years old"`), it's converted to string
-- Nested properties work line lodash get notation.
+- Nested properties work like lodash get notation
+- Variables can also be used in object keys (e.g., `"input placeholder=\"${placeholderText}\"":`)
+
+### Special Characters in Variable Names
+
+Variable names support various special characters:
+
+- **Hyphens**: `${user-name}`
+- **Colons**: `${user:id}`
+- **At symbols**: `${user@email}`
+- **Array indexing**: `${items[0]}`
+- **Nested properties**: `${user.profile.name}`
+
+Note: Variables with parentheses like `${func()}` are parsed as function calls, not variables.
 
 ```yaml
 template:
@@ -103,6 +116,7 @@ template:
   isAdult: ${isAdult}
   firstHobby: "${hobbies[0]}"
   allHobbies: "${hobbies}"
+  input placeholder="${placeholderText}":
 
 cases:
   - data:
@@ -113,6 +127,7 @@ cases:
       city: "New York"
       isAdult: true
       hobbies: ["reading", "writing", "coding"]
+      placeholderText: "Enter your name"
 
     output:
       fullName: "John Doe"
@@ -121,6 +136,7 @@ cases:
       isAdult: true
       firstHobby: "reading"
       allHobbies: ["reading", "writing", "coding"]
+      input placeholder="Enter your name":
 ```
 
 
@@ -339,6 +355,14 @@ output:
 ```
 
 ## Functions
+
+### Function vs Variable Parsing
+
+The parser distinguishes between functions and variables based on parentheses:
+
+- `${variableName}` - Parsed as a variable reference
+- `${functionName()}` - Parsed as a function call (even with no arguments)
+- `${add(5, 3)}` - Parsed as a function call with arguments
 
 ### Built-in Functions
 
