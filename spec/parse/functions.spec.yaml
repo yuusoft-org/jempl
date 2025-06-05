@@ -142,7 +142,7 @@ out:
       value:
         type: 2
         parts:
-          - {var: "name"}
+          - {type: 1, path: "name"}
           - " has "
           - type: 3
             name: "length"

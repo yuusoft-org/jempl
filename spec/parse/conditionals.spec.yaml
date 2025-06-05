@@ -428,7 +428,7 @@ out:
                   type: 2
                   parts:
                     - "Hello "
-                    - {var: "user.name"}
+                    - {type: 1, path: "user.name"}
                     - ", you are an admin"
               - key: permissions
                 value:

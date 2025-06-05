@@ -212,12 +212,7 @@ export const parseStringValue = (str) => {
 
     // Parse the expression (could be variable or function)
     const parsedExpr = parseVariable(varName.trim());
-    if (parsedExpr.type === NodeType.FUNCTION) {
-      parts.push(parsedExpr);
-    } else {
-      // Keep compatibility with existing format for variables
-      parts.push({ var: parsedExpr.path });
-    }
+    parts.push(parsedExpr);
 
     lastIndex = index + fullMatch.length;
   }

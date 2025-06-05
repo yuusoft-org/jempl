@@ -84,9 +84,9 @@ in:
             type: 2
             parts:
               - "Hello "
-              - {var: "firstName"}
+              - {type: 1, path: "firstName"}
               - " "
-              - {var: "lastName"}
+              - {type: 1, path: "lastName"}
               - "!"
     functions: {}
     data:
@@ -379,7 +379,7 @@ in:
             type: 2
             parts:
               - "input placeholder=\""
-              - {var: "placeholderText"}
+              - {type: 1, path: "placeholderText"}
               - "\""
           value:
             type: 0
