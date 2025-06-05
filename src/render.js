@@ -5,9 +5,38 @@ import {
 } from "./errors.js";
 
 /**
- * Renders an AST template and data into a JSON object
- * @param {Object} input - Object containing ast, functions, and data
- * @returns {Object} rendered data
+ * Renders a parsed AST with data to produce the final output
+ * @param {Object} input - Input object
+ * @param {Object} input.ast - The parsed AST to render
+ * @param {Object} input.data - Data to use for variable substitution
+ * @param {Object.<string, Function>} [input.functions] - Custom functions
+ * @returns {Object} The rendered output
+ * @throws {JemplRenderError} When rendering fails (unknown functions, invalid iteration, etc.)
+ *
+ * @example
+ * // Render a simple template
+ * const ast = parse({ message: "Hello ${name}!" });
+ * const result = render({ ast, data: { name: "World" } });
+ * // result: { message: "Hello World!" }
+ *
+ * @example
+ * // Render with conditional logic
+ * const ast = parse({
+ *   "$if user.isAdmin": { role: "admin", permissions: ["read", "write"] },
+ *   "$else": { role: "user", permissions: ["read"] }
+ * });
+ * const result = render({ ast, data: { user: { isAdmin: true } } });
+ * // result: { role: "admin", permissions: ["read", "write"] }
+ *
+ * @example
+ * // Render with custom functions
+ * const ast = parse({ timestamp: "${now()}" });
+ * const result = render({
+ *   ast,
+ *   data: {},
+ *   functions: { now: () => Date.now() }
+ * });
+ * // result: { timestamp: 1234567890123 }
  */
 const render = (input) => {
   const { ast, functions, data } = input;

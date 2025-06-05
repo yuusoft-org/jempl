@@ -3,18 +3,21 @@ import { NodeType } from "./constants.js";
 const VARIABLE_REGEX = /\$\{([^}]*)\}/g;
 
 /**
- * Parses a function call expression like functionName(arg1, arg2)
+ * Checks if expression is a function call and returns parsed function node
  * @param {string} expr - The expression without ${ and }
- * @returns {Object|null} Function node or null if not a function call
+ * @returns {Object} Function node with type, name, and args
  */
 const parseFunctionCall = (expr) => {
   const functionMatch = expr.match(/^(\w+)\((.*)\)$/);
-  if (!functionMatch) return null;
+  if (!functionMatch) {
+    return { isFunction: false };
+  }
 
   const [, name, argsStr] = functionMatch;
   const args = parseArguments(argsStr);
 
   return {
+    isFunction: true,
     type: NodeType.FUNCTION,
     name,
     args,
@@ -112,8 +115,12 @@ const parseArgument = (arg) => {
 
   // Handle nested function calls
   const nestedFunction = parseFunctionCall(arg);
-  if (nestedFunction) {
-    return nestedFunction;
+  if (nestedFunction.isFunction) {
+    return {
+      type: nestedFunction.type,
+      name: nestedFunction.name,
+      args: nestedFunction.args,
+    };
   }
 
   // Default to variable reference
@@ -131,8 +138,12 @@ export const parseVariable = (expr, functions = {}) => {
 
   // Try to parse as function call first
   const functionNode = parseFunctionCall(trimmed);
-  if (functionNode) {
-    return functionNode;
+  if (functionNode.isFunction) {
+    return {
+      type: functionNode.type,
+      name: functionNode.name,
+      args: functionNode.args,
+    };
   }
 
   // Default to variable
