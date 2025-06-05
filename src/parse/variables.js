@@ -20,18 +20,49 @@ export const parseVariable = (expr) => {
  * @returns {Object} Variable, interpolation, or literal node
  */
 export const parseStringValue = (str) => {
-  const matches = [...str.matchAll(VARIABLE_REGEX)];
+  // Handle escaping: first handle double escapes, then single escapes
+  let processedStr = str;
+  const escapedParts = [];
+
+  // Handle escaped sequences - need to process double escapes carefully
+  if (str.includes("\\${")) {
+    // First replace \\${ (double escape) with a special marker to preserve it
+    processedStr = str.replace(/\\\\(\$\{[^}]*\})/g, "\\DOUBLE_ESC$1");
+
+    // Then replace \${ (single escape) with placeholder
+    processedStr = processedStr.replace(
+      /\\(\$\{[^}]*\})/g,
+      (match, dollarExpr) => {
+        const placeholder = `__ESCAPED_${escapedParts.length}__`;
+        escapedParts.push(dollarExpr);
+        return placeholder;
+      },
+    );
+
+    // Restore double escapes as literal backslash + variable
+    processedStr = processedStr.replace(/\\DOUBLE_ESC/g, "\\");
+  }
+
+  const matches = [...processedStr.matchAll(VARIABLE_REGEX)];
 
   if (matches.length === 0) {
-    // No variables, return literal
+    // No variables, return literal (restore escapes)
+    let finalValue = processedStr;
+    for (let i = 0; i < escapedParts.length; i++) {
+      finalValue = finalValue.replace(`__ESCAPED_${i}__`, escapedParts[i]);
+    }
     return {
       type: NodeType.LITERAL,
-      value: str,
+      value: finalValue,
     };
   }
 
-  if (matches.length === 1 && matches[0][0] === str) {
-    // Single variable that is the entire string
+  if (
+    matches.length === 1 &&
+    matches[0][0] === processedStr &&
+    escapedParts.length === 0
+  ) {
+    // Single variable that is the entire string, no escapes
     return parseVariable(matches[0][1]);
   }
 
@@ -45,7 +76,14 @@ export const parseStringValue = (str) => {
 
     // Add literal part before the variable
     if (index > lastIndex) {
-      parts.push(str.substring(lastIndex, index));
+      let literalPart = processedStr.substring(lastIndex, index);
+      // Restore escaped parts in this literal section
+      for (let i = 0; i < escapedParts.length; i++) {
+        literalPart = literalPart.replace(`__ESCAPED_${i}__`, escapedParts[i]);
+      }
+      if (literalPart) {
+        parts.push(literalPart);
+      }
     }
 
     // Add variable reference
@@ -55,8 +93,15 @@ export const parseStringValue = (str) => {
   }
 
   // Add remaining literal part
-  if (lastIndex < str.length) {
-    parts.push(str.substring(lastIndex));
+  if (lastIndex < processedStr.length) {
+    let literalPart = processedStr.substring(lastIndex);
+    // Restore escaped parts in this literal section
+    for (let i = 0; i < escapedParts.length; i++) {
+      literalPart = literalPart.replace(`__ESCAPED_${i}__`, escapedParts[i]);
+    }
+    if (literalPart) {
+      parts.push(literalPart);
+    }
   }
 
   return {

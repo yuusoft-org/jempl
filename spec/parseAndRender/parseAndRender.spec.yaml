@@ -409,3 +409,25 @@ in:
     functions: {}
 out:
   - message: Hello child!
+---
+case: escaped variables in template
+in:
+  - template:
+      escaped: "\\${notVariable}"
+      mixed: "\\${escaped} but ${real}"
+      doubleEscaped: "\\\\${actualVariable}"
+      onlyEscape: "\\${}"
+      multipleEscapes: "\\${one} and \\${two}"
+      normalVar: "${price}"
+    data:
+      real: "realValue"
+      actualVariable: "test"
+      price: 100
+    functions: {}
+out:
+  escaped: "${notVariable}"
+  mixed: "${escaped} but realValue"
+  doubleEscaped: "\\test"
+  onlyEscape: "${}"
+  multipleEscapes: "${one} and ${two}"
+  normalVar: 100

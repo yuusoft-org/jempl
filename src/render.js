@@ -126,19 +126,19 @@ const evaluateCondition = (node, functions, data, scope) => {
     case NodeType.VARIABLE:
       // For conditions, return the actual value without converting undefined to string
       return getVariableValue(node.path, data, scope);
-    
+
     case NodeType.LITERAL:
       return node.value;
-    
+
     case NodeType.BINARY:
       return renderBinaryOperation(node, functions, data, scope);
-    
+
     case NodeType.UNARY:
       return renderUnaryOperation(node, functions, data, scope);
-    
+
     case NodeType.FUNCTION:
       return renderFunction(node, functions, data, scope);
-    
+
     default:
       // For other node types, use regular rendering
       return renderNode(node, functions, data, scope);
@@ -153,7 +153,7 @@ const renderBinaryOperation = (node, functions, data, scope) => {
   if (node.op === BinaryOp.AND || node.op === BinaryOp.OR) {
     const left = evaluateCondition(node.left, functions, data, scope);
     const right = evaluateCondition(node.right, functions, data, scope);
-    
+
     switch (node.op) {
       case BinaryOp.AND:
         return left && right;
@@ -161,7 +161,7 @@ const renderBinaryOperation = (node, functions, data, scope) => {
         return left || right;
     }
   }
-  
+
   // For other operations, use renderNode
   const left = renderNode(node.left, functions, data, scope);
   const right = renderNode(node.right, functions, data, scope);
@@ -191,9 +191,10 @@ const renderBinaryOperation = (node, functions, data, scope) => {
  */
 const renderUnaryOperation = (node, functions, data, scope) => {
   // For NOT operation, use evaluateCondition to preserve undefined
-  const operand = node.op === UnaryOp.NOT 
-    ? evaluateCondition(node.operand, functions, data, scope)
-    : renderNode(node.operand, functions, data, scope);
+  const operand =
+    node.op === UnaryOp.NOT
+      ? evaluateCondition(node.operand, functions, data, scope)
+      : renderNode(node.operand, functions, data, scope);
 
   switch (node.op) {
     case UnaryOp.NOT:
@@ -214,7 +215,7 @@ const renderConditional = (node, functions, data, scope) => {
     if (condition === null) {
       return renderNode(node.bodies[i], functions, data, scope);
     }
-    
+
     // Evaluate condition - don't convert undefined to "undefined" string
     const conditionValue = evaluateCondition(condition, functions, data, scope);
     if (conditionValue) {
@@ -340,7 +341,7 @@ const renderObject = (node, functions, data, scope) => {
           ? renderNode(prop.parsedKey, functions, data, scope)
           : prop.key;
         const renderedValue = renderNode(prop.value, functions, data, scope);
-        
+
         // Only add the property if the value is not undefined
         if (renderedValue !== undefined) {
           result[renderedKey] = renderedValue;
