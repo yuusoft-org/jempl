@@ -11,7 +11,7 @@ import * as defaultFunctions from "./functions.js";
  * @returns {Object} The rendered output
  * @throws {JemplParseError} When template syntax is invalid
  * @throws {JemplRenderError} When rendering fails
- * 
+ *
  * @example
  * // Simple usage
  * const result = parseAndRender({
@@ -19,12 +19,12 @@ import * as defaultFunctions from "./functions.js";
  *   data: { name: "World" }
  * });
  * // result: { message: "Hello World!" }
- * 
+ *
  * @example
  * // With conditional logic
  * const result = parseAndRender({
  *   template: {
- *     "$if items.length > 0": { 
+ *     "$if items.length > 0": {
  *       count: "${items.length}",
  *       items: "${items}"
  *     },
@@ -33,11 +33,11 @@ import * as defaultFunctions from "./functions.js";
  *   data: { items: ["apple", "banana"] }
  * });
  * // result: { count: "2", items: ["apple", "banana"] }
- * 
+ *
  * @example
  * // With custom functions
  * const result = parseAndRender({
- *   template: { 
+ *   template: {
  *     greeting: "Hello ${upper(name)}!",
  *     timestamp: "${now()}"
  *   },

@@ -6,18 +6,18 @@ import { parseValue } from "./utils.js";
  * @param {Object.<string, Function>} [functions={}] - Custom functions
  * @returns {Object} The parsed AST
  * @throws {JemplParseError} When template syntax is invalid (malformed conditions, loops, variables, etc.)
- * 
+ *
  * @example
  * // Simple variable template
  * const ast = parse({ message: "Hello ${name}!" });
- * 
+ *
  * @example
  * // Template with conditional
  * const ast = parse({
  *   "$if user.isAdmin": { role: "admin" },
  *   "$else": { role: "user" }
  * });
- * 
+ *
  * @example
  * // Template with custom function
  * const ast = parse(
