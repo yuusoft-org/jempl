@@ -85,7 +85,10 @@ const splitArguments = (argsStr) => {
  */
 const parseArgument = (arg) => {
   // Handle string literals
-  if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+  if (
+    (arg.startsWith('"') && arg.endsWith('"')) ||
+    (arg.startsWith("'") && arg.endsWith("'"))
+  ) {
     return { type: NodeType.LITERAL, value: arg.slice(1, -1) };
   }
 
