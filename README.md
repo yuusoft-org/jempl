@@ -8,12 +8,11 @@ Jempl is a JSON templating engine with conditionals, loops, and custom functions
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Features](#features)
-  - [Variable Replacement](#variable-replacement)
-  - [Conditionals](#conditionals)
-  - [Loops](#loops)
-  - [Custom Functions](#custom-functions)
-  - [Escaping](#escaping)
+- [Variable Replacement](#variable-replacement)
+- [Conditionals](#conditionals)
+- [Loops](#loops)
+- [Custom Functions](#custom-functions)
+- [Escaping](#escaping)
 - [Alternative Libraries](#alternative-libraries)
 
 ## Installation
@@ -82,15 +81,6 @@ During `Parse` phase, the objective is to do all the performance critical work a
 During `Render` phase, the objective is to do the actual rendering. This should be done at runtime, and should be as fast as possible.
 
 For more details about the AST structure, see [AST Documentation](./docs/AST.md).
-
-# Features
-
-- Variable Replacement
-- Conditionals
-- Loops
-- Custom Functions
-- Escaping
-- Error Handling
 
 ## Variable Replacement
 
