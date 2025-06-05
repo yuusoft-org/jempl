@@ -1,6 +1,48 @@
 # Jempl
 
+[![npm version](https://badge.fury.io/js/jempl.svg)](https://www.npmjs.com/package/jempl)
+
 Jempl is a JSON templating engine with conditionals, loops, and custom functions.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Features](#features)
+  - [Variable Replacement](#variable-replacement)
+  - [Conditionals](#conditionals)
+  - [Loops](#loops)
+  - [Custom Functions](#custom-functions)
+  - [Escaping](#escaping)
+- [Alternative Libraries](#alternative-libraries)
+
+## Installation
+
+```bash
+npm install jempl
+```
+
+## Quick Start
+
+```javascript
+import { parseAndRender } from 'jempl';
+
+const template = {
+  name: "${user.name}",
+  greeting: "Hello ${user.name}!",
+  $if user.age >= 18:
+    status: "adult"
+  $else:
+    status: "minor"
+};
+
+const data = {
+  user: { name: "John", age: 25 }
+};
+
+const result = parseAndRender(template, data);
+// Output: { name: "John", greeting: "Hello John!", status: "adult" }
+```
 
 ## Objectives
 
@@ -11,23 +53,27 @@ Jempl is a JSON templating engine with conditionals, loops, and custom functions
 
 ## Parse and Render
 
-$$\begin{align*}
-& \textbf{Let:} \\[0.5em]
-& D = \text{Data} \\
-& T = \text{Template} \\
-& F = \text{Custom Functions} \\
-& A = \text{AST (Abstract Syntax Tree)} \\
-& R = \text{Result} \\[1em]
-& \textbf{Then:} \\[0.5em]
-& A = \mathtt{Parse}(T, F) \\
-& R = \mathtt{Render}(A, D, F) \\[1em]
-& \textbf{Or by composition:} \\[0.5em]
-& R = \mathtt{Render}(\mathtt{Parse}(T, F), D, F) \\
-\end{align*}$$
+```math
+\begin{array}{l}
+\textbf{Let:} \\
+D = \text{Data} \\
+T = \text{Template} \\
+F = \text{Custom Functions} \\
+A = \text{AST (Abstract Syntax Tree)} \\
+R = \text{Result} \\[1em]
+\textbf{Then:} \\
+A = \mathtt{Parse}(T, F) \\
+R = \mathtt{Render}(A, D, F) \\[1em]
+\textbf{Or by composition:} \\
+R = \mathtt{Render}(\mathtt{Parse}(T, F), D, F)
+\end{array}
+```
 
 During `Parse` phase, the objective is to do all the performance critical work and validation. `Parse` only makes use of `Custom Functions` for validation purpose. This should be done at build time. The `AST` should require minimal time to be rendered.
 
 During `Render` phase, the objective is to do the actual rendering. This should be done at runtime, and should be as fast as possible.
+
+For more details about the AST structure, see [AST Documentation](./docs/AST.md).
 
 # Features
 
@@ -163,71 +209,81 @@ cases:
       name: "John"
 ```
 
-### Comparison operations
+### Supported Operators
+
+#### Comparison Operators
+- `==` - Equal to
+- `!=` - Not equal to
+- `>` - Greater than
+- `>=` - Greater than or equal to
+- `<` - Less than
+- `<=` - Less than or equal to
+- `in` - Array/string contains value
+
+#### Logical Operators
+- `&&` - Logical AND
+- `||` - Logical OR
+- `!` - Logical NOT (negation)
+
+#### Examples
 
 ```yaml
 template:
   name: "${name}"
 
-  # strings
+  # Equality and inequality
   $if name == "John":
     welcome1: "You are John"
   $if name != "John":
     welcome2: "You are not John"
 
-  # booleans:
-  $if isAdult:
-    welcome1: "You are an adult"
-  $if !isAdult:
-    welcome2: "You are not an adult"
-
-  # numbers
+  # Numeric comparisons
   $if age == 30:
-    welcome1: You are 30 years old
-  $if age >= 60:
-    welcome2: "You are above or equal 60"
-  $if age > 60:
-    welcome3: "You are above 60"
+    welcome3: "You are exactly 30"
+  $if age >= 18:
+    welcome4: "You are an adult"
+  $if age > 65:
+    welcome5: "You are a senior"
   $if age < 18:
-    welcome4: "You are under 18"
-  $if age <= 18:
-    welcome5: "You are under or equal to 18"
+    welcome6: "You are a minor"
+  $if age <= 12:
+    welcome7: "You are a child"
 
-  # arrays
-  hobbies:
-    - $if "reading" in hobbies:
-      - reading: true
+  # Boolean operations
+  $if isAdult:
+    welcome8: "You are an adult"
+  $if !isAdult:
+    welcome9: "You are not an adult"
 
-cases:
-  - data:
-      age: 30
-      hobbies: ["reading", "writing", "coding"]
-    output:
-      welcome1: "You are 30 years old"
-      hobbies:
-        - reading: true
+  # Array/string membership
+  $if "reading" in hobbies:
+    welcome10: "You like reading"
+  $if "o" in name:
+    welcome11: "Your name contains 'o'"
 
-```
-
-### And Or operations
-
-```yaml
-template:
-  name: "${name}"
-  # strings
-  $if name == "John" && age == 30:
-    welcome1: "You are John and 30 years old"
-  $if name == "John" || age == 30:
-    welcome2: "You are John or 30 years old"
+  # Logical combinations
+  $if name == "John" && age >= 18:
+    welcome12: "You are adult John"
+  $if age < 18 || age > 65:
+    welcome13: "You get a discount"
 
 cases:
   - data:
       name: "John"
       age: 30
+      isAdult: true
+      hobbies: ["reading", "writing"]
     output:
-      welcome1: "You are John and 30 years old"
-      welcome2: "You are John or 30 years old"
+      name: "John"
+      welcome1: "You are John"
+      welcome3: "You are exactly 30"
+      welcome4: "You are an adult"
+      welcome8: "You are an adult"
+      welcome10: "You like reading"
+      welcome11: "Your name contains 'o'"
+      welcome12: "You are adult John"
 ```
+
 
 ## Loops
 
@@ -315,7 +371,7 @@ Functions can return any JSON-serializable value, including objects and arrays.
 Custom functions can be passed to the template engine and used in expressions:
 
 ```javascript
-import parseAndRender from 'jempl';
+import { parseAndRender } from 'jempl';
 
 const customFunctions = {
   add: (a, b) => Number(a) + Number(b),
