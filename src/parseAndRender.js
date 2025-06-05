@@ -3,9 +3,12 @@ import render from "./render.js";
 import * as defaultFunctions from "./functions.js";
 
 /**
- * Parses a template and renders it with data in one step
- * @param {Object} input - Object containing template, data, and optional functions
- * @returns {Object} rendered data
+ * Convenience function that parses a template and renders it with data in one step
+ * @param {Object} input - Input object
+ * @param {any} input.template - The template to parse and render
+ * @param {any} input.data - Data to use for variable substitution
+ * @param {Object.<string, Function>} [input.functions] - Custom functions
+ * @returns {any} The rendered output
  */
 const parseAndRender = (input) => {
   const { template, data, functions = {} } = input;

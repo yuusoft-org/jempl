@@ -5,9 +5,12 @@ import {
 } from "./errors.js";
 
 /**
- * Renders an AST template and data into a JSON object
- * @param {Object} input - Object containing ast, functions, and data
- * @returns {Object} rendered data
+ * Renders a parsed AST with data to produce the final output
+ * @param {Object} input - Input object
+ * @param {Object} input.ast - The parsed AST to render
+ * @param {Object} input.data - Data to use for variable substitution
+ * @param {Object.<string, Function>} [input.functions] - Custom functions
+ * @returns {any} The rendered output
  */
 const render = (input) => {
   const { ast, functions, data } = input;

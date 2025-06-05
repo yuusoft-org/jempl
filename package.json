@@ -1,11 +1,13 @@
 {
   "name": "jempl",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A JSON templating engine with conditionals, loops, and custom functions",
   "main": "src/index.js",
+  "types": "types/index.d.ts",
   "type": "module",
   "files": [
-    "src"
+    "src",
+    "types"
   ],
   "repository": {
     "type": "git",
@@ -22,6 +24,7 @@
     "test:watch": "bunx vitest watch",
     "test:coverage": "bunx vitest run --coverage",
     "lint": "bunx prettier src -c",
-    "lint:fix": "bunx prettier src -w"
+    "lint:fix": "bunx prettier src -w",
+    "types": "bunx tsc --allowJs --declaration --emitDeclarationOnly --skipLibCheck --outDir types src/**/*.js"
   }
 }

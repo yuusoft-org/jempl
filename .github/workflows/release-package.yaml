@@ -16,6 +16,10 @@ jobs:
         with:
           bun-version: 1.2.2
 
+      # Generate types
+      - name: Generate types
+        run: bun run types
+
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
