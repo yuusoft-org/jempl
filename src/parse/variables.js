@@ -3,14 +3,138 @@ import { NodeType } from "./constants.js";
 const VARIABLE_REGEX = /\$\{([^}]*)\}/g;
 
 /**
- * Parses a variable expression like ${name} or ${user.profile.name}
+ * Parses a function call expression like functionName(arg1, arg2)
  * @param {string} expr - The expression without ${ and }
- * @returns {Object} Variable node
+ * @returns {Object|null} Function node or null if not a function call
+ */
+const parseFunctionCall = (expr) => {
+  const functionMatch = expr.match(/^(\w+)\((.*)\)$/);
+  if (!functionMatch) return null;
+
+  const [, name, argsStr] = functionMatch;
+  const args = parseArguments(argsStr);
+
+  return {
+    type: NodeType.FUNCTION,
+    name,
+    args,
+  };
+};
+
+/**
+ * Parses function arguments from a string
+ * @param {string} argsStr - The arguments string
+ * @returns {Array} Array of parsed argument nodes
+ */
+const parseArguments = (argsStr) => {
+  if (!argsStr.trim()) return [];
+
+  const args = splitArguments(argsStr);
+  return args.map((arg) => parseArgument(arg.trim()));
+};
+
+/**
+ * Splits argument string respecting quotes and nested parentheses
+ * @param {string} argsStr - The arguments string
+ * @returns {Array<string>} Array of argument strings
+ */
+const splitArguments = (argsStr) => {
+  const args = [];
+  let current = "";
+  let depth = 0;
+  let inQuotes = false;
+  let quoteChar = "";
+
+  for (let i = 0; i < argsStr.length; i++) {
+    const char = argsStr[i];
+    const prevChar = i > 0 ? argsStr[i - 1] : "";
+
+    if (!inQuotes && (char === '"' || char === "'")) {
+      inQuotes = true;
+      quoteChar = char;
+      current += char;
+    } else if (inQuotes && char === quoteChar && prevChar !== "\\") {
+      inQuotes = false;
+      quoteChar = "";
+      current += char;
+    } else if (!inQuotes && char === "(") {
+      depth++;
+      current += char;
+    } else if (!inQuotes && char === ")") {
+      depth--;
+      current += char;
+    } else if (!inQuotes && char === "," && depth === 0) {
+      args.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) {
+    args.push(current);
+  }
+
+  return args;
+};
+
+/**
+ * Parses a single argument
+ * @param {string} arg - The argument string
+ * @returns {Object} Parsed argument node
+ */
+const parseArgument = (arg) => {
+  // Handle string literals
+  if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+    return { type: NodeType.LITERAL, value: arg.slice(1, -1) };
+  }
+
+  // Handle numeric literals
+  if (/^-?\d+(\.\d+)?$/.test(arg)) {
+    return { type: NodeType.LITERAL, value: parseFloat(arg) };
+  }
+
+  // Handle boolean literals
+  if (arg === "true") {
+    return { type: NodeType.LITERAL, value: true };
+  }
+  if (arg === "false") {
+    return { type: NodeType.LITERAL, value: false };
+  }
+
+  // Handle null
+  if (arg === "null") {
+    return { type: NodeType.LITERAL, value: null };
+  }
+
+  // Handle nested function calls
+  const nestedFunction = parseFunctionCall(arg);
+  if (nestedFunction) {
+    return nestedFunction;
+  }
+
+  // Default to variable reference
+  return { type: NodeType.VARIABLE, path: arg };
+};
+
+/**
+ * Parses a variable expression like ${name} or ${user.profile.name} or function calls like ${now()}
+ * @param {string} expr - The expression without ${ and }
+ * @returns {Object} Variable or Function node
  */
 export const parseVariable = (expr) => {
+  const trimmed = expr.trim();
+
+  // Try to parse as function call first
+  const functionNode = parseFunctionCall(trimmed);
+  if (functionNode) {
+    return functionNode;
+  }
+
+  // Default to variable
   return {
     type: NodeType.VARIABLE,
-    path: expr.trim(),
+    path: trimmed,
   };
 };
 
@@ -86,8 +210,9 @@ export const parseStringValue = (str) => {
       }
     }
 
-    // Add variable reference
-    parts.push({ var: varName.trim() });
+    // Parse the expression (could be variable or function)
+    const parsedExpr = parseVariable(varName.trim());
+    parts.push(parsedExpr);
 
     lastIndex = index + fullMatch.length;
   }

@@ -1,0 +1,223 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [functions]
+---
+### Function Tests
+suite: functions
+exportName: default
+---
+case: simple function call without arguments
+in:
+  - result: "${now()}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "now"
+        args: []
+---
+case: function with single argument
+in:
+  - result: "${length(name)}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "length"
+        args:
+          - {type: 1, path: "name"}
+---
+case: function with multiple arguments
+in:
+  - result: "${add(a, b)}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "add"
+        args:
+          - {type: 1, path: "a"}
+          - {type: 1, path: "b"}
+---
+case: function with literal string argument
+in:
+  - result: "${formatDate(timestamp, 'YYYY-MM-DD')}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "formatDate"
+        args:
+          - {type: 1, path: "timestamp"}
+          - {type: 0, value: "YYYY-MM-DD"}
+---
+case: function with numeric literal arguments
+in:
+  - result: "${round(price, 2)}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "round"
+        args:
+          - {type: 1, path: "price"}
+          - {type: 0, value: 2}
+---
+case: function with boolean and null arguments
+in:
+  - result: "${ifElse(true, name, null)}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "ifElse"
+        args:
+          - {type: 0, value: true}
+          - {type: 1, path: "name"}
+          - {type: 0, value: null}
+---
+case: nested function calls
+in:
+  - result: "${uppercase(substring(name, 0, 5))}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "uppercase"
+        args:
+          - type: 3
+            name: "substring"
+            args:
+              - {type: 1, path: "name"}
+              - {type: 0, value: 0}
+              - {type: 0, value: 5}
+---
+case: function in string interpolation
+in:
+  - message: "Hello ${capitalize(name)}!"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: message
+      value:
+        type: 2
+        parts:
+          - "Hello "
+          - type: 3
+            name: "capitalize"
+            args:
+              - {type: 1, path: "name"}
+          - "!"
+---
+case: mixed variables and functions in interpolation
+in:
+  - result: "${name} has ${length(hobbies)} hobbies"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: result
+      value:
+        type: 2
+        parts:
+          - {type: 1, path: "name"}
+          - " has "
+          - type: 3
+            name: "length"
+            args:
+              - {type: 1, path: "hobbies"}
+          - " hobbies"
+---
+case: function with complex arguments
+in:
+  - result: "${concat('User: ', name, ' (', toString(age), ')')}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "concat"
+        args:
+          - {type: 0, value: "User: "}
+          - {type: 1, path: "name"}
+          - {type: 0, value: " ("}
+          - type: 3
+            name: "toString"
+            args:
+              - {type: 1, path: "age"}
+          - {type: 0, value: ")"}
+---
+case: function with quoted string containing comma
+in:
+  - result: "${replace(text, 'hello, world', 'hi')}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: result
+      value:
+        type: 3
+        name: "replace"
+        args:
+          - {type: 1, path: "text"}
+          - {type: 0, value: "hello, world"}
+          - {type: 0, value: "hi"}
+---
+case: multiple functions in same object
+in:
+  - timestamp: "${now()}"
+    formatted: "${formatDate(now(), 'YYYY-MM-DD')}"
+    math: "${add(multiply(a, 2), b)}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: timestamp
+      value:
+        type: 3
+        name: "now"
+        args: []
+    - key: formatted
+      value:
+        type: 3
+        name: "formatDate"
+        args:
+          - type: 3
+            name: "now"
+            args: []
+          - {type: 0, value: "YYYY-MM-DD"}
+    - key: math
+      value:
+        type: 3
+        name: "add"
+        args:
+          - type: 3
+            name: "multiply"
+            args:
+              - {type: 1, path: "a"}
+              - {type: 0, value: 2}
+          - {type: 1, path: "b"}

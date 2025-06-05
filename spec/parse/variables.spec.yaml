@@ -59,27 +59,27 @@ out:
         type: 2
         parts:
           - "Hello "
-          - {var: "firstName"}
+          - {type: 1, path: "firstName"}
           - " "
-          - {var: "lastName"}
+          - {type: 1, path: "lastName"}
           - "!"
     - key: message
       value:
         type: 2
         parts:
           - "You have "
-          - {var: "count"}
+          - {type: 1, path: "count"}
           - " new messages from "
-          - {var: "sender"}
+          - {type: 1, path: "sender"}
     - key: complex
       value:
         type: 2
         parts:
-          - {var: "user.name"}
+          - {type: 1, path: "user.name"}
           - " ("
-          - {var: "user.email"}
+          - {type: 1, path: "user.email"}
           - ") - Status: "
-          - {var: "user.status"}
+          - {type: 1, path: "user.status"}
 ---
 case: variables with whitespace
 in:
@@ -160,7 +160,7 @@ out:
           - type: 2
             parts:
               - "prefix "
-              - {var: "item3"}
+              - {type: 1, path: "item3"}
               - " suffix"
 ---
 case: nested objects with variables
@@ -183,9 +183,9 @@ out:
             value:
               type: 2
               parts:
-                - {var: "firstName"}
+                - {type: 1, path: "firstName"}
                 - " "
-                - {var: "lastName"}
+                - {type: 1, path: "lastName"}
           - key: details
             value:
               type: 8
@@ -199,9 +199,9 @@ out:
                   value:
                     type: 2
                     parts:
-                      - {var: "city"}
+                      - {type: 1, path: "city"}
                       - ", "
-                      - {var: "country"}
+                      - {type: 1, path: "country"}
 ---
 case: special characters in variable names
 in:
@@ -212,7 +212,7 @@ in:
     parens: "${func()}"
 out:
   type: 8
-  fast: true
+  fast: false
   properties:
     - key: hyphen
       value:
@@ -232,8 +232,9 @@ out:
         path: "items[0]"
     - key: parens
       value:
-        type: 1
-        path: "func()"
+        type: 3
+        name: "func"
+        args: []
 ---
 case: incomplete variable syntax
 in:
@@ -275,23 +276,23 @@ out:
       value:
         type: 2
         parts:
-          - {var: "first"}
-          - {var: "second"}
+          - {type: 1, path: "first"}
+          - {type: 1, path: "second"}
     - key: triple
       value:
         type: 2
         parts:
-          - {var: "a"}
-          - {var: "b"}
-          - {var: "c"}
+          - {type: 1, path: "a"}
+          - {type: 1, path: "b"}
+          - {type: 1, path: "c"}
     - key: withText
       value:
         type: 2
         parts:
           - "text"
-          - {var: "var1"}
+          - {type: 1, path: "var1"}
           - "more"
-          - {var: "var2"}
+          - {type: 1, path: "var2"}
           - "end"
 ---
 case: escaped dollar signs
@@ -314,13 +315,13 @@ out:
         type: 2
         parts:
           - "${escaped} but "
-          - {var: "real"}
+          - {type: 1, path: "real"}
     - key: doubleEscaped
       value:
         type: 2
         parts:
           - "\\"
-          - {var: "actualVariable"}
+          - {type: 1, path: "actualVariable"}
     - key: onlyEscape
       value:
         type: 0
@@ -369,7 +370,7 @@ out:
         type: 2
         parts:
           - "input placeholder=\""
-          - {var: "placeholderText"}
+          - {type: 1, path: "placeholderText"}
           - "\""
       value:
         type: 0

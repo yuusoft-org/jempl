@@ -92,13 +92,10 @@ const renderInterpolation = (parts, functions, data, scope) => {
   for (const part of parts) {
     if (typeof part === "string") {
       result += part;
-    } else if (part.var) {
-      const value = getVariableValue(part.var, data, scope);
+    } else {
+      // Handle AST nodes (variables, functions, etc.)
+      const value = renderNode(part, functions, data, scope);
       result += value != null ? String(value) : "";
-    } else if (part.func) {
-      // Handle function calls in interpolation
-      const funcResult = functions[part.func]?.(...(part.args || []));
-      result += funcResult != null ? String(funcResult) : "";
     }
   }
 

@@ -123,11 +123,11 @@ out:
                           type: 2
                           parts:
                             - "Item "
-                            - {var: "idx"}
+                            - {type: 1, path: "idx"}
                             - ": "
-                            - {var: "item.name"}
+                            - {type: 1, path: "item.name"}
                             - " ("
-                            - {var: "item.type"}
+                            - {type: 1, path: "item.type"}
                             - ")"
 ---
 case: for loop with object body (not array)

@@ -282,6 +282,25 @@ output:
   doubleEscape: "Backslash and variable: \\100"
 ```
 
+## Functions
+
+### Built-in Functions
+
+Jempl includes one built-in function:
+
+```yaml
+template:
+  timestamp: "${now()}"
+  message: "Generated at ${now()}"
+
+output:
+  timestamp: 1640995200000
+  message: "Generated at 1640995200000"
+```
+
+**Available Built-in Function:**
+- `now()` - Returns current timestamp in milliseconds
+
 ## Custom Functions
 
 ### Overview
@@ -291,38 +310,102 @@ The library comes with built-in functions and allows registering custom ones.
 
 Functions can return any JSON-serializable value, including objects and arrays.
 
-### Built-in Functions
-
-The library ships with the following built-in functions:
-
-```javascript
-// Date/Time functions
-now() // Returns current timestamp
-```
-
 ### Usage in Templates
 
-Functions can be used anywhere expressions are allowed:
+Custom functions can be passed to the template engine and used in expressions:
+
+```javascript
+import parseAndRender from 'jempl';
+
+const customFunctions = {
+  add: (a, b) => Number(a) + Number(b),
+  multiply: (a, b) => Number(a) * Number(b),
+  uppercase: (str) => String(str).toUpperCase(),
+  capitalize: (str) => {
+    const s = String(str);
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  }
+};
+
+const template = {
+  sum: "${add(10, 20)}",
+  greeting: "Hello ${capitalize(name)}!",
+  result: "${multiply(add(a, b), c)}"
+};
+
+const data = { name: "john", a: 5, b: 3, c: 2 };
+
+const result = parseAndRender(template, data, customFunctions);
+// Output: { sum: 30, greeting: "Hello John!", result: 16 }
+```
+
+### Functions Returning Objects
+
+Functions can return complex data structures including objects and arrays:
+
+```javascript
+const customFunctions = {
+  createUser: (name, age) => ({
+    name: String(name),
+    age: Number(age),
+    isAdult: Number(age) >= 18,
+    metadata: {
+      createdAt: Date.now(),
+      version: 1
+    }
+  }),
+  
+  getStats: (items) => ({
+    count: Array.isArray(items) ? items.length : 0,
+    isEmpty: !Array.isArray(items) || items.length === 0,
+    summary: `${Array.isArray(items) ? items.length : 0} items`
+  })
+};
+```
 
 ```yaml
-data:
-  userString: "John, Doe
-  startDate: "2024-01-01"
-
 template:
-  # Built-in functions
-  timestamp: "${now()}"
-  string: "${substring(userString, 0, 5)}"
-  structuredName: "${structuredName(userString)}"
+  user: "${createUser(name, age)}"
+  stats: "${getStats(hobbies)}"
+  profile:
+    info: "${createUser(firstName, userAge)}"
+    activity: "${getStats(activities)}"
+
+data:
+  name: "Alice"
+  age: 25
+  firstName: "Bob"
+  userAge: 17
+  hobbies: ["reading", "coding"]
+  activities: []
 
 output:
-  timestamp: 1704067200000
-  string: "John"
-  structuredName: {
-    firstName: "John",
-    lastName: "Doe"
-  }
+  user:
+    name: "Alice"
+    age: 25
+    isAdult: true
+    metadata:
+      createdAt: 1640995200000
+      version: 1
+  stats:
+    count: 2
+    isEmpty: false
+    summary: "2 items"
+  profile:
+    info:
+      name: "Bob"
+      age: 17
+      isAdult: false
+      metadata:
+        createdAt: 1640995200000
+        version: 1
+    activity:
+      count: 0
+      isEmpty: true
+      summary: "0 items"
 ```
+
+When a function returns an object or array, it replaces the entire template value. This allows you to dynamically generate complex nested structures based on your data and logic.
 
 ### Function Constraints
 
