@@ -1,0 +1,82 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [renderErrors]
+---
+### Render Error Tests
+suite: renderErrors
+exportName: default
+
+---
+case: unknown function
+in:
+  - template: "${unknownFunc()}"
+    data: {}
+    functions: {}
+throws: "Render Error: Unknown function 'unknownFunc' (now)"
+
+---
+case: unknown function with available functions  
+in:
+  - template: "${invalidFunc()}"
+    data: {}
+    functions: {now: () => Date.now()}
+throws: "Render Error: Unknown function 'invalidFunc' (now)"
+
+---
+case: iterate over non-array string
+in:
+  - template:
+      users:
+        $for user in users:
+          name: "${user.name}"
+    data:
+      users: "not an array"
+    functions: {}
+throws: "Render Error: Cannot iterate over non-array value (got: string) at '$for user in users'"
+
+---
+case: iterate over null
+in:
+  - template:
+      users:
+        $for user in users:
+          name: "${user.name}"
+    data:
+      users: null
+    functions: {}
+throws: "Render Error: Cannot iterate over null value at '$for user in users'"
+
+---
+case: iterate over undefined
+in:
+  - template:
+      users:
+        $for user in users:
+          name: "${user.name}"
+    data: {}
+    functions: {}
+throws: "Render Error: Cannot iterate over undefined value at '$for user in users'"
+
+---
+case: iterate over number
+in:
+  - template:
+      users:
+        $for user in users:
+          name: "${user.name}"
+    data:
+      users: 123
+    functions: {}
+throws: "Render Error: Cannot iterate over non-array value (got: number) at '$for user in users'"
+
+---
+case: iterate over object
+in:
+  - template:
+      users:
+        $for user in users:
+          name: "${user.name}"
+    data:
+      users: {a: 1}
+    functions: {}
+throws: "Render Error: Cannot iterate over non-array value (got: object) at '$for user in users'"

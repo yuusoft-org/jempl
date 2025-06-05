@@ -1,4 +1,8 @@
 import { NodeType, BinaryOp, UnaryOp } from "./parse/constants.js";
+import {
+  createIterationRenderError,
+  createUnknownFunctionRenderError,
+} from "./errors.js";
 
 /**
  * Renders an AST template and data into a JSON object
@@ -70,14 +74,22 @@ const getVariableValue = (path, data, scope) => {
   const parts = path.split(".");
   let current = data;
 
-  for (const part of parts) {
-    if (current == null) return undefined;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+
     // Check scope first for each part
     if (scope.hasOwnProperty(part)) {
       current = scope[part];
-    } else {
-      current = current[part];
+      continue;
     }
+
+    if (current == null) {
+      // Return undefined for missing variables - this preserves original Jempl behavior
+      // where missing variables are silently ignored
+      return undefined;
+    }
+
+    current = current[part];
   }
 
   return current;
@@ -108,7 +120,7 @@ const renderInterpolation = (parts, functions, data, scope) => {
 const renderFunction = (node, functions, data, scope) => {
   const func = functions[node.name];
   if (!func) {
-    throw new Error(`Function '${node.name}' is not defined`);
+    throw createUnknownFunctionRenderError(node.name, functions);
   }
 
   const args = node.args.map((arg) => renderNode(arg, functions, data, scope));
@@ -231,7 +243,9 @@ const renderLoop = (node, functions, data, scope) => {
   const iterable = renderNode(node.iterable, functions, data, scope);
 
   if (!Array.isArray(iterable)) {
-    return [];
+    // Create the loop expression for error message
+    const loopExpr = `${node.itemVar}${node.indexVar ? `, ${node.indexVar}` : ""} in ${node.iterable.path}`;
+    throw createIterationRenderError(loopExpr, iterable);
   }
 
   const results = [];

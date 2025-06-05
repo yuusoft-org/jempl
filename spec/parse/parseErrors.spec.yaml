@@ -1,0 +1,70 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [parseErrors]
+---
+### Parse Error Tests
+suite: parseErrors
+exportName: default
+---
+case: missing condition expression
+in:
+  - template:
+      "$if": "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: Missing condition expression after '$if'"
+
+---
+case: incomplete comparison - missing right operand
+in:
+  - template:
+      "$if user.age >": "adult"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete comparison expression - missing right operand (got: 'user.age >')"
+
+---
+case: invalid comparison operator
+in:
+  - template:
+      "$if user.name ===": "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid comparison operator '===' - did you mean '=='? (got: 'user.name ===')"
+
+---
+case: elif without if
+in:
+  - template:
+      "$elif user.age > 18": "adult"
+    data: {}
+    functions: {}
+throws: "Parse Error: '$elif' without matching '$if'"
+
+---
+case: invalid loop syntax - missing in
+in:
+  - template:
+      "$for user": ["item"]
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop syntax - missing 'in' keyword (got: '$for user')"
+
+---
+case: missing iterable expression
+in:
+  - template:
+      "$for user in": ["item"]
+    data: {}
+    functions: {}
+throws: "Parse Error: Missing iterable expression after 'in' (got: '$for user in')"
+
+---
+case: empty loop variable name
+in:
+  - template:
+      "$for , index in people": ["item"]
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop variable - variable name cannot be empty (got: '$for , index in people')"
+

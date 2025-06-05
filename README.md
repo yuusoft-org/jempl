@@ -95,6 +95,7 @@ For more details about the AST structure, see [AST Documentation](./docs/AST.md)
 ## Variable Replacement
 
 ### Basic Syntax
+
 Variables are referenced using `${variableName}` syntax. The library preserves the original data type when replacing standalone variables.
 
 Notice that
@@ -147,10 +148,10 @@ cases:
       input placeholder="Enter your name":
 ```
 
-
 ## Conditionals
 
 ### Basic
+
 When a conditional evaluates to true, its properties are merged directly into the parent object. The key insight is that `$if`, `$elif`, and `$else` are special keys that get evaluated and removed during processing.
 
 ```yaml
@@ -207,7 +208,6 @@ cases:
 
 ### Nested conditionals
 
-
 ```yaml
 template:
   name: "${name}"
@@ -236,6 +236,7 @@ cases:
 ### Supported Operators
 
 #### Comparison Operators
+
 - `==` - Equal to
 - `!=` - Not equal to
 - `>` - Greater than
@@ -245,6 +246,7 @@ cases:
 - `in` - Array/string contains value
 
 #### Logical Operators
+
 - `&&` - Logical AND
 - `||` - Logical OR
 - `!` - Logical NOT (negation)
@@ -307,7 +309,6 @@ cases:
       welcome11: "Your name contains 'o'"
       welcome12: "You are adult John"
 ```
-
 
 ## Loops
 
@@ -387,11 +388,13 @@ output:
 ```
 
 **Available Built-in Function:**
+
 - `now()` - Returns current timestamp in milliseconds
 
 ## Custom Functions
 
 ### Overview
+
 Custom functions provide an escape hatch for advanced use cases while maintaining security and performance.
 
 The library comes with built-in functions and allows registering custom ones.
@@ -403,7 +406,7 @@ Functions can return any JSON-serializable value, including objects and arrays.
 Custom functions can be passed to the template engine and used in expressions:
 
 ```javascript
-import { parseAndRender } from 'jempl';
+import { parseAndRender } from "jempl";
 
 const customFunctions = {
   add: (a, b) => Number(a) + Number(b),
@@ -412,13 +415,13 @@ const customFunctions = {
   capitalize: (str) => {
     const s = String(str);
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-  }
+  },
 };
 
 const template = {
   sum: "${add(10, 20)}",
   greeting: "Hello ${capitalize(name)}!",
-  result: "${multiply(add(a, b), c)}"
+  result: "${multiply(add(a, b), c)}",
 };
 
 const data = { name: "john", a: 5, b: 3, c: 2 };
@@ -439,15 +442,15 @@ const customFunctions = {
     isAdult: Number(age) >= 18,
     metadata: {
       createdAt: Date.now(),
-      version: 1
-    }
+      version: 1,
+    },
   }),
-  
+
   getStats: (items) => ({
     count: Array.isArray(items) ? items.length : 0,
     isEmpty: !Array.isArray(items) || items.length === 0,
-    summary: `${Array.isArray(items) ? items.length : 0} items`
-  })
+    summary: `${Array.isArray(items) ? items.length : 0} items`,
+  }),
 };
 ```
 
@@ -519,13 +522,12 @@ template:
 The library will try to throw errors whenever an invalid expression is encountered.
 The library will try to give as much information as possible when an error occurs.
 
-
 ## Alternative libraries
 
 If you are looking for a more battle tested and feature rich library, we recommend [json-e](https://github.com/json-e/json-e).
 
 We were using `json-e` before, and the reason we decided to build our own library was because of following limitations with `json-e`:
 
-* Unclear error messages. When my templating had an error, it was hard for me to understand where the error was coming from.
-* No support for custom functions. We needed custom functions to transform data in arbitrary ways for maximum flexibility.
-* Conditional statements lacked a `if, elseif, else` functionality. `$switch` came close, but it allows only one truthy condition.
+- Unclear error messages. When my templating had an error, it was hard for me to understand where the error was coming from.
+- No support for custom functions. We needed custom functions to transform data in arbitrary ways for maximum flexibility.
+- Conditional statements lacked a `if, elseif, else` functionality. `$switch` came close, but it allows only one truthy condition.
