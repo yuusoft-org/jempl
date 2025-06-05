@@ -1,5 +1,10 @@
 import { NodeType, BinaryOp, UnaryOp } from "./constants.js";
 import { parseStringValue } from "./variables.js";
+import {
+  validateConditionExpression,
+  validateLoopSyntax,
+  JemplParseError,
+} from "../errors.js";
 
 /**
  * Parses any value (string, number, boolean, null, object, array)
@@ -9,7 +14,7 @@ import { parseStringValue } from "./variables.js";
  */
 export const parseValue = (value, functions) => {
   if (typeof value === "string") {
-    return parseStringValue(value);
+    return parseStringValue(value, functions);
   } else if (typeof value === "object" && value !== null) {
     if (Array.isArray(value)) {
       return parseArray(value, functions);
@@ -108,6 +113,14 @@ export const parseObject = (obj, functions) => {
       });
       hasDynamicContent = true;
       i++;
+    } else if (key.startsWith("$elif ") || key.startsWith("$else")) {
+      // Check for orphaned $elif or $else
+      throw new JemplParseError(
+        `'${key.split(" ")[0]}' without matching '$if'`,
+      );
+    } else if (key === "$if" || key === "$if:") {
+      // Check for missing condition expression
+      throw new JemplParseError("Missing condition expression after '$if'");
     } else {
       const parsedValue = parseValue(value, functions);
 
@@ -123,7 +136,7 @@ export const parseObject = (obj, functions) => {
       }
 
       // Parse the key for potential variables
-      const parsedKey = parseStringValue(key);
+      const parsedKey = parseStringValue(key, functions);
 
       // Only include parsedKey if it's not a simple literal
       const prop = { key, value: parsedValue };
@@ -167,7 +180,7 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       conditionId = match[1];
       conditionExpr = match[2];
     } else {
-      throw new Error(`Invalid conditional syntax: ${ifKey}`);
+      throw new JemplParseError(`Invalid conditional syntax: ${ifKey}`);
     }
   } else {
     // Regular $if: "$if age > 18" -> expr="age > 18"
@@ -178,6 +191,9 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       conditionExpr = conditionExpr.slice(0, -1).trim();
     }
   }
+
+  // Validate condition expression
+  validateConditionExpression(conditionExpr);
 
   const ifCondition = parseConditionExpression(conditionExpr);
   conditions.push(ifCondition);
@@ -225,6 +241,8 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       if (elifConditionExpr === null) {
         conditions.push(null); // null represents else branch
       } else {
+        // Validate elif condition expression
+        validateConditionExpression(elifConditionExpr);
         const elifCondition = parseConditionExpression(elifConditionExpr);
         conditions.push(elifCondition);
       }
@@ -404,10 +422,15 @@ export const parseLoop = (key, value, functions) => {
   // Parse the loop syntax: "$for p, i in people" or "$for p in people"
   const loopExpr = key.substring(5).trim(); // Remove '$for '
 
+  // Validate loop syntax
+  validateLoopSyntax(loopExpr);
+
   // Split on ' in ' to separate variables from iterable
   const inMatch = loopExpr.match(/^(.+?)\s+in\s+(.+)$/);
   if (!inMatch) {
-    throw new Error(`Invalid loop syntax: ${key}`);
+    throw new JemplParseError(
+      `Invalid loop syntax - missing 'in' keyword (got: '$for ${loopExpr}')`,
+    );
   }
 
   const varsExpr = inMatch[1].trim();
@@ -419,7 +442,7 @@ export const parseLoop = (key, value, functions) => {
   if (varsExpr.includes(",")) {
     const vars = varsExpr.split(",").map((v) => v.trim());
     if (vars.length !== 2) {
-      throw new Error(
+      throw new JemplParseError(
         `Invalid loop variables: ${varsExpr}. Expected format: "item" or "item, index"`,
       );
     }

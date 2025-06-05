@@ -123,9 +123,10 @@ const parseArgument = (arg) => {
 /**
  * Parses a variable expression like ${name} or ${user.profile.name} or function calls like ${now()}
  * @param {string} expr - The expression without ${ and }
+ * @param {Object} functions - Available functions for validation
  * @returns {Object} Variable or Function node
  */
-export const parseVariable = (expr) => {
+export const parseVariable = (expr, functions = {}) => {
   const trimmed = expr.trim();
 
   // Try to parse as function call first
@@ -144,9 +145,10 @@ export const parseVariable = (expr) => {
 /**
  * Parses a string value that may contain interpolations
  * @param {string} str - The string to parse
+ * @param {Object} functions - Available functions for validation
  * @returns {Object} Variable, interpolation, or literal node
  */
-export const parseStringValue = (str) => {
+export const parseStringValue = (str, functions = {}) => {
   // Handle escaping: first handle double escapes, then single escapes
   let processedStr = str;
   const escapedParts = [];
@@ -170,6 +172,9 @@ export const parseStringValue = (str) => {
     processedStr = processedStr.replace(/\\DOUBLE_ESC/g, "\\");
   }
 
+  // Don't validate incomplete variables - let them be treated as literals
+  // This preserves the original Jempl behavior where incomplete syntax is ignored
+
   const matches = [...processedStr.matchAll(VARIABLE_REGEX)];
 
   if (matches.length === 0) {
@@ -190,7 +195,7 @@ export const parseStringValue = (str) => {
     escapedParts.length === 0
   ) {
     // Single variable that is the entire string, no escapes
-    return parseVariable(matches[0][1]);
+    return parseVariable(matches[0][1], functions);
   }
 
   // Multiple variables or mixed content - create interpolation
@@ -214,7 +219,7 @@ export const parseStringValue = (str) => {
     }
 
     // Parse the expression (could be variable or function)
-    const parsedExpr = parseVariable(varName.trim());
+    const parsedExpr = parseVariable(varName.trim(), functions);
     parts.push(parsedExpr);
 
     lastIndex = index + fullMatch.length;
