@@ -303,8 +303,7 @@ in:
             path: "nonexistent"
     functions: {}
     data: {}
-out:
-  missing: "undefined"
+out: {}
 ---
 case: binary operations
 in:

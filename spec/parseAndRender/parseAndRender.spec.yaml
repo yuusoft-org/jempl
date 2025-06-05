@@ -221,8 +221,6 @@ in:
     functions: {}
 out:
   name: "Alice"
-  missing: "undefined"
-  nested: "undefined"
 ---
 case: boolean and numeric literals
 in:
@@ -399,3 +397,15 @@ in:
     functions: {}
 out:
   - input placeholder="What needs to be done?":
+---
+case: $if statement undefined boolean
+in:
+  - template:
+      - $if isAdult:
+          - message: Hello adult!
+        $else:
+          - message: Hello child!
+    data: {}
+    functions: {}
+out:
+  - message: Hello child!

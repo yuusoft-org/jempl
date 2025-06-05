@@ -59,7 +59,7 @@ const renderNode = (node, functions, data, scope) => {
  * Gets a variable value from data or scope using dot notation
  */
 const getVariableValue = (path, data, scope) => {
-  if (!path) return "undefined";
+  if (!path) return undefined;
 
   // Check local scope first (for loop variables)
   if (scope.hasOwnProperty(path)) {
@@ -71,7 +71,7 @@ const getVariableValue = (path, data, scope) => {
   let current = data;
 
   for (const part of parts) {
-    if (current == null) return "undefined";
+    if (current == null) return undefined;
     // Check scope first for each part
     if (scope.hasOwnProperty(part)) {
       current = scope[part];
@@ -80,7 +80,7 @@ const getVariableValue = (path, data, scope) => {
     }
   }
 
-  return current === undefined ? "undefined" : current;
+  return current;
 };
 
 /**
@@ -119,9 +119,50 @@ const renderFunction = (node, functions, data, scope) => {
 };
 
 /**
+ * Evaluates a condition node without converting undefined to string
+ */
+const evaluateCondition = (node, functions, data, scope) => {
+  switch (node.type) {
+    case NodeType.VARIABLE:
+      // For conditions, return the actual value without converting undefined to string
+      return getVariableValue(node.path, data, scope);
+    
+    case NodeType.LITERAL:
+      return node.value;
+    
+    case NodeType.BINARY:
+      return renderBinaryOperation(node, functions, data, scope);
+    
+    case NodeType.UNARY:
+      return renderUnaryOperation(node, functions, data, scope);
+    
+    case NodeType.FUNCTION:
+      return renderFunction(node, functions, data, scope);
+    
+    default:
+      // For other node types, use regular rendering
+      return renderNode(node, functions, data, scope);
+  }
+};
+
+/**
  * Renders binary operations
  */
 const renderBinaryOperation = (node, functions, data, scope) => {
+  // For logical operations, use evaluateCondition to preserve undefined
+  if (node.op === BinaryOp.AND || node.op === BinaryOp.OR) {
+    const left = evaluateCondition(node.left, functions, data, scope);
+    const right = evaluateCondition(node.right, functions, data, scope);
+    
+    switch (node.op) {
+      case BinaryOp.AND:
+        return left && right;
+      case BinaryOp.OR:
+        return left || right;
+    }
+  }
+  
+  // For other operations, use renderNode
   const left = renderNode(node.left, functions, data, scope);
   const right = renderNode(node.right, functions, data, scope);
 
@@ -138,10 +179,6 @@ const renderBinaryOperation = (node, functions, data, scope) => {
       return left >= right;
     case BinaryOp.LTE:
       return left <= right;
-    case BinaryOp.AND:
-      return left && right;
-    case BinaryOp.OR:
-      return left || right;
     case BinaryOp.IN:
       return Array.isArray(right) ? right.includes(left) : false;
     default:
@@ -153,7 +190,10 @@ const renderBinaryOperation = (node, functions, data, scope) => {
  * Renders unary operations
  */
 const renderUnaryOperation = (node, functions, data, scope) => {
-  const operand = renderNode(node.operand, functions, data, scope);
+  // For NOT operation, use evaluateCondition to preserve undefined
+  const operand = node.op === UnaryOp.NOT 
+    ? evaluateCondition(node.operand, functions, data, scope)
+    : renderNode(node.operand, functions, data, scope);
 
   switch (node.op) {
     case UnaryOp.NOT:
@@ -171,7 +211,13 @@ const renderConditional = (node, functions, data, scope) => {
     const condition = node.conditions[i];
 
     // null condition means else branch
-    if (condition === null || renderNode(condition, functions, data, scope)) {
+    if (condition === null) {
+      return renderNode(node.bodies[i], functions, data, scope);
+    }
+    
+    // Evaluate condition - don't convert undefined to "undefined" string
+    const conditionValue = evaluateCondition(condition, functions, data, scope);
+    if (conditionValue) {
       return renderNode(node.bodies[i], functions, data, scope);
     }
   }
@@ -278,16 +324,27 @@ const renderObject = (node, functions, data, scope) => {
         );
         if (loopProp) {
           // This property contains a loop - render the loop and assign the result
-          result[prop.key] = renderNode(loopProp.value, functions, data, scope);
+          const loopResult = renderNode(loopProp.value, functions, data, scope);
+          if (loopResult !== undefined) {
+            result[prop.key] = loopResult;
+          }
         } else {
-          result[prop.key] = renderNode(prop.value, functions, data, scope);
+          const renderedValue = renderNode(prop.value, functions, data, scope);
+          if (renderedValue !== undefined) {
+            result[prop.key] = renderedValue;
+          }
         }
       } else {
         // Render the key if it contains variables
         const renderedKey = prop.parsedKey
           ? renderNode(prop.parsedKey, functions, data, scope)
           : prop.key;
-        result[renderedKey] = renderNode(prop.value, functions, data, scope);
+        const renderedValue = renderNode(prop.value, functions, data, scope);
+        
+        // Only add the property if the value is not undefined
+        if (renderedValue !== undefined) {
+          result[renderedKey] = renderedValue;
+        }
       }
     }
   }
