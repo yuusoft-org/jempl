@@ -416,7 +416,7 @@ const template = {
 
 const data = { name: "john", a: 5, b: 3, c: 2 };
 
-const result = parseAndRender(template, data, customFunctions);
+const result = parseAndRender(template, data, { functions: customFunctions });
 // Output: { sum: 30, greeting: "Hello John!", result: 16 }
 ```
 
