@@ -47,6 +47,10 @@ const customFunctions = {
   }),
 };
 
-export default (template, data) => {
-  return parseAndRender(template, data, { functions: customFunctions });
+export default (template, data, options = {}) => {
+  // Merge custom functions with any functions passed from tests
+  const { functions = {} } = options;
+  const allFunctions = { ...customFunctions, ...functions };
+  
+  return parseAndRender(template, data, { functions: allFunctions });
 }

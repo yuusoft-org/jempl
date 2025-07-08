@@ -12,7 +12,6 @@ in:
     result: "${add(a, b)}"
   - a: 5
     b: 3
-  - functions: {}
 out:
   sum: 30
   result: 8
@@ -23,7 +22,6 @@ in:
     calculation: "${multiply(x, y)}"
   - x: 7
     y: 4
-  - functions: {}
 out:
   product: 30
   calculation: 28
@@ -34,7 +32,6 @@ in:
     greeting: "Hello ${capitalize(name)}!"
   - firstName: "john"
     name: "alice"
-  - functions: {}
 out:
   name: "John"
   greeting: "Hello Alice!"
@@ -45,7 +42,6 @@ in:
     count: "${length(text)}"
   - message: "hello there"
     text: "testing"
-  - functions: {}
 out:
   greeting: "HELLO THERE"
   count: 7
@@ -55,7 +51,6 @@ in:
   - list: "${join(hobbies, ', ')}"
     arraySize: "${size(hobbies)}"
   - hobbies: ["reading", "coding", "hiking"]
-  - functions: {}
 out:
   list: "reading, coding, hiking"
   arraySize: 3
@@ -65,7 +60,6 @@ in:
   - result: "${multiply(add(5, 3), 2)}"
     processed: "${uppercase(capitalize(name))}"
   - name: "johnsmith"
-  - functions: {}
 out:
   result: 16
   processed: "JOHNSMITH"
@@ -75,7 +69,6 @@ in:
   - summary: "${name} has ${size(hobbies)} hobbies: ${join(hobbies, ', ')}"
   - name: "Alice"
     hobbies: ["reading", "coding", "hiking"]
-  - functions: {}
 out:
   summary: "Alice has 3 hobbies: reading, coding, hiking"
 ---
@@ -87,7 +80,6 @@ in:
     age: 25
     firstName: "Bob"
     userAge: 17
-  - functions: {}
 out:
   user:
     name: "Alice"
@@ -111,7 +103,6 @@ in:
     nullStats: "${getStats(missing)}"
   - hobbies: ["reading", "coding"]
     activities: []
-  - functions: {}
 out:
   stats:
     count: 2
@@ -138,7 +129,6 @@ in:
     items: ["a", "b", "c"]
     firstName: "Diana"
     years: 22
-  - functions: {}
 out:
   data:
     user:
