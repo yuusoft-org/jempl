@@ -29,12 +29,10 @@ import { parseAndRender } from 'jempl';
 const template = {
   name: "${user.name}",
   greeting: "Hello ${user.name}!",
-  "$if user.age >= 18": {
+  $if user.age >= 18:
     status: "adult"
-  },
-  "$else": {
+  $else:
     status: "minor"
-  }
 };
 
 const data = {
