@@ -39,7 +39,7 @@ const data = {
   user: { name: "John", age: 25 }
 };
 
-const result = parseAndRender({ template, data });
+const result = parseAndRender(template, data);
 // Output: { name: "John", greeting: "Hello John!", status: "adult" }
 ```
 
@@ -416,7 +416,7 @@ const template = {
 
 const data = { name: "john", a: 5, b: 3, c: 2 };
 
-const result = parseAndRender({ template, data, functions: customFunctions });
+const result = parseAndRender(template, data, { functions: customFunctions });
 // Output: { sum: 30, greeting: "Hello John!", result: 16 }
 ```
 

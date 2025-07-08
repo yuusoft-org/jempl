@@ -8,34 +8,30 @@ exportName: default
 ---
 case: simple variable replacement
 in:
-  - template:
-      name: "${firstName} ${lastName}"
-      age: "${age}"
-    data:
-      firstName: "John"
-      lastName: "Doe" 
-      age: 30
-    functions: {}
+  - name: "${firstName} ${lastName}"
+    age: "${age}"
+  - firstName: "John"
+    lastName: "Doe" 
+    age: 30
+  - functions: {}
 out:
   name: "John Doe"
   age: 30
 ---
 case: nested object with variables
 in:
-  - template:
-      user:
-        profile:
-          displayName: "${user.name}"
-          email: "${user.email}"
-        settings:
-          theme: "${preferences.theme}"
-    data:
-      user:
-        name: "Alice Smith"
-        email: "alice@example.com"
-      preferences:
-        theme: "dark"
-    functions: {}
+  - user:
+      profile:
+        displayName: "${user.name}"
+        email: "${user.email}"
+      settings:
+        theme: "${preferences.theme}"
+  - user:
+      name: "Alice Smith"
+      email: "alice@example.com"
+    preferences:
+      theme: "dark"
+  - functions: {}
 out:
   user:
     profile:
@@ -46,15 +42,13 @@ out:
 ---
 case: array with string interpolation
 in:
-  - template:
-      - "Hello ${name}!"
-      - "You have ${count} messages"
-      - "${status}"
-    data:
-      name: "Bob"
-      count: 5
-      status: "online"
-    functions: {}
+  - - "Hello ${name}!"
+    - "You have ${count} messages"
+    - "${status}"
+  - name: "Bob"
+    count: 5
+    status: "online"
+  - functions: {}
 out:
   - "Hello Bob!"
   - "You have 5 messages"
@@ -62,69 +56,61 @@ out:
 ---
 case: conditional rendering - if true
 in:
-  - template:
-      $if age >= 18:
-        status: "adult"
-        canVote: true
-      $else:
-        status: "minor"
-        canVote: false
-    data:
-      age: 25
-    functions: {}
+  - $if age >= 18:
+      status: "adult"
+      canVote: true
+    $else:
+      status: "minor"
+      canVote: false
+  - age: 25
+  - functions: {}
 out:
   status: "adult"
   canVote: true
 ---
 case: conditional rendering - if false
 in:
-  - template:
-      $if age >= 18:
-        status: "adult"
-        permissions: ["vote", "drive"]
-      $else:
-        status: "minor"
-        permissions: ["school"]
-    data:
-      age: 16
-    functions: {}
+  - $if age >= 18:
+      status: "adult"
+      permissions: ["vote", "drive"]
+    $else:
+      status: "minor"
+      permissions: ["school"]
+  - age: 16
+  - functions: {}
 out:
   status: "minor"
   permissions: ["school"]
 ---
 case: conditional with comparison operators
 in:
-  - template:
-      $if score > 90:
-        grade: "A"
-      $elif score > 80:
-        grade: "B" 
-      $elif score > 70:
-        grade: "C"
-      $else:
-        grade: "F"
-    data:
-      score: 85
-    functions: {}
+  - $if score > 90:
+      grade: "A"
+    $elif score > 80:
+      grade: "B" 
+    $elif score > 70:
+      grade: "C"
+    $else:
+      grade: "F"
+  - score: 85
+  - functions: {}
 out:
   grade: "B"
 ---
 case: simple loop
 in:
-  - template:
-      users:
-        $for user in users:
-          name: "${user.name}"
-          role: "${user.role}"
-    data:
-      users:
-        - name: "Alice"
-          role: "admin"
-        - name: "Bob" 
-          role: "user"
-        - name: "Carol"
-          role: "moderator"
-    functions: {}
+  - users:
+      $for user in users:
+        name: "${user.name}"
+        role: "${user.role}"
+  - users:
+      - name: "Alice"
+        role: "admin"
+      - name: "Bob" 
+        role: "user"
+      - name: "Carol"
+        role: "moderator"
+  - functions: {}
 out:
   users:
     - name: "Alice"
@@ -136,15 +122,13 @@ out:
 ---
 case: loop with index
 in:
-  - template:
-      items:
-        $for item, index in items:
-          id: "${index}"
-          value: "${item}"
-          position: "Item #${index}"
-    data:
-      items: ["apple", "banana", "cherry"]
-    functions: {}
+  - items:
+      $for item, index in items:
+        id: "${index}"
+        value: "${item}"
+        position: "Item #${index}"
+  - items: ["apple", "banana", "cherry"]
+  - functions: {}
 out:
   items:
     - id: 0
@@ -159,22 +143,20 @@ out:
 ---
 case: nested conditionals and loops
 in:
-  - template:
-      report:
-        activeUsers:
-          $for user in activeUsers:
-            name: "${user.name}"
-            lastLogin: "${user.lastLogin}"
-        stats:
-          total: "${totalUsers}"
-    data:
+  - report:
       activeUsers:
-        - name: "Alice"
-          lastLogin: "2023-12-20"
-        - name: "Carol"
-          lastLogin: "2023-12-22"
-      totalUsers: 3
-    functions: {}
+        $for user in activeUsers:
+          name: "${user.name}"
+          lastLogin: "${user.lastLogin}"
+      stats:
+        total: "${totalUsers}"
+  - activeUsers:
+      - name: "Alice"
+        lastLogin: "2023-12-20"
+      - name: "Carol"
+        lastLogin: "2023-12-22"
+    totalUsers: 3
+  - functions: {}
 out:
   report:
     activeUsers:
@@ -187,22 +169,20 @@ out:
 ---
 case: complex string interpolation
 in:
-  - template:
-      summary: "User ${user.name} (ID: ${user.id}) has ${user.postCount} posts and ${user.followerCount} followers"
-      details:
-        - "Email: ${user.email}"
-        - "Joined: ${user.joinDate}"
-        - "Status: ${user.status}"
-    data:
-      user:
-        id: 123
-        name: "John Doe"
-        email: "john@example.com"
-        joinDate: "2023-01-15"
-        status: "Active"
-        postCount: 2
-        followerCount: 3
-    functions: {}
+  - summary: "User ${user.name} (ID: ${user.id}) has ${user.postCount} posts and ${user.followerCount} followers"
+    details:
+      - "Email: ${user.email}"
+      - "Joined: ${user.joinDate}"
+      - "Status: ${user.status}"
+  - user:
+      id: 123
+      name: "John Doe"
+      email: "john@example.com"
+      joinDate: "2023-01-15"
+      status: "Active"
+      postCount: 2
+      followerCount: 3
+  - functions: {}
 out:
   summary: "User John Doe (ID: 123) has 2 posts and 3 followers"
   details:
@@ -212,28 +192,24 @@ out:
 ---
 case: missing variables handling
 in:
-  - template:
-      name: "${name}"
-      missing: "${nonexistent}"
-      nested: "${user.profile.missing}"
-    data:
-      name: "Alice"
-    functions: {}
+  - name: "${name}"
+    missing: "${nonexistent}"
+    nested: "${user.profile.missing}"
+  - name: "Alice"
+  - functions: {}
 out:
   name: "Alice"
 ---
 case: boolean and numeric literals
 in:
-  - template:
-      config:
-        enabled: true
-        port: 8080
-        timeout: 30.5
-        debug: false
-        name: "${appName}"
-    data:
-      appName: "MyApp"
-    functions: {}
+  - config:
+      enabled: true
+      port: 8080
+      timeout: 30.5
+      debug: false
+      name: "${appName}"
+  - appName: "MyApp"
+  - functions: {}
 out:
   config:
     enabled: true
@@ -244,16 +220,14 @@ out:
 ---
 case: mixed array types
 in:
-  - template:
-      - 1
-      - "${name}"
-      - true
-      - "Count: ${count}"
-      - null
-    data:
-      name: "test"
-      count: 42
-    functions: {}
+  - - 1
+    - "${name}"
+    - true
+    - "Count: ${count}"
+    - null
+  - name: "test"
+    count: 42
+  - functions: {}
 out:
   - 1
   - "test"
@@ -263,54 +237,50 @@ out:
 ---
 case: empty template and data
 in:
-  - template: {}
-    data: {}
-    functions: {}
+  - {}
+  - {}
+  - functions: {}
 out: {}
 ---
 case: logical operators in conditionals
 in:
-  - template:
-      $if isAdmin && isActive:
-        access: "full"
-      $elif isUser && isActive:
-        access: "limited"
-      $else:
-        access: "none"
-    data:
-      isAdmin: false
-      isUser: true
-      isActive: true
-    functions: {}
+  - $if isAdmin && isActive:
+      access: "full"
+    $elif isUser && isActive:
+      access: "limited"
+    $else:
+      access: "none"
+  - isAdmin: false
+    isUser: true
+    isActive: true
+  - functions: {}
 out:
   access: "limited"
 ---
 case: nested objects with loops and conditionals
 in:
-  - template:
-      dashboard:
-        users:
-          $for user in users:
-            name: "${user.name}"
-            $if user.premium:
-              badge: "Premium"
-              features: ["advanced", "priority"]
-            $else:
-              badge: "Standard" 
-              features: ["basic"]
-        stats:
-          total: "${users.length}"
-          premium: "${premiumCount}"
-    data:
+  - dashboard:
       users:
-        - name: "Alice"
-          premium: true
-        - name: "Bob"
-          premium: false
-        - name: "Carol"
-          premium: true
-      premiumCount: 2
-    functions: {}
+        $for user in users:
+          name: "${user.name}"
+          $if user.premium:
+            badge: "Premium"
+            features: ["advanced", "priority"]
+          $else:
+            badge: "Standard" 
+            features: ["basic"]
+      stats:
+        total: "${users.length}"
+        premium: "${premiumCount}"
+  - users:
+      - name: "Alice"
+        premium: true
+      - name: "Bob"
+        premium: false
+      - name: "Carol"
+        premium: true
+    premiumCount: 2
+  - functions: {}
 out:
   dashboard:
     users:
@@ -329,20 +299,18 @@ out:
 ---
 case: loop inside array syntax
 in:
-  - template:
-      rtgl-view#projects:
-        - $for p, i in projects:
-            - rtgl-view:
-              - rtgl-text: "${p.title}"
-              - rtgl-text: "${p.description}"
-              - rtgl-text: "${i}"
-    data:
-      projects:
-        - title: "Project Alpha"
-          description: "First project"
-        - title: "Project Beta"
-          description: "Second project"
-    functions: {}
+  - rtgl-view#projects:
+      - $for p, i in projects:
+          - rtgl-view:
+            - rtgl-text: "${p.title}"
+            - rtgl-text: "${p.description}"
+            - rtgl-text: "${i}"
+  - projects:
+      - title: "Project Alpha"
+        description: "First project"
+      - title: "Project Beta"
+        description: "Second project"
+  - functions: {}
 out:
   rtgl-view#projects:
     - - rtgl-view:
@@ -356,30 +324,28 @@ out:
 ---
 case: conditional rendering issue - filter buttons (exact failing syntax)  
 in:
-  - template:
-      - rtgl-view#footer d=h jc=space-between p=md c=mu-fg :
-          - rtgl-text: "${activeCount} ${itemText} left"
-          - $if isAllFilter:
-              - rtgl-button#filter-all v=pr: "All"
-            $else:
-              - rtgl-button#filter-all v=lk: "All"
-          - $if isActiveFilter:
-              - rtgl-button#filter-active v=pr: "Active"
-            $else:
-              - rtgl-button#filter-active v=lk: "Active"
-          - $if isCompletedFilter:
-              - rtgl-button#filter-completed v=pr: "Completed"
-            $else:
-              - rtgl-button#filter-completed v=lk: "Completed"
-          - rtgl-button#clear-completed v=lk: "Clear completed (${completedCount})"
-    data:
-      activeCount: 2
-      itemText: "items"
-      isAllFilter: true
-      isActiveFilter: false
-      isCompletedFilter: false
-      completedCount: 1
-    functions: {}
+  - - rtgl-view#footer d=h jc=space-between p=md c=mu-fg :
+        - rtgl-text: "${activeCount} ${itemText} left"
+        - $if isAllFilter:
+            - rtgl-button#filter-all v=pr: "All"
+          $else:
+            - rtgl-button#filter-all v=lk: "All"
+        - $if isActiveFilter:
+            - rtgl-button#filter-active v=pr: "Active"
+          $else:
+            - rtgl-button#filter-active v=lk: "Active"
+        - $if isCompletedFilter:
+            - rtgl-button#filter-completed v=pr: "Completed"
+          $else:
+            - rtgl-button#filter-completed v=lk: "Completed"
+        - rtgl-button#clear-completed v=lk: "Clear completed (${completedCount})"
+  - activeCount: 2
+    itemText: "items"
+    isAllFilter: true
+    isActiveFilter: false
+    isCompletedFilter: false
+    completedCount: 1
+  - functions: {}
 out:
   - rtgl-view#footer d=h jc=space-between p=md c=mu-fg :
       - rtgl-text: "2 items left"
@@ -390,40 +356,35 @@ out:
 ---
 case: placeholder attribute with variable
 in:
-  - template:
-      - input placeholder="${placeholderText}":
-    data:
-      placeholderText: "What needs to be done?"
-    functions: {}
+  - - input placeholder="${placeholderText}":
+  - placeholderText: "What needs to be done?"
+  - functions: {}
 out:
   - input placeholder="What needs to be done?":
 ---
 case: $if statement undefined boolean
 in:
-  - template:
-      - $if isAdult:
-          - message: Hello adult!
-        $else:
-          - message: Hello child!
-    data: {}
-    functions: {}
+  - - $if isAdult:
+        - message: Hello adult!
+      $else:
+        - message: Hello child!
+  - {}
+  - functions: {}
 out:
   - message: Hello child!
 ---
 case: escaped variables in template
 in:
-  - template:
-      escaped: "\\${notVariable}"
-      mixed: "\\${escaped} but ${real}"
-      doubleEscaped: "\\\\${actualVariable}"
-      onlyEscape: "\\${}"
-      multipleEscapes: "\\${one} and \\${two}"
-      normalVar: "${price}"
-    data:
-      real: "realValue"
-      actualVariable: "test"
-      price: 100
-    functions: {}
+  - escaped: "\\${notVariable}"
+    mixed: "\\${escaped} but ${real}"
+    doubleEscaped: "\\\\${actualVariable}"
+    onlyEscape: "\\${}"
+    multipleEscapes: "\\${one} and \\${two}"
+    normalVar: "${price}"
+  - real: "realValue"
+    actualVariable: "test"
+    price: 100
+  - functions: {}
 out:
   escaped: "${notVariable}"
   mixed: "${escaped} but realValue"

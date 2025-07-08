@@ -6,17 +6,16 @@ import {
 
 /**
  * Renders a parsed AST with data to produce the final output
- * @param {Object} input - Input object
- * @param {Object} input.ast - The parsed AST to render
- * @param {Object} input.data - Data to use for variable substitution
- * @param {Object.<string, Function>} [input.functions] - Custom functions
+ * @param {Object} ast - The parsed AST to render
+ * @param {Object} data - Data to use for variable substitution
+ * @param {Object.<string, Function>} [functions={}] - Custom functions
  * @returns {Object} The rendered output
  * @throws {JemplRenderError} When rendering fails (unknown functions, invalid iteration, etc.)
  *
  * @example
  * // Render a simple template
  * const ast = parse({ message: "Hello ${name}!" });
- * const result = render({ ast, data: { name: "World" } });
+ * const result = render(ast, { name: "World" });
  * // result: { message: "Hello World!" }
  *
  * @example
@@ -25,21 +24,16 @@ import {
  *   "$if user.isAdmin": { role: "admin", permissions: ["read", "write"] },
  *   "$else": { role: "user", permissions: ["read"] }
  * });
- * const result = render({ ast, data: { user: { isAdmin: true } } });
+ * const result = render(ast, { user: { isAdmin: true } });
  * // result: { role: "admin", permissions: ["read", "write"] }
  *
  * @example
  * // Render with custom functions
  * const ast = parse({ timestamp: "${now()}" });
- * const result = render({
- *   ast,
- *   data: {},
- *   functions: { now: () => Date.now() }
- * });
+ * const result = render(ast, {}, { now: () => Date.now() });
  * // result: { timestamp: 1234567890123 }
  */
-const render = (input) => {
-  const { ast, functions, data } = input;
+const render = (ast, data, functions = {}) => {
   return renderNode(ast, functions, data, {});
 };
 

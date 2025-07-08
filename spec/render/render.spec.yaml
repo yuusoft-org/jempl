@@ -8,243 +8,227 @@ exportName: default
 ---
 case: simple literal values
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: name
-          value:
-            type: 0
-            value: "John"
-        - key: age
-          value:
-            type: 0
-            value: 30
-    functions: {}
-    data: {}
+  - type: 8
+    fast: true
+    properties:
+      - key: name
+        value:
+          type: 0
+          value: "John"
+      - key: age
+        value:
+          type: 0
+          value: 30
+  - {}
+  - {}
 out:
   name: "John"
   age: 30
 ---
 case: simple variable replacement
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: name
-          value:
-            type: 1
-            path: "userName"
-        - key: age
-          value:
-            type: 1
-            path: "userAge"
-    functions: {}
-    data:
-      userName: "Alice"
-      userAge: 25
+  - type: 8
+    fast: true
+    properties:
+      - key: name
+        value:
+          type: 1
+          path: "userName"
+      - key: age
+        value:
+          type: 1
+          path: "userAge"
+  - userName: "Alice"
+    userAge: 25
+  - {}
 out:
   name: "Alice"
   age: 25
 ---
 case: nested variable access
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: profileName
-          value:
-            type: 1
-            path: "user.profile.name"
-        - key: city
-          value:
-            type: 1
-            path: "user.address.city"
-    functions: {}
-    data:
-      user:
-        profile:
-          name: "Bob"
-        address:
-          city: "New York"
+  - type: 8
+    fast: true
+    properties:
+      - key: profileName
+        value:
+          type: 1
+          path: "user.profile.name"
+      - key: city
+        value:
+          type: 1
+          path: "user.address.city"
+  - user:
+      profile:
+        name: "Bob"
+      address:
+        city: "New York"
+  - {}
 out:
   profileName: "Bob"
   city: "New York"
 ---
 case: string interpolation
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: greeting
-          value:
-            type: 2
-            parts:
-              - "Hello "
-              - {type: 1, path: "firstName"}
-              - " "
-              - {type: 1, path: "lastName"}
-              - "!"
-    functions: {}
-    data:
-      firstName: "John"
-      lastName: "Doe"
+  - type: 8
+    fast: true
+    properties:
+      - key: greeting
+        value:
+          type: 2
+          parts:
+            - "Hello "
+            - {type: 1, path: "firstName"}
+            - " "
+            - {type: 1, path: "lastName"}
+            - "!"
+  - firstName: "John"
+    lastName: "Doe"
+  - {}
 out:
   greeting: "Hello John Doe!"
 ---
 case: array of literals
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: items
-          value:
-            type: 9
-            fast: true
-            items:
-              - type: 0
-                value: "apple"
-              - type: 0
-                value: "banana"
-              - type: 0
-                value: "orange"
-    functions: {}
-    data: {}
+  - type: 8
+    fast: true
+    properties:
+      - key: items
+        value:
+          type: 9
+          fast: true
+          items:
+            - type: 0
+              value: "apple"
+            - type: 0
+              value: "banana"
+            - type: 0
+              value: "orange"
+  - {}
+  - {}
 out:
   items: ["apple", "banana", "orange"]
 ---
 case: array with variables
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: items
-          value:
-            type: 9
-            fast: true
-            items:
-              - type: 1
-                path: "fruit1"
-              - type: 1
-                path: "fruit2"
-    functions: {}
-    data:
-      fruit1: "apple"
-      fruit2: "banana"
+  - type: 8
+    fast: true
+    properties:
+      - key: items
+        value:
+          type: 9
+          fast: true
+          items:
+            - type: 1
+              path: "fruit1"
+            - type: 1
+              path: "fruit2"
+  - fruit1: "apple"
+    fruit2: "banana"
+  - {}
 out:
   items: ["apple", "banana"]
 ---
 case: conditional if true
 in:
-  - ast:
-      type: 8
-      fast: false
-      properties:
-        - key: "$if age >= 18"
-          value:
-            type: 6
-            conditions:
-              - type: 4
-                op: 4
-                left:
-                  type: 1
-                  path: "age"
-                right:
-                  type: 0
-                  value: 18
-            bodies:
-              - type: 8
-                fast: true
-                properties:
-                  - key: status
-                    value:
-                      type: 0
-                      value: "adult"
-            id: null
-    functions: {}
-    data:
-      age: 25
+  - type: 8
+    fast: false
+    properties:
+      - key: "$if age >= 18"
+        value:
+          type: 6
+          conditions:
+            - type: 4
+              op: 4
+              left:
+                type: 1
+                path: "age"
+              right:
+                type: 0
+                value: 18
+          bodies:
+            - type: 8
+              fast: true
+              properties:
+                - key: status
+                  value:
+                    type: 0
+                    value: "adult"
+          id: null
+  - age: 25
+  - {}
 out:
   status: "adult"
 ---
 case: conditional if false with else
 in:
-  - ast:
-      type: 8
-      fast: false
-      properties:
-        - key: "$if age >= 18"
-          value:
-            type: 6
-            conditions:
-              - type: 4
-                op: 4
-                left:
-                  type: 1
-                  path: "age"
-                right:
-                  type: 0
-                  value: 18
-              - null
-            bodies:
-              - type: 8
-                fast: true
-                properties:
-                  - key: status
-                    value:
-                      type: 0
-                      value: "adult"
-              - type: 8
-                fast: true
-                properties:
-                  - key: status
-                    value:
-                      type: 0
-                      value: "minor"
-            id: null
-    functions: {}
-    data:
-      age: 16
+  - type: 8
+    fast: false
+    properties:
+      - key: "$if age >= 18"
+        value:
+          type: 6
+          conditions:
+            - type: 4
+              op: 4
+              left:
+                type: 1
+                path: "age"
+              right:
+                type: 0
+                value: 18
+            - null
+          bodies:
+            - type: 8
+              fast: true
+              properties:
+                - key: status
+                  value:
+                    type: 0
+                    value: "adult"
+            - type: 8
+              fast: true
+              properties:
+                - key: status
+                  value:
+                    type: 0
+                    value: "minor"
+          id: null
+  - age: 16
+  - {}
 out:
   status: "minor"
 ---
 case: simple loop
 in:
-  - ast:
-      type: 8
-      fast: false
-      properties:
-        - key: users
-          value:
-            type: 8
-            fast: false
-            properties:
-              - key: "$for user in users"
-                value:
-                  type: 7
-                  itemVar: "user"
-                  indexVar: null
-                  iterable:
-                    type: 1
-                    path: "users"
-                  body:
-                    type: 8
-                    fast: true
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "user.name"
-    functions: {}
-    data:
-      users:
-        - name: "Alice"
-        - name: "Bob"
+  - type: 8
+    fast: false
+    properties:
+      - key: users
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for user in users"
+              value:
+                type: 7
+                itemVar: "user"
+                indexVar: null
+                iterable:
+                  type: 1
+                  path: "users"
+                body:
+                  type: 8
+                  fast: true
+                  properties:
+                    - key: name
+                      value:
+                        type: 1
+                        path: "user.name"
+  - users:
+      - name: "Alice"
+      - name: "Bob"
+  - {}
 out:
   users:
     - name: "Alice"
@@ -252,38 +236,36 @@ out:
 ---
 case: loop with index
 in:
-  - ast:
-      type: 8
-      fast: false
-      properties:
-        - key: items
-          value:
-            type: 8
-            fast: false
-            properties:
-              - key: "$for item, idx in items"
-                value:
-                  type: 7
-                  itemVar: "item"
-                  indexVar: "idx"
-                  iterable:
-                    type: 1
-                    path: "items"
-                  body:
-                    type: 8
-                    fast: true
-                    properties:
-                      - key: value
-                        value:
-                          type: 1
-                          path: "item"
-                      - key: index
-                        value:
-                          type: 1
-                          path: "idx"
-    functions: {}
-    data:
-      items: ["apple", "banana"]
+  - type: 8
+    fast: false
+    properties:
+      - key: items
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for item, idx in items"
+              value:
+                type: 7
+                itemVar: "item"
+                indexVar: "idx"
+                iterable:
+                  type: 1
+                  path: "items"
+                body:
+                  type: 8
+                  fast: true
+                  properties:
+                    - key: value
+                      value:
+                        type: 1
+                        path: "item"
+                    - key: index
+                      value:
+                        type: 1
+                        path: "idx"
+  - items: ["apple", "banana"]
+  - {}
 out:
   items:
     - value: "apple"
@@ -293,99 +275,92 @@ out:
 ---
 case: missing variable returns undefined
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: missing
-          value:
-            type: 1
-            path: "nonexistent"
-    functions: {}
-    data: {}
+  - type: 8
+    fast: true
+    properties:
+      - key: missing
+        value:
+          type: 1
+          path: "nonexistent"
+  - {}
+  - {}
 out: {}
 ---
 case: binary operations
 in:
-  - ast:
-      type: 8
-      fast: false
-      properties:
-        - key: "$if score > 80"
-          value:
-            type: 6
-            conditions:
-              - type: 4
-                op: 2
-                left:
-                  type: 1
-                  path: "score"
-                right:
-                  type: 0
-                  value: 80
-            bodies:
-              - type: 8
-                fast: true
-                properties:
-                  - key: grade
-                    value:
-                      type: 0
-                      value: "A"
-            id: null
-    functions: {}
-    data:
-      score: 85
+  - type: 8
+    fast: false
+    properties:
+      - key: "$if score > 80"
+        value:
+          type: 6
+          conditions:
+            - type: 4
+              op: 2
+              left:
+                type: 1
+                path: "score"
+              right:
+                type: 0
+                value: 80
+          bodies:
+            - type: 8
+              fast: true
+              properties:
+                - key: grade
+                  value:
+                    type: 0
+                    value: "A"
+          id: null
+  - score: 85
+  - {}
 out:
   grade: "A"
 ---
 case: unary negation
 in:
-  - ast:
-      type: 8
-      fast: false
-      properties:
-        - key: "$if !isDisabled"
-          value:
-            type: 6
-            conditions:
-              - type: 5
-                op: 0
-                operand:
-                  type: 1
-                  path: "isDisabled"
-            bodies:
-              - type: 8
-                fast: true
-                properties:
-                  - key: enabled
-                    value:
-                      type: 0
-                      value: true
-            id: null
-    functions: {}
-    data:
-      isDisabled: false
+  - type: 8
+    fast: false
+    properties:
+      - key: "$if !isDisabled"
+        value:
+          type: 6
+          conditions:
+            - type: 5
+              op: 0
+              operand:
+                type: 1
+                path: "isDisabled"
+          bodies:
+            - type: 8
+              fast: true
+              properties:
+                - key: enabled
+                  value:
+                    type: 0
+                    value: true
+          id: null
+  - isDisabled: false
+  - {}
 out:
   enabled: true
 ---
 case: object keys with variables
 in:
-  - ast:
-      type: 8
-      fast: true
-      properties:
-        - key: "input placeholder=\"${placeholderText}\""
-          parsedKey:
-            type: 2
-            parts:
-              - "input placeholder=\""
-              - {type: 1, path: "placeholderText"}
-              - "\""
-          value:
-            type: 0
-            value: null
-    functions: {}
-    data:
-      placeholderText: "Enter your name"
+  - type: 8
+    fast: true
+    properties:
+      - key: "input placeholder=\"${placeholderText}\""
+        parsedKey:
+          type: 2
+          parts:
+            - "input placeholder=\""
+            - {type: 1, path: "placeholderText"}
+            - "\""
+        value:
+          type: 0
+          value: null
+  - placeholderText: "Enter your name"
+  - {}
 out:
   "input placeholder=\"Enter your name\"": null

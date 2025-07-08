@@ -47,6 +47,6 @@ const customFunctions = {
   }),
 };
 
-export default ({ template, data }) => {
-  return parseAndRender({ template, data, functions: customFunctions });
+export default (template, data) => {
+  return parseAndRender(template, data, { functions: customFunctions });
 }

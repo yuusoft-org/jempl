@@ -3,7 +3,8 @@ import { parseValue } from "./utils.js";
 /**
  * Parses a JSON template into an Abstract Syntax Tree (AST)
  * @param {Object} template - The JSON template to parse
- * @param {Object.<string, Function>} [functions={}] - Custom functions
+ * @param {Object} [options] - Options object
+ * @param {Object.<string, Function>} [options.functions={}] - Custom functions
  * @returns {Object} The parsed AST
  * @throws {JemplParseError} When template syntax is invalid (malformed conditions, loops, variables, etc.)
  *
@@ -22,10 +23,11 @@ import { parseValue } from "./utils.js";
  * // Template with custom function
  * const ast = parse(
  *   { timestamp: "${formatDate(now())}" },
- *   { formatDate: (date) => new Date(date).toISOString() }
+ *   { functions: { formatDate: (date) => new Date(date).toISOString() } }
  * );
  */
-const parse = (template, functions = {}) => {
+const parse = (template, options = {}) => {
+  const { functions = {} } = options;
   return parseValue(template, functions);
 };
 

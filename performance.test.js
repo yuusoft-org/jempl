@@ -23,7 +23,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
@@ -57,7 +57,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
@@ -97,7 +97,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
@@ -130,7 +130,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
@@ -173,7 +173,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
@@ -206,7 +206,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
@@ -238,7 +238,7 @@ describe('Performance Tests', () => {
       // Measure parseAndRender
       const start1 = performance.now();
       for (let i = 0; i < iterations; i++) {
-        parseAndRender({ template, data });
+        parseAndRender(template, data);
       }
       const end1 = performance.now();
       const parseAndRenderTime = (end1 - start1) / iterations;
@@ -247,7 +247,7 @@ describe('Performance Tests', () => {
       const ast = parse(template);
       const start2 = performance.now();
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       const end2 = performance.now();
       const renderOnlyTime = (end2 - start2) / iterations;
@@ -334,7 +334,7 @@ describe('Performance Tests', () => {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        render({ ast, data, functions: {} });
+        render(ast, data);
       }
       
       const end = performance.now();
