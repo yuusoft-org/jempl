@@ -20,7 +20,7 @@
     "vitest": "~3.2.1"
   },
   "scripts": {
-    ": "bunx vitest run --reporter=verbose",
+    "test": "bunx vitest run --reporter=verbose",
     "test:watch": "bunx vitest watch",
     "test:coverage": "bunx vitest run --coverage",
     "lint": "bunx prettier src -c",
