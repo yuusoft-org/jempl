@@ -46,6 +46,11 @@ const render = (ast, data, functions = {}) => {
  * @returns {any} rendered value
  */
 const renderNode = (node, functions, data, scope) => {
+  // Handle malformed variable nodes that have 'var' instead of 'type' and 'path'
+  if (node.var && !node.type) {
+    return getVariableValue(node.var, data, scope);
+  }
+
   switch (node.type) {
     case NodeType.LITERAL:
       return node.value;
@@ -89,7 +94,8 @@ const getVariableValue = (path, data, scope) => {
   if (!path) return undefined;
 
   // Check local scope first (for loop variables)
-  if (scope.hasOwnProperty(path)) {
+  // Use 'in' operator to check prototype chain as well
+  if (path in scope) {
     return scope[path];
   }
 
@@ -101,7 +107,8 @@ const getVariableValue = (path, data, scope) => {
     const part = parts[i];
 
     // Check scope first for each part
-    if (scope.hasOwnProperty(part)) {
+    // Use 'in' operator to check prototype chain as well
+    if (part in scope) {
       current = scope[part];
       continue;
     }
@@ -154,6 +161,11 @@ const renderFunction = (node, functions, data, scope) => {
  * Evaluates a condition node without converting undefined to string
  */
 const evaluateCondition = (node, functions, data, scope) => {
+  // Handle malformed variable nodes that have 'var' instead of 'type' and 'path'
+  if (node.var && !node.type) {
+    return getVariableValue(node.var, data, scope);
+  }
+
   switch (node.type) {
     case NodeType.VARIABLE:
       // For conditions, return the actual value without converting undefined to string
@@ -399,7 +411,18 @@ const renderArray = (node, functions, data, scope) => {
       const loopResults = renderNode(item, functions, data, scope);
       results.push(loopResults);
     } else {
-      results.push(renderNode(item, functions, data, scope));
+      const rendered = renderNode(item, functions, data, scope);
+      // Skip empty objects that come from failed conditionals with no else branch
+      if (
+        !(
+          typeof rendered === "object" &&
+          rendered !== null &&
+          !Array.isArray(rendered) &&
+          Object.keys(rendered).length === 0
+        )
+      ) {
+        results.push(rendered);
+      }
     }
   }
 
