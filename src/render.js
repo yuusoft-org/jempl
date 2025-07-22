@@ -413,7 +413,14 @@ const renderArray = (node, functions, data, scope) => {
     } else {
       const rendered = renderNode(item, functions, data, scope);
       // Skip empty objects that come from failed conditionals with no else branch
-      if (!(typeof rendered === 'object' && rendered !== null && !Array.isArray(rendered) && Object.keys(rendered).length === 0)) {
+      if (
+        !(
+          typeof rendered === "object" &&
+          rendered !== null &&
+          !Array.isArray(rendered) &&
+          Object.keys(rendered).length === 0
+        )
+      ) {
         results.push(rendered);
       }
     }
