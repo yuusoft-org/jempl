@@ -128,12 +128,12 @@ const parseArgument = (arg) => {
   return { type: NodeType.VARIABLE, path: arg };
 };
 
-// Pre-compiled regex for function detection (faster than match())
+// Valid function call: word followed by parentheses with any content
 const FUNCTION_CALL_REGEX = /^\w+\(.*\)$/;
 
 /**
  * Validates variable expression for unsupported syntax
- * @param {string} expr - The expression to validate
+ * @param {string} expr - The expression to validate  
  * @throws {JemplParseError} If expression contains unsupported syntax
  */
 const validateVariableExpression = (expr) => {
@@ -142,27 +142,26 @@ const validateVariableExpression = (expr) => {
     return;
   }
 
-  // Skip validation if this looks like a function call (single regex test)
+  // Allow function calls
   if (FUNCTION_CALL_REGEX.test(expr)) {
-    return; // Let function parsing handle it
+    return;
   }
 
-  // Fast check: if no suspicious characters, skip validation entirely
+  // Fast path: if no suspicious characters, skip validation entirely
   if (!expr.includes("+") && !expr.includes("-") && !expr.includes("*") && 
       !expr.includes("/") && !expr.includes("%") && !expr.includes("?") && 
       !expr.includes(":") && !expr.includes("|") && !expr.includes("&")) {
     return;
   }
 
-  // Check for ternary operator first (complex expressions)
+  // Check for specific problematic patterns that indicate expressions
   if (expr.includes("?") && expr.includes(":")) {
     throw new JemplParseError(
       `Complex expressions not supported in variable replacements - ` +
       `consider calculating the value in your data instead`
     );
   }
-
-  // Check for logical operators (most specific first)
+  
   if (expr.includes("||") || expr.includes("&&") || expr.includes("??")) {
     throw new JemplParseError(
       `Logical operators not supported in variable replacements - ` +
@@ -170,8 +169,8 @@ const validateVariableExpression = (expr) => {
       `(operators like ||, &&, ?? are not supported)`
     );
   }
-
-  // Check for arithmetic operators with spaces (single indexOf calls)
+  
+  // Check for arithmetic operators with spaces (spaced indicates expressions)
   if (expr.includes(" + ") || expr.includes(" - ") || expr.includes(" * ") || 
       expr.includes(" / ") || expr.includes(" % ")) {
     throw new JemplParseError(
