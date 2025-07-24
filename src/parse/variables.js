@@ -128,6 +128,9 @@ const parseArgument = (arg) => {
   return { type: NodeType.VARIABLE, path: arg };
 };
 
+// Pre-compiled regex for function detection (faster than match())
+const FUNCTION_CALL_REGEX = /^\w+\(.*\)$/;
+
 /**
  * Validates variable expression for unsupported syntax
  * @param {string} expr - The expression to validate
@@ -139,41 +142,43 @@ const validateVariableExpression = (expr) => {
     return;
   }
 
-  // Skip validation if this looks like a function call
-  if (expr.match(/^\w+\(.*\)$/)) {
+  // Skip validation if this looks like a function call (single regex test)
+  if (FUNCTION_CALL_REGEX.test(expr)) {
     return; // Let function parsing handle it
   }
 
+  // Fast check: if no suspicious characters, skip validation entirely
+  if (!expr.includes("+") && !expr.includes("-") && !expr.includes("*") && 
+      !expr.includes("/") && !expr.includes("%") && !expr.includes("?") && 
+      !expr.includes(":") && !expr.includes("|") && !expr.includes("&")) {
+    return;
+  }
+
   // Check for ternary operator first (complex expressions)
-  if (expr.includes("?") && expr.includes(":") && !expr.match(/^\w+\(.*\)$/)) {
+  if (expr.includes("?") && expr.includes(":")) {
     throw new JemplParseError(
       `Complex expressions not supported in variable replacements - ` +
-        `consider calculating the value in your data instead`,
+      `consider calculating the value in your data instead`
     );
   }
 
-  // Check for arithmetic operators with spaces (more likely to be actual expressions)
-  const arithmeticOps = [" + ", " - ", " * ", " / ", " % "];
-  for (const op of arithmeticOps) {
-    if (expr.includes(op)) {
-      throw new JemplParseError(
-        `Arithmetic expressions not supported in variable replacements - ` +
-          `consider calculating '${expr}' in your data instead ` +
-          `(expressions with +, -, *, /, % are not supported)`,
-      );
-    }
+  // Check for logical operators (most specific first)
+  if (expr.includes("||") || expr.includes("&&") || expr.includes("??")) {
+    throw new JemplParseError(
+      `Logical operators not supported in variable replacements - ` +
+      `consider calculating the value in your data instead ` +
+      `(operators like ||, &&, ?? are not supported)`
+    );
   }
 
-  // Check for logical operators
-  const logicalOps = ["||", "&&", "??"];
-  for (const op of logicalOps) {
-    if (expr.includes(op)) {
-      throw new JemplParseError(
-        `Logical operators not supported in variable replacements - ` +
-          `consider calculating the value in your data instead ` +
-          `(operators like ||, &&, ?? are not supported)`,
-      );
-    }
+  // Check for arithmetic operators with spaces (single indexOf calls)
+  if (expr.includes(" + ") || expr.includes(" - ") || expr.includes(" * ") || 
+      expr.includes(" / ") || expr.includes(" % ")) {
+    throw new JemplParseError(
+      `Arithmetic expressions not supported in variable replacements - ` +
+      `consider calculating '${expr}' in your data instead ` +
+      `(expressions with +, -, *, /, % are not supported)`
+    );
   }
 };
 
