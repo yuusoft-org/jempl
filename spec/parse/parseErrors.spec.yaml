@@ -154,3 +154,76 @@ in:
     functions: {}
 throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported)"
 
+---
+case: arithmetic expression in variable replacement - addition
+in:
+  - template: "Result: ${count + 1}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'count + 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+
+---
+case: arithmetic expression in variable replacement - subtraction
+in:
+  - template: "Index: ${items.length - 1}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+
+---
+case: arithmetic expression in variable replacement - multiplication
+in:
+  - template: "Total: ${price * quantity}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'price * quantity' in your data instead (expressions with +, -, *, /, % are not supported)"
+
+---
+case: arithmetic expression in variable replacement - division
+in:
+  - template: "Average: ${total / count}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'total / count' in your data instead (expressions with +, -, *, /, % are not supported)"
+
+---
+case: arithmetic expression in variable replacement - modulo
+in:
+  - template: "Remainder: ${number % 2}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'number % 2' in your data instead (expressions with +, -, *, /, % are not supported)"
+
+---
+case: logical OR operator in variable replacement
+in:
+  - template: "Value: ${name || 'default'}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported)"
+
+---
+case: logical AND operator in variable replacement
+in:
+  - template: "Value: ${user && user.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported)"
+
+---
+case: nullish coalescing operator in variable replacement
+in:
+  - template: "Value: ${value ?? 'fallback'}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported)"
+
+---
+case: complex expression in variable replacement
+in:
+  - template: "Result: ${(age + 5) > 18 ? 'adult' : 'minor'}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Complex expressions not supported in variable replacements - consider calculating the value in your data instead"
+
+
