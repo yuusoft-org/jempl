@@ -39,52 +39,43 @@ Jempl achieves **sub-millisecond rendering** for most common template patterns t
 
 ### Web Application Scenarios
 
-```javascript
-// ✅ EXCELLENT: Real-time data updates
-// 34,000+ renders/sec - smooth 60fps even with multiple components
-const list = {
-  '$for item in items': {
-    id: '${item.id}',
-    name: '${item.name}',
-    status: '${item.status}'
-  }
-};
+```yaml
+# ✅ EXCELLENT: Real-time data updates
+# 34,000+ renders/sec - smooth 60fps even with multiple components
+template:
+  $for item in items:
+    id: "${item.id}"
+    name: "${item.name}"
+    status: "${item.status}"
 
-// ✅ EXCELLENT: Dynamic filtering
-// 250,000+ renders/sec - instant UI updates
-const filtered = {
-  '$for item in items': {
-    '$if item.visible': {
-      title: '${item.title}',
-      content: '${item.content}'
-    }
-  }
-};
+# ✅ EXCELLENT: Dynamic filtering
+# 250,000+ renders/sec - instant UI updates
+template:
+  $for item in items:
+    $if item.visible:
+      title: "${item.title}"
+      content: "${item.content}"
 
-// ✅ GOOD: Complex nested structures
-// 7,000+ renders/sec - suitable for component rendering
-const component = {
-  'component#root': {
-    'header': { title: '${title}' },
-    'main': {
-      '$for section in sections': {
-        'section#${section.id}': {
-          'h2': '${section.title}',
-          'content': '${section.body}'
-        }
-      }
-    }
-  }
-};
+# ✅ GOOD: Complex nested structures
+# 7,000+ renders/sec - suitable for component rendering
+template:
+  component#root:
+    header:
+      title: "${title}"
+    main:
+      $for section in sections:
+        section#${section.id}:
+          h2: "${section.title}"
+          content: "${section.body}"
 ```
 
 ### Performance Comparison
 
-```javascript
-// Pure JavaScript equivalent performance comparison:
-// Jempl conditionals: 0.004ms vs Pure JS: 0.003ms (2x faster than pure JS!)
-// Jempl simple loops: 0.029ms vs Pure JS: 0.015ms (~2x overhead)
-// Jempl nested structures: competitive with hand-optimized code
+```yaml
+# Pure JavaScript equivalent performance comparison:
+# Jempl conditionals: 0.004ms vs Pure JS: 0.003ms (2x faster than pure JS!)
+# Jempl simple loops: 0.029ms vs Pure JS: 0.015ms (~2x overhead)
+# Jempl nested structures: competitive with hand-optimized code
 ```
 
 ## 🏗️ Optimization Techniques
@@ -93,31 +84,26 @@ const component = {
 
 Jempl detects common template patterns and generates specialized renderers:
 
-```javascript
-// This pattern triggers nuclear optimization:
-{
-  '$for todo in todos': {
-    id: '${todo.id}',
-    title: '${todo.title}',
-    completed: '${todo.completed}'
-  }
-}
-// → Renders at ~0.029ms for 100 items (34,000+ renders/sec)
+```yaml
+# This pattern triggers nuclear optimization:
+template:
+  $for todo in todos:
+    id: "${todo.id}"
+    title: "${todo.title}"
+    completed: "${todo.completed}"
+# → Renders at ~0.029ms for 100 items (34,000+ renders/sec)
 ```
 
 ### 2. Ultra-Fast Conditional Rendering
 
-```javascript
-// Conditional patterns are heavily optimized:
-{
-  '$for item in items': {
-    '$if item.visible': {
-      id: '${item.id}',
-      name: '${item.name}'
-    }
-  }
-}
-// → Renders at ~0.004ms for 100 items (250,000+ renders/sec)
+```yaml
+# Conditional patterns are heavily optimized:
+template:
+  $for item in items:
+    $if item.visible:
+      id: "${item.id}"
+      name: "${item.name}"
+# → Renders at ~0.004ms for 100 items (250,000+ renders/sec)
 ```
 
 ### 3. Aggressive Inlining
@@ -131,28 +117,38 @@ Jempl detects common template patterns and generates specialized renderers:
 
 ### ✅ Fast Patterns
 
-```javascript
-// ✅ Simple variable access
-{ name: '${user.name}' }
+```yaml
+# ✅ Simple variable access
+template:
+  name: "${user.name}"
 
-// ✅ Direct property loops
-{ '$for item in items': { id: '${item.id}' } }
+# ✅ Direct property loops
+template:
+  $for item in items:
+    id: "${item.id}"
 
-// ✅ Simple conditionals
-{ '$if user.active': { status: 'Active' } }
+# ✅ Simple conditionals
+template:
+  $if user.active:
+    status: "Active"
 ```
 
 ### ⚠️ Slower Patterns
 
-```javascript
-// ⚠️ Deep property access (still fast, but not ultra-fast)
-{ name: '${user.profile.personal.name}' }
+```yaml
+# ⚠️ Deep property access (still fast, but not ultra-fast)
+template:
+  name: "${user.profile.personal.name}"
 
-// ⚠️ Complex conditional logic
-{ '$if user.role == "admin" && user.permissions.write': {...} }
+# ⚠️ Complex conditional logic
+template:
+  $if user.role == "admin" && user.permissions.write:
+    # complex logic here
 
-// ⚠️ Function calls in loops (optimization coming)
-{ '$for item in items': { formatted: '${formatDate(item.date)}' } }
+# ⚠️ Function calls in loops (optimization coming)
+template:
+  $for item in items:
+    formatted: "${formatDate(item.date)}"
 ```
 
 ## 📈 Scaling Characteristics
