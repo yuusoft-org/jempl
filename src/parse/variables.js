@@ -1,4 +1,5 @@
 import { NodeType } from "./constants.js";
+import { JemplParseError } from "../errors.js";
 
 const VARIABLE_REGEX = /\$\{([^}]*)\}/g;
 
@@ -127,6 +128,51 @@ const parseArgument = (arg) => {
   return { type: NodeType.VARIABLE, path: arg };
 };
 
+// Valid function call: word followed by parentheses with any content
+const FUNCTION_CALL_REGEX = /^\w+\(.*\)$/;
+
+// Invalid expressions: arithmetic with spaces, logical operators, ternary
+const INVALID_EXPR_REGEX = /\s[+\-*/%]\s|\|\||&&|\?\?|.*\?.*:/;
+
+/**
+ * Validates variable expression for unsupported syntax
+ * @param {string} expr - The expression to validate
+ * @throws {JemplParseError} If expression contains unsupported syntax
+ */
+const validateVariableExpression = (expr) => {
+  // Allow empty expressions and function calls
+  if (!expr || expr.trim() === "" || FUNCTION_CALL_REGEX.test(expr)) {
+    return;
+  }
+
+  // Check for invalid expression patterns
+  if (INVALID_EXPR_REGEX.test(expr)) {
+    // Determine specific error message based on what was found
+    if (expr.includes("?") && expr.includes(":")) {
+      throw new JemplParseError(
+        `Complex expressions not supported in variable replacements - ` +
+          `consider calculating the value in your data instead`,
+      );
+    } else if (
+      expr.includes("||") ||
+      expr.includes("&&") ||
+      expr.includes("??")
+    ) {
+      throw new JemplParseError(
+        `Logical operators not supported in variable replacements - ` +
+          `consider calculating the value in your data instead ` +
+          `(operators like ||, &&, ?? are not supported)`,
+      );
+    } else {
+      throw new JemplParseError(
+        `Arithmetic expressions not supported in variable replacements - ` +
+          `consider calculating '${expr}' in your data instead ` +
+          `(expressions with +, -, *, /, % are not supported)`,
+      );
+    }
+  }
+};
+
 /**
  * Parses a variable expression like ${name} or ${user.profile.name} or function calls like ${now()}
  * @param {string} expr - The expression without ${ and }
@@ -135,6 +181,9 @@ const parseArgument = (arg) => {
  */
 export const parseVariable = (expr, functions = {}) => {
   const trimmed = expr.trim();
+
+  // Validate the expression first
+  validateVariableExpression(trimmed);
 
   // Try to parse as function call first
   const functionNode = parseFunctionCall(trimmed);

@@ -329,6 +329,18 @@ export const parseConditionExpression = (expr) => {
     }
   }
 
+  // Check for unsupported arithmetic operators
+  const arithmeticOps = [" + ", " - ", " * ", " / ", " % "];
+  for (const op of arithmeticOps) {
+    if (findOperatorOutsideParens(expr, op) !== -1) {
+      throw new JemplParseError(
+        `Arithmetic expressions not supported in conditionals - ` +
+          `consider calculating '${expr}' in your data instead ` +
+          `(expressions with +, -, *, /, % are not supported)`,
+      );
+    }
+  }
+
   // Handle unary NOT (!)
   if (expr.startsWith("!")) {
     return {
