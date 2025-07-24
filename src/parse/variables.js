@@ -151,7 +151,8 @@ const validateVariableExpression = (expr) => {
     if (expr.includes("?") && expr.includes(":")) {
       throw new JemplParseError(
         `Complex expressions not supported in variable replacements - ` +
-          `consider calculating the value in your data instead`,
+          `consider calculating the value in your data instead. ` +
+          `Offending expression: "${expr}"`,
       );
     } else if (
       expr.includes("||") ||
@@ -161,13 +162,15 @@ const validateVariableExpression = (expr) => {
       throw new JemplParseError(
         `Logical operators not supported in variable replacements - ` +
           `consider calculating the value in your data instead ` +
-          `(operators like ||, &&, ?? are not supported)`,
+          `(operators like ||, &&, ?? are not supported). ` +
+          `Offending expression: "${expr}"`,
       );
     } else {
       throw new JemplParseError(
         `Arithmetic expressions not supported in variable replacements - ` +
           `consider calculating '${expr}' in your data instead ` +
-          `(expressions with +, -, *, /, % are not supported)`,
+          `(expressions with +, -, *, /, % are not supported). ` +
+          `Offending expression: "${expr}"`,
       );
     }
   }
