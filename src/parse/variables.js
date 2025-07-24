@@ -131,53 +131,41 @@ const parseArgument = (arg) => {
 // Valid function call: word followed by parentheses with any content
 const FUNCTION_CALL_REGEX = /^\w+\(.*\)$/;
 
+// Invalid expressions: arithmetic with spaces, logical operators, ternary
+const INVALID_EXPR_REGEX = /\s[+\-*/%]\s|\|\||&&|\?\?|.*\?.*:/;
+
 /**
  * Validates variable expression for unsupported syntax
  * @param {string} expr - The expression to validate  
  * @throws {JemplParseError} If expression contains unsupported syntax
  */
 const validateVariableExpression = (expr) => {
-  // Allow empty expressions (they create variables with empty path)
-  if (!expr || expr.trim() === "") {
+  // Allow empty expressions and function calls
+  if (!expr || expr.trim() === "" || FUNCTION_CALL_REGEX.test(expr)) {
     return;
-  }
-
-  // Allow function calls
-  if (FUNCTION_CALL_REGEX.test(expr)) {
-    return;
-  }
-
-  // Fast path: if no suspicious characters, skip validation entirely
-  if (!expr.includes("+") && !expr.includes("-") && !expr.includes("*") && 
-      !expr.includes("/") && !expr.includes("%") && !expr.includes("?") && 
-      !expr.includes(":") && !expr.includes("|") && !expr.includes("&")) {
-    return;
-  }
-
-  // Check for specific problematic patterns that indicate expressions
-  if (expr.includes("?") && expr.includes(":")) {
-    throw new JemplParseError(
-      `Complex expressions not supported in variable replacements - ` +
-      `consider calculating the value in your data instead`
-    );
   }
   
-  if (expr.includes("||") || expr.includes("&&") || expr.includes("??")) {
-    throw new JemplParseError(
-      `Logical operators not supported in variable replacements - ` +
-      `consider calculating the value in your data instead ` +
-      `(operators like ||, &&, ?? are not supported)`
-    );
-  }
-  
-  // Check for arithmetic operators with spaces (spaced indicates expressions)
-  if (expr.includes(" + ") || expr.includes(" - ") || expr.includes(" * ") || 
-      expr.includes(" / ") || expr.includes(" % ")) {
-    throw new JemplParseError(
-      `Arithmetic expressions not supported in variable replacements - ` +
-      `consider calculating '${expr}' in your data instead ` +
-      `(expressions with +, -, *, /, % are not supported)`
-    );
+  // Check for invalid expression patterns
+  if (INVALID_EXPR_REGEX.test(expr)) {
+    // Determine specific error message based on what was found
+    if (expr.includes('?') && expr.includes(':')) {
+      throw new JemplParseError(
+        `Complex expressions not supported in variable replacements - ` +
+        `consider calculating the value in your data instead`
+      );
+    } else if (expr.includes('||') || expr.includes('&&') || expr.includes('??')) {
+      throw new JemplParseError(
+        `Logical operators not supported in variable replacements - ` +
+        `consider calculating the value in your data instead ` +
+        `(operators like ||, &&, ?? are not supported)`
+      );
+    } else {
+      throw new JemplParseError(
+        `Arithmetic expressions not supported in variable replacements - ` +
+        `consider calculating '${expr}' in your data instead ` +
+        `(expressions with +, -, *, /, % are not supported)`
+      );
+    }
   }
 };
 
