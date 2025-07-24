@@ -75,7 +75,7 @@ in:
       "$if age + 5 > 25": "old enough"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 5' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 5' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"age + 5\""
 
 ---
 case: arithmetic expression in conditional - subtraction
@@ -84,7 +84,7 @@ in:
       "$if items.length - 1 > 0": "has items"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"items.length - 1\""
 
 ---
 case: arithmetic expression in conditional - multiplication
@@ -93,7 +93,7 @@ in:
       "$if count * 2 > 10": "many"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'count * 2' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'count * 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"count * 2\""
 
 ---
 case: arithmetic expression in conditional - division
@@ -102,7 +102,7 @@ in:
       "$if total / count > 5": "high average"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'total / count' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'total / count' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"total / count\""
 
 ---
 case: arithmetic expression in conditional - modulo
@@ -111,7 +111,7 @@ in:
       "$if number % 2 == 0": "even"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'number % 2' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'number % 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"number % 2\""
 
 ---
 case: arithmetic expression in elif
@@ -121,7 +121,7 @@ in:
       "$elif age + 1 > 18": "almost adult"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"age + 1\""
 
 ---
 case: arithmetic expression in loop conditional
@@ -134,7 +134,7 @@ in:
               separator: ","
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"items.length - 1\""
 
 ---
 case: complex arithmetic expression
@@ -143,7 +143,7 @@ in:
       "$if (age + 5) * 2 > total": "complex"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating '(age + 5) * 2' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating '(age + 5) * 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"(age + 5) * 2\""
 
 ---
 case: arithmetic in both sides of comparison
@@ -152,7 +152,7 @@ in:
       "$if age + 1 > limit - 2": "both sides"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"age + 1\""
 
 ---
 case: arithmetic expression in variable replacement - addition
@@ -160,7 +160,7 @@ in:
   - template: "Result: ${count + 1}"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'count + 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'count + 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"count + 1\""
 
 ---
 case: arithmetic expression in variable replacement - subtraction
@@ -168,7 +168,7 @@ in:
   - template: "Index: ${items.length - 1}"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"items.length - 1\""
 
 ---
 case: arithmetic expression in variable replacement - multiplication
@@ -176,7 +176,7 @@ in:
   - template: "Total: ${price * quantity}"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'price * quantity' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'price * quantity' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"price * quantity\""
 
 ---
 case: arithmetic expression in variable replacement - division
@@ -184,7 +184,7 @@ in:
   - template: "Average: ${total / count}"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'total / count' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'total / count' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"total / count\""
 
 ---
 case: arithmetic expression in variable replacement - modulo
@@ -192,7 +192,7 @@ in:
   - template: "Remainder: ${number % 2}"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'number % 2' in your data instead (expressions with +, -, *, /, % are not supported)"
+throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'number % 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"number % 2\""
 
 ---
 case: logical OR operator in variable replacement
@@ -200,7 +200,7 @@ in:
   - template: "Value: ${name || 'default'}"
     data: {}
     functions: {}
-throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported)"
+throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported). Offending expression: \"name || 'default'\""
 
 ---
 case: logical AND operator in variable replacement
@@ -208,7 +208,7 @@ in:
   - template: "Value: ${user && user.name}"
     data: {}
     functions: {}
-throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported)"
+throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported). Offending expression: \"user && user.name\""
 
 ---
 case: nullish coalescing operator in variable replacement
@@ -216,7 +216,7 @@ in:
   - template: "Value: ${value ?? 'fallback'}"
     data: {}
     functions: {}
-throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported)"
+throws: "Parse Error: Logical operators not supported in variable replacements - consider calculating the value in your data instead (operators like ||, &&, ?? are not supported). Offending expression: \"value ?? 'fallback'\""
 
 ---
 case: complex expression in variable replacement
@@ -224,6 +224,6 @@ in:
   - template: "Result: ${(age + 5) > 18 ? 'adult' : 'minor'}"
     data: {}
     functions: {}
-throws: "Parse Error: Complex expressions not supported in variable replacements - consider calculating the value in your data instead"
+throws: "Parse Error: Complex expressions not supported in variable replacements - consider calculating the value in your data instead. Offending expression: \"(age + 5) > 18 ? 'adult' : 'minor'\""
 
 

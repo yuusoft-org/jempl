@@ -336,7 +336,8 @@ export const parseConditionExpression = (expr) => {
       throw new JemplParseError(
         `Arithmetic expressions not supported in conditionals - ` +
           `consider calculating '${expr}' in your data instead ` +
-          `(expressions with +, -, *, /, % are not supported)`,
+          `(expressions with +, -, *, /, % are not supported). ` +
+          `Offending expression: "${expr}"`,
       );
     }
   }
