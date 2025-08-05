@@ -96,7 +96,51 @@ const renderNode = (node, functions, data, scope) => {
 const pathCache = new Map();
 
 /**
- * Gets a variable value from data or scope using dot notation
+ * Parses a path segment that may contain array indices
+ * @param {string} segment - Path segment like "items[0]" or "users[1][2]"
+ * @returns {Array} Array of property/index accessors
+ */
+const parsePathSegment = (segment) => {
+  const accessors = [];
+  let current = "";
+  let inBracket = false;
+
+  for (let i = 0; i < segment.length; i++) {
+    const char = segment[i];
+
+    if (char === "[") {
+      if (current) {
+        accessors.push({ type: "property", value: current });
+        current = "";
+      }
+      inBracket = true;
+    } else if (char === "]") {
+      if (inBracket && current) {
+        // Parse the index - only support numeric indices
+        const trimmed = current.trim();
+        if (/^\d+$/.test(trimmed)) {
+          accessors.push({ type: "index", value: parseInt(trimmed, 10) });
+        } else {
+          // For non-numeric indices, treat as property name
+          accessors.push({ type: "property", value: `[${current}]` });
+        }
+        current = "";
+      }
+      inBracket = false;
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) {
+    accessors.push({ type: "property", value: current });
+  }
+
+  return accessors;
+};
+
+/**
+ * Gets a variable value from data or scope using dot notation and array indices
  */
 const getVariableValue = (path, data, scope) => {
   if (!path) return undefined;
@@ -106,21 +150,55 @@ const getVariableValue = (path, data, scope) => {
     return scope[path];
   }
 
-  // Use cached path parts to avoid repeated string splitting
-  let parts = pathCache.get(path);
-  if (!parts) {
-    parts = path.split(".");
-    pathCache.set(path, parts);
+  // Use cached path parts to avoid repeated parsing
+  let parsedPath = pathCache.get(path);
+  if (!parsedPath) {
+    // Split by dots but preserve array indices
+    const segments = [];
+    let current = "";
+    let bracketDepth = 0;
+
+    for (let i = 0; i < path.length; i++) {
+      const char = path[i];
+
+      if (char === "[") {
+        bracketDepth++;
+        current += char;
+      } else if (char === "]") {
+        bracketDepth--;
+        current += char;
+      } else if (char === "." && bracketDepth === 0) {
+        if (current) {
+          segments.push(current);
+          current = "";
+        }
+      } else {
+        current += char;
+      }
+    }
+
+    if (current) {
+      segments.push(current);
+    }
+
+    // Parse each segment for array indices
+    parsedPath = [];
+    for (const segment of segments) {
+      const accessors = parsePathSegment(segment.trim());
+      parsedPath.push(...accessors);
+    }
+
+    pathCache.set(path, parsedPath);
   }
 
   let current = data;
 
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
+  for (let i = 0; i < parsedPath.length; i++) {
+    const accessor = parsedPath[i];
 
-    // Check scope first for each part
-    if (part in scope) {
-      current = scope[part];
+    // For property access, check scope first
+    if (accessor.type === "property" && accessor.value in scope) {
+      current = scope[accessor.value];
       continue;
     }
 
@@ -130,7 +208,11 @@ const getVariableValue = (path, data, scope) => {
       return undefined;
     }
 
-    current = current[part];
+    if (accessor.type === "property") {
+      current = current[accessor.value];
+    } else if (accessor.type === "index") {
+      current = current[accessor.value];
+    }
   }
 
   return current;
@@ -537,7 +619,7 @@ const renderLoopUltraFast = (node, iterable) => {
         } else if (path.startsWith(itemVar + ".")) {
           const propPath = path.substring(itemVar.length + 1);
           // Only handle single-level property access for ultra-fast path
-          if (!propPath.includes(".")) {
+          if (!propPath.includes(".") && !propPath.includes("[")) {
             accessors.push({ key, type: "prop", prop: propPath });
           } else {
             isUltraFastEligible = false;
@@ -559,7 +641,7 @@ const renderLoopUltraFast = (node, iterable) => {
             accessors.push({ key, type: "item_string" });
           } else if (path.startsWith(itemVar + ".")) {
             const propPath = path.substring(itemVar.length + 1);
-            if (!propPath.includes(".")) {
+            if (!propPath.includes(".") && !propPath.includes("[")) {
               accessors.push({ key, type: "prop_string", prop: propPath });
             } else {
               isUltraFastEligible = false;
@@ -678,24 +760,17 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
           } else if (path.startsWith(itemVar + ".")) {
             // Handle item.property access with minimal overhead
             const propName = path.substring(itemVar.length + 1);
-            if (!propName.includes(".")) {
-              // Single property access - fastest path
+            if (!propName.includes(".") && !propName.includes("[")) {
+              // Single property access without arrays - fastest path
               result[key] = item[propName];
             } else {
-              // Multi-level property access
-              const parts =
-                pathCache.get(propName) ||
-                (pathCache.set(propName, propName.split(".")),
-                pathCache.get(propName));
-              let current = item;
-              for (const part of parts) {
-                if (current == null) {
-                  current = undefined;
-                  break;
-                }
-                current = current[part];
-              }
-              result[key] = current;
+              // Multi-level property access or array indices
+              // Use the full getVariableValue logic but with item in scope
+              result[key] = getVariableValue(path, data, {
+                ...scope,
+                [itemVar]: item,
+                ...(indexVar && { [indexVar]: i }),
+              });
             }
           } else {
             // Fall back to full variable resolution
@@ -721,22 +796,15 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
                 value = i;
               } else if (path.startsWith(itemVar + ".")) {
                 const propName = path.substring(itemVar.length + 1);
-                if (!propName.includes(".")) {
+                if (!propName.includes(".") && !propName.includes("[")) {
                   value = item[propName];
                 } else {
-                  const parts =
-                    pathCache.get(propName) ||
-                    (pathCache.set(propName, propName.split(".")),
-                    pathCache.get(propName));
-                  let current = item;
-                  for (const part of parts) {
-                    if (current == null) {
-                      current = undefined;
-                      break;
-                    }
-                    current = current[part];
-                  }
-                  value = current;
+                  // Use the full getVariableValue logic for complex paths
+                  value = getVariableValue(path, data, {
+                    ...scope,
+                    [itemVar]: item,
+                    ...(indexVar && { [indexVar]: i }),
+                  });
                 }
               } else {
                 value = getVariableValue(path, data, {

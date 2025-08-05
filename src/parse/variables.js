@@ -198,6 +198,20 @@ export const parseVariable = (expr, functions = {}) => {
     };
   }
 
+  // Check if the variable has unclosed array brackets
+  // Only check if it looks like a variable path (no spaces, operators, etc.)
+  if (trimmed.includes("[") && !/[\s+\-*/%|&?:]/.test(trimmed)) {
+    let bracketCount = 0;
+    for (const char of trimmed) {
+      if (char === "[") bracketCount++;
+      else if (char === "]") bracketCount--;
+    }
+    if (bracketCount !== 0) {
+      // Invalid array syntax - treat as literal
+      throw new Error("Invalid array index syntax");
+    }
+  }
+
   // Default to variable
   return {
     type: NodeType.VARIABLE,
@@ -258,7 +272,19 @@ export const parseStringValue = (str, functions = {}) => {
     escapedParts.length === 0
   ) {
     // Single variable that is the entire string, no escapes
-    return parseVariable(matches[0][1], functions);
+    try {
+      return parseVariable(matches[0][1], functions);
+    } catch (e) {
+      // Only catch our specific array syntax error
+      if (e.message === "Invalid array index syntax") {
+        return {
+          type: NodeType.LITERAL,
+          value: processedStr,
+        };
+      }
+      // Re-throw other errors (like validation errors)
+      throw e;
+    }
   }
 
   // Multiple variables or mixed content - create interpolation
@@ -282,8 +308,18 @@ export const parseStringValue = (str, functions = {}) => {
     }
 
     // Parse the expression (could be variable or function)
-    const parsedExpr = parseVariable(varName.trim(), functions);
-    parts.push(parsedExpr);
+    try {
+      const parsedExpr = parseVariable(varName.trim(), functions);
+      parts.push(parsedExpr);
+    } catch (e) {
+      // Only catch our specific array syntax error
+      if (e.message === "Invalid array index syntax") {
+        parts.push(fullMatch);
+      } else {
+        // Re-throw other errors (like validation errors)
+        throw e;
+      }
+    }
 
     lastIndex = index + fullMatch.length;
   }
