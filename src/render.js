@@ -620,7 +620,7 @@ const renderLoopUltraFast = (node, iterable) => {
         } else if (path.startsWith(itemVar + ".")) {
           const propPath = path.substring(itemVar.length + 1);
           // Only handle single-level property access for ultra-fast path
-          if (!propPath.includes(".")) {
+          if (!propPath.includes(".") && !propPath.includes("[")) {
             accessors.push({ key, type: "prop", prop: propPath });
           } else {
             isUltraFastEligible = false;
@@ -642,7 +642,7 @@ const renderLoopUltraFast = (node, iterable) => {
             accessors.push({ key, type: "item_string" });
           } else if (path.startsWith(itemVar + ".")) {
             const propPath = path.substring(itemVar.length + 1);
-            if (!propPath.includes(".")) {
+            if (!propPath.includes(".") && !propPath.includes("[")) {
               accessors.push({ key, type: "prop_string", prop: propPath });
             } else {
               isUltraFastEligible = false;
@@ -761,24 +761,17 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
           } else if (path.startsWith(itemVar + ".")) {
             // Handle item.property access with minimal overhead
             const propName = path.substring(itemVar.length + 1);
-            if (!propName.includes(".")) {
-              // Single property access - fastest path
+            if (!propName.includes(".") && !propName.includes("[")) {
+              // Single property access without arrays - fastest path
               result[key] = item[propName];
             } else {
-              // Multi-level property access
-              const parts =
-                pathCache.get(propName) ||
-                (pathCache.set(propName, propName.split(".")),
-                pathCache.get(propName));
-              let current = item;
-              for (const part of parts) {
-                if (current == null) {
-                  current = undefined;
-                  break;
-                }
-                current = current[part];
-              }
-              result[key] = current;
+              // Multi-level property access or array indices
+              // Use the full getVariableValue logic but with item in scope
+              result[key] = getVariableValue(path, data, {
+                ...scope,
+                [itemVar]: item,
+                ...(indexVar && { [indexVar]: i }),
+              });
             }
           } else {
             // Fall back to full variable resolution
@@ -804,22 +797,15 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
                 value = i;
               } else if (path.startsWith(itemVar + ".")) {
                 const propName = path.substring(itemVar.length + 1);
-                if (!propName.includes(".")) {
+                if (!propName.includes(".") && !propName.includes("[")) {
                   value = item[propName];
                 } else {
-                  const parts =
-                    pathCache.get(propName) ||
-                    (pathCache.set(propName, propName.split(".")),
-                    pathCache.get(propName));
-                  let current = item;
-                  for (const part of parts) {
-                    if (current == null) {
-                      current = undefined;
-                      break;
-                    }
-                    current = current[part];
-                  }
-                  value = current;
+                  // Use the full getVariableValue logic for complex paths
+                  value = getVariableValue(path, data, {
+                    ...scope,
+                    [itemVar]: item,
+                    ...(indexVar && { [indexVar]: i }),
+                  });
                 }
               } else {
                 value = getVariableValue(path, data, {
