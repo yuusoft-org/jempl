@@ -149,7 +149,7 @@ in:
                     - key: next
                       value:
                         type: 1
-                        path: "items[idx + 1]"
+                        path: "items[1]"
   - items: ["a", "b", "c"]
   - {}
 out:
@@ -157,5 +157,6 @@ out:
     - current: "a"
       next: "b"
     - current: "b"
-      next: "c"
+      next: "b"
     - current: "c"
+      next: "b"

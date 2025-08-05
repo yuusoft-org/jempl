@@ -116,13 +116,12 @@ const parsePathSegment = (segment) => {
       inBracket = true;
     } else if (char === "]") {
       if (inBracket && current) {
-        // Parse the index - could be numeric or a variable reference
+        // Parse the index - only support numeric indices
         const trimmed = current.trim();
         if (/^\d+$/.test(trimmed)) {
           accessors.push({ type: "index", value: parseInt(trimmed, 10) });
         } else {
-          // For now, treat non-numeric indices as property names
-          // This could be extended to support variable indices later
+          // For non-numeric indices, treat as property name
           accessors.push({ type: "property", value: `[${current}]` });
         }
         current = "";
