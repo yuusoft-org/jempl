@@ -596,3 +596,147 @@ out:
               - rtgl-view d=h w=f h=24 bgc=mu br=sm g=xs:
                   - - rtgl-view#keyframe-x-0 d=h p=xs h=f bgc=ac flex=1 br=sm ah=e av=e mr=xs:
                         - rtgl-text s=xs: 123ms
+---
+case: array index selectors - basic
+in:
+  - first: "${items[0]}"
+    second: "${items[1]}"
+    last: "${items[3]}"
+  - items: ["apple", "banana", "cherry", "date"]
+  - functions: {}
+out:
+  first: "apple"
+  second: "banana"
+  last: "date"
+---
+case: array index selectors - nested objects
+in:
+  - user:
+      name: "${users[0].name}"
+      email: "${users[0].email}"
+    secondUserAge: "${users[1].age}"
+  - users:
+      - name: "Alice"
+        email: "alice@example.com"
+        age: 30
+      - name: "Bob"
+        email: "bob@example.com"
+        age: 25
+  - functions: {}
+out:
+  user:
+    name: "Alice"
+    email: "alice@example.com"
+  secondUserAge: 25
+---
+case: array index selectors - multi-dimensional
+in:
+  - cell: "${matrix[1][2]}"
+    nested: "${data[0].values[1]}"
+  - matrix:
+      - [1, 2, 3]
+      - [4, 5, 6]
+      - [7, 8, 9]
+    data:
+      - values: [10, 20, 30]
+      - values: [40, 50, 60]
+  - functions: {}
+out:
+  cell: 6
+  nested: 20
+---
+case: array index selectors - string interpolation
+in:
+  - message: "First item: ${items[0]}, Last item: ${items[2]}"
+    complex: "${users[0].name} has ${users[0].scores[1]} points"
+  - items: ["red", "green", "blue"]
+    users:
+      - name: "Alice"
+        scores: [100, 200, 300]
+  - functions: {}
+out:
+  message: "First item: red, Last item: blue"
+  complex: "Alice has 200 points"
+---
+case: array index selectors - with loops
+in:
+  - results:
+      $for user in users:
+        name: "${user.name}"
+        firstTag: "${user.tags[0]}"
+        secondTag: "${user.tags[1]}"
+  - users:
+      - name: "Alice"
+        tags: ["admin", "developer", "reviewer"]
+      - name: "Bob"
+        tags: ["user", "tester"]
+      - name: "Carol"
+        tags: ["moderator"]
+  - functions: {}
+out:
+  results:
+    - name: "Alice"
+      firstTag: "admin"
+      secondTag: "developer"
+    - name: "Bob"
+      firstTag: "user"
+      secondTag: "tester"
+    - name: "Carol"
+      firstTag: "moderator"
+---
+case: array index selectors - with conditionals
+in:
+  - $if users[0].isActive:
+      activeUser: "${users[0].name}"
+      firstScore: "${users[0].scores[0]}"
+    $else:
+      message: "No active user"
+  - users:
+      - name: "Alice"
+        isActive: true
+        scores: [95, 87, 92]
+  - functions: {}
+out:
+  activeUser: "Alice"
+  firstScore: 95
+---
+case: array index selectors - missing indices
+in:
+  - exists: "${items[0]}"
+    outOfBounds: "${items[10]}"
+    nullArray: "${missing[0]}"
+    deepMissing: "${users[0].missing[0]}"
+  - items: ["only one"]
+    users:
+      - name: "Alice"
+  - functions: {}
+out:
+  exists: "only one"
+---
+case: array index selectors - complex nesting
+in:
+  - result:
+      $for group in groups:
+        name: "${group.name}"
+        firstMember: "${group.members[0].name}"
+        lastTask: "${group.members[0].tasks[1]}"
+  - groups:
+      - name: "Team A"
+        members:
+          - name: "Alice"
+            tasks: ["Design", "Review", "Deploy"]
+          - name: "Bob"
+            tasks: ["Code", "Test"]
+      - name: "Team B"
+        members:
+          - name: "Carol"
+            tasks: ["Plan", "Execute"]
+  - functions: {}
+out:
+  result:
+    - name: "Team A"
+      firstMember: "Alice"
+      lastTask: "Review"
+    - name: "Team B"
+      firstMember: "Carol"
+      lastTask: "Execute"
