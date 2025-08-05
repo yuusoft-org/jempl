@@ -1,0 +1,161 @@
+file: '../../src/render.js'
+group: render
+suites: [arrayIndex]
+---
+### Array Index
+suite: arrayIndex
+exportName: default
+---
+case: simple array index access
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: first
+        value:
+          type: 1
+          path: "items[0]"
+      - key: third
+        value:
+          type: 1
+          path: "items[2]"
+  - items: ["apple", "banana", "orange", "grape"]
+  - {}
+out:
+  first: "apple"
+  third: "orange"
+---
+case: nested array index access
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: userName
+        value:
+          type: 1
+          path: "users[0].name"
+      - key: userAge
+        value:
+          type: 1
+          path: "users[1].age"
+      - key: firstItem
+        value:
+          type: 1
+          path: "user.items[0]"
+  - users:
+      - name: "Alice"
+        age: 30
+      - name: "Bob"
+        age: 25
+    user:
+      items: ["item1", "item2", "item3"]
+  - {}
+out:
+  userName: "Alice"
+  userAge: 25
+  firstItem: "item1"
+---
+case: multi-dimensional array access
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: value
+        value:
+          type: 1
+          path: "matrix[0][1]"
+      - key: deep
+        value:
+          type: 1
+          path: "data[0].values[1][2]"
+  - matrix:
+      - [1, 2, 3]
+      - [4, 5, 6]
+    data:
+      - values:
+          - [10, 20]
+          - [30, 40, 50]
+  - {}
+out:
+  value: 2
+  deep: 50
+---
+case: array index in string interpolation
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: message
+        value:
+          type: 2
+          parts:
+            - "First item is "
+            - {type: 1, path: "items[0]"}
+            - " and last is "
+            - {type: 1, path: "items[2]"}
+  - items: ["apple", "banana", "orange"]
+  - {}
+out:
+  message: "First item is apple and last is orange"
+---
+case: array index with missing elements
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: exists
+        value:
+          type: 1
+          path: "items[0]"
+      - key: outOfBounds
+        value:
+          type: 1
+          path: "items[10]"
+      - key: missingArray
+        value:
+          type: 1
+          path: "nonexistent[0]"
+  - items: ["first", "second"]
+  - {}
+out:
+  exists: "first"
+---
+case: array index in loop context
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: results
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for item, idx in items"
+              value:
+                type: 7
+                itemVar: "item"
+                indexVar: "idx"
+                iterable:
+                  type: 1
+                  path: "items"
+                body:
+                  type: 8
+                  fast: true
+                  properties:
+                    - key: current
+                      value:
+                        type: 1
+                        path: "item"
+                    - key: next
+                      value:
+                        type: 1
+                        path: "items[idx + 1]"
+  - items: ["a", "b", "c"]
+  - {}
+out:
+  results:
+    - current: "a"
+      next: "b"
+    - current: "b"
+      next: "c"
+    - current: "c"

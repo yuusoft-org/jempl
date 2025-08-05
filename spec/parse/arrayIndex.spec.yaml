@@ -1,0 +1,136 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [arrayIndex]
+---
+### Array Index
+suite: arrayIndex
+exportName: default
+---
+case: simple array index
+in:
+  - first: "${data[0]}"
+    second: "${data[1]}"
+    last: "${data[2]}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: first
+      value:
+        type: 1
+        path: "data[0]"
+    - key: second
+      value:
+        type: 1
+        path: "data[1]"
+    - key: last
+      value:
+        type: 1
+        path: "data[2]"
+---
+case: nested array index
+in:
+  - value: "${user.items[0]}"
+    nested: "${users[0].name}"
+    deep: "${data.matrix[0][1]}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: value
+      value:
+        type: 1
+        path: "user.items[0]"
+    - key: nested
+      value:
+        type: 1
+        path: "users[0].name"
+    - key: deep
+      value:
+        type: 1
+        path: "data.matrix[0][1]"
+---
+case: array index in string interpolation
+in:
+  - message: "First: ${items[0]}, Last: ${items[2]}"
+    complex: "${users[0].name} has ${users[0].items[1]}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: message
+      value:
+        type: 2
+        parts:
+          - "First: "
+          - {type: 1, path: "items[0]"}
+          - ", Last: "
+          - {type: 1, path: "items[2]"}
+    - key: complex
+      value:
+        type: 2
+        parts:
+          - {type: 1, path: "users[0].name"}
+          - " has "
+          - {type: 1, path: "users[0].items[1]"}
+---
+case: mixed dot notation and array index
+in:
+  - value: "${data[0].user.items[2]}"
+    chain: "${a[0].b[1].c[2]}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: value
+      value:
+        type: 1
+        path: "data[0].user.items[2]"
+    - key: chain
+      value:
+        type: 1
+        path: "a[0].b[1].c[2]"
+---
+case: array index with whitespace
+in:
+  - spaced: "${ items[ 0 ] }"
+    mixed: "${ data [ 1 ] . name }"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: spaced
+      value:
+        type: 1
+        path: "items[ 0 ]"
+    - key: mixed
+      value:
+        type: 1
+        path: "data [ 1 ] . name"
+---
+case: invalid array index syntax
+in:
+  - empty: "${items[]}"
+    negative: "${items[-1]}"
+    nonNumeric: "${items[abc]}"
+    unclosed: "${items[0}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: empty
+      value:
+        type: 1
+        path: "items[]"
+    - key: negative
+      value:
+        type: 1
+        path: "items[-1]"
+    - key: nonNumeric
+      value:
+        type: 1
+        path: "items[abc]"
+    - key: unclosed
+      value:
+        type: 0
+        value: "${items[0}"
