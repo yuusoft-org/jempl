@@ -102,41 +102,41 @@ const pathCache = new Map();
  */
 const parsePathSegment = (segment) => {
   const accessors = [];
-  let current = '';
+  let current = "";
   let inBracket = false;
-  
+
   for (let i = 0; i < segment.length; i++) {
     const char = segment[i];
-    
-    if (char === '[') {
+
+    if (char === "[") {
       if (current) {
-        accessors.push({ type: 'property', value: current });
-        current = '';
+        accessors.push({ type: "property", value: current });
+        current = "";
       }
       inBracket = true;
-    } else if (char === ']') {
+    } else if (char === "]") {
       if (inBracket && current) {
         // Parse the index - could be numeric or a variable reference
         const trimmed = current.trim();
         if (/^\d+$/.test(trimmed)) {
-          accessors.push({ type: 'index', value: parseInt(trimmed, 10) });
+          accessors.push({ type: "index", value: parseInt(trimmed, 10) });
         } else {
           // For now, treat non-numeric indices as property names
           // This could be extended to support variable indices later
-          accessors.push({ type: 'property', value: `[${current}]` });
+          accessors.push({ type: "property", value: `[${current}]` });
         }
-        current = '';
+        current = "";
       }
       inBracket = false;
     } else {
       current += char;
     }
   }
-  
+
   if (current) {
-    accessors.push({ type: 'property', value: current });
+    accessors.push({ type: "property", value: current });
   }
-  
+
   return accessors;
 };
 
@@ -156,39 +156,39 @@ const getVariableValue = (path, data, scope) => {
   if (!parsedPath) {
     // Split by dots but preserve array indices
     const segments = [];
-    let current = '';
+    let current = "";
     let bracketDepth = 0;
-    
+
     for (let i = 0; i < path.length; i++) {
       const char = path[i];
-      
-      if (char === '[') {
+
+      if (char === "[") {
         bracketDepth++;
         current += char;
-      } else if (char === ']') {
+      } else if (char === "]") {
         bracketDepth--;
         current += char;
-      } else if (char === '.' && bracketDepth === 0) {
+      } else if (char === "." && bracketDepth === 0) {
         if (current) {
           segments.push(current);
-          current = '';
+          current = "";
         }
       } else {
         current += char;
       }
     }
-    
+
     if (current) {
       segments.push(current);
     }
-    
+
     // Parse each segment for array indices
     parsedPath = [];
     for (const segment of segments) {
       const accessors = parsePathSegment(segment.trim());
       parsedPath.push(...accessors);
     }
-    
+
     pathCache.set(path, parsedPath);
   }
 
@@ -198,7 +198,7 @@ const getVariableValue = (path, data, scope) => {
     const accessor = parsedPath[i];
 
     // For property access, check scope first
-    if (accessor.type === 'property' && accessor.value in scope) {
+    if (accessor.type === "property" && accessor.value in scope) {
       current = scope[accessor.value];
       continue;
     }
@@ -209,9 +209,9 @@ const getVariableValue = (path, data, scope) => {
       return undefined;
     }
 
-    if (accessor.type === 'property') {
+    if (accessor.type === "property") {
       current = current[accessor.value];
-    } else if (accessor.type === 'index') {
+    } else if (accessor.type === "index") {
       current = current[accessor.value];
     }
   }
