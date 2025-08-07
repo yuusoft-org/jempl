@@ -1,0 +1,441 @@
+file: '../customFunctions.js'
+group: parseAndRender
+suites: [when]
+---
+### When Directive End-to-End Tests
+suite: when
+exportName: default
+---
+case: simple when condition true
+in:
+  - $when: isActive
+    type: "button"
+    label: "Click me"
+  - isActive: true
+  - functions: {}
+out:
+  type: "button"
+  label: "Click me"
+---
+case: simple when condition false
+in:
+  - $when: isActive
+    type: "button"
+    label: "Click me"
+  - isActive: false
+  - functions: {}
+out: {}
+---
+case: when with comparison operators
+in:
+  - items:
+      - $when: age >= 18
+        status: "adult"
+        canVote: true
+      - $when: age < 18
+        status: "minor"
+        canVote: false
+  - age: 25
+  - functions: {}
+out:
+  items:
+    - status: "adult"
+      canVote: true
+---
+case: when in array filtering
+in:
+  - products:
+      - $when: inStock
+        id: 1
+        name: "Product A"
+        available: true
+      - $when: "!inStock"
+        id: 2
+        name: "Product B"
+        available: false
+      - id: 3
+        name: "Product C"
+        available: true
+  - inStock: true
+  - functions: {}
+out:
+  products:
+    - id: 1
+      name: "Product A"
+      available: true
+    - id: 3
+      name: "Product C"
+      available: true
+---
+case: when with logical operators
+in:
+  - access:
+      $when: isLoggedIn && (isAdmin || isOwner)
+      dashboard: "Full Access"
+      settings: "Edit All"
+  - isLoggedIn: true
+    isAdmin: false
+    isOwner: true
+  - functions: {}
+out:
+  access:
+    dashboard: "Full Access"
+    settings: "Edit All"
+---
+case: nested when conditions - outer true, inner mixed
+in:
+  - app:
+      $when: appEnabled
+      header:
+        $when: showHeader
+        title: "My App"
+        logo: "logo.png"
+      content:
+        $when: hasContent
+        text: "Welcome"
+      footer:
+        copyright: "2024"
+  - appEnabled: true
+    showHeader: true
+    hasContent: false
+  - functions: {}
+out:
+  app:
+    header:
+      title: "My App"
+      logo: "logo.png"
+    footer:
+      copyright: "2024"
+---
+case: nested when conditions - outer false, inner true
+in:
+  - app:
+      $when: appEnabled
+      header:
+        $when: showHeader
+        title: "My App"
+        logo: "logo.png"
+      content:
+        $when: hasContent
+        text: "Welcome"
+      footer:
+        copyright: "2024"
+  - appEnabled: false
+    showHeader: true
+    hasContent: true
+  - functions: {}
+out: {}
+---
+case: nested when conditions - outer true, all inner false
+in:
+  - app:
+      $when: appEnabled
+      header:
+        $when: showHeader
+        title: "My App"
+        logo: "logo.png"
+      content:
+        $when: hasContent
+        text: "Welcome"
+      footer:
+        copyright: "2024"
+  - appEnabled: true
+    showHeader: false
+    hasContent: false
+  - functions: {}
+out:
+  app:
+    footer:
+      copyright: "2024"
+---
+case: when with variables in properties
+in:
+  - user:
+      $when: showUserInfo
+      name: "${firstName} ${lastName}"
+      email: "${email}"
+      age: "${age}"
+  - showUserInfo: true
+    firstName: "John"
+    lastName: "Doe"
+    email: "john@example.com"
+    age: 30
+  - functions: {}
+out:
+  user:
+    name: "John Doe"
+    email: "john@example.com"
+    age: 30
+---
+case: when combined with if statements
+in:
+  - card:
+      $when: showCard
+      title: "User Card"
+      $if isPremium:
+        badge: "Premium"
+        features: ["Feature A", "Feature B"]
+      $else:
+        badge: "Basic"
+        features: ["Feature A"]
+  - showCard: true
+    isPremium: true
+  - functions: {}
+out:
+  card:
+    title: "User Card"
+    badge: "Premium"
+    features: ["Feature A", "Feature B"]
+---
+case: when prevents if evaluation when false
+in:
+  - section:
+      $when: showSection
+      $if hasData:
+        content: "${data}"
+      $else:
+        content: "No data"
+  - showSection: false
+    hasData: true
+    data: "Important data"
+  - functions: {}
+out: {}
+---
+case: array with multiple when conditions
+in:
+  - menu:
+      - $when: true
+        label: "Home"
+        path: "/"
+      - $when: isLoggedIn
+        label: "Dashboard"
+        path: "/dashboard"
+      - $when: isAdmin
+        label: "Admin"
+        path: "/admin"
+      - $when: false
+        label: "Hidden"
+        path: "/hidden"
+  - isLoggedIn: true
+    isAdmin: false
+  - functions: {}
+out:
+  menu:
+    - label: "Home"
+      path: "/"
+    - label: "Dashboard"
+      path: "/dashboard"
+---
+case: when with in operator
+in:
+  - permissions:
+      - $when: userRole in deleteRoles
+        action: "delete"
+        resource: "posts"
+      - $when: userRole in readRoles
+        action: "read"
+        resource: "posts"
+      - $when: userRole == "admin"
+        action: "manage"
+        resource: "users"
+  - userRole: "moderator"
+    deleteRoles: ["admin", "moderator"]
+    readRoles: ["admin", "moderator", "user"]
+  - functions: {}
+out:
+  permissions:
+    - action: "delete"
+      resource: "posts"
+    - action: "read"
+      resource: "posts"
+---
+case: complex real-world example
+in:
+  - layout:
+      type: "page"
+      header:
+        $when: "!isEmbedded"
+        logo: "logo.png"
+        navigation:
+          - $when: true
+            label: "Home"
+            url: "/"
+          - $when: isAuthenticated
+            label: "Profile"
+            url: "/profile"
+          - $when: isAuthenticated && hasNotifications
+            label: "Notifications (${notificationCount})"
+            url: "/notifications"
+      main:
+        sidebar:
+          $when: showSidebar && screenSize != "mobile"
+          width: 250
+          items:
+            - $when: hasRecentItems
+              title: "Recent"
+              count: "${recentCount}"
+        content:
+          title: "${pageTitle}"
+          $if isLoading:
+            status: "Loading..."
+          $else:
+            status: "Ready"
+            data: "${contentData}"
+  - isEmbedded: false
+    isAuthenticated: true
+    hasNotifications: true
+    notificationCount: 5
+    showSidebar: true
+    screenSize: "desktop"
+    hasRecentItems: false
+    pageTitle: "Dashboard"
+    isLoading: false
+    contentData: "Main content here"
+  - functions: {}
+out:
+  layout:
+    type: "page"
+    header:
+      logo: "logo.png"
+      navigation:
+        - label: "Home"
+          url: "/"
+        - label: "Profile"
+          url: "/profile"
+        - label: "Notifications (5)"
+          url: "/notifications"
+    main:
+      sidebar:
+        width: 250
+        items: []
+      content:
+        title: "Dashboard"
+        status: "Ready"
+        data: "Main content here"
+---
+case: when with undefined variables defaults to false
+in:
+  - item:
+      $when: undefinedVariable
+      value: "Should not appear"
+    fallback: "Always appears"
+  - otherVariable: true
+  - functions: {}
+out:
+  fallback: "Always appears"
+---
+case: when with null and falsy values
+in:
+  - tests:
+      - $when: nullValue
+        label: "null is falsy"
+      - $when: zeroValue
+        label: "zero is falsy"
+      - $when: emptyString
+        label: "empty string is falsy"
+      - $when: falseValue
+        label: "false is falsy"
+      - $when: emptyArray
+        label: "empty array is truthy"
+      - $when: emptyObject
+        label: "empty object is truthy"
+  - nullValue: null
+    zeroValue: 0
+    emptyString: ""
+    falseValue: false
+    emptyArray: []
+    emptyObject: {}
+  - functions: {}
+out:
+  tests:
+    - label: "empty array is truthy"
+    - label: "empty object is truthy"
+---
+case: when preserves data types in properties
+in:
+  - data:
+      $when: includeData
+      string: "text"
+      number: 42
+      boolean: true
+      null: null
+      array: [1, 2, 3]
+      object:
+        nested: "value"
+  - includeData: true
+  - functions: {}
+out:
+  data:
+    string: "text"
+    number: 42
+    boolean: true
+    null: null
+    array: [1, 2, 3]
+    object:
+      nested: "value"
+---
+case: when with nested paths
+in:
+  - profile:
+      $when: user.profile.isPublic
+      name: "${user.profile.name}"
+      bio: "${user.profile.bio}"
+  - user:
+      profile:
+        isPublic: true
+        name: "Alice"
+        bio: "Software Developer"
+  - functions: {}
+out:
+  profile:
+    name: "Alice"
+    bio: "Software Developer"
+---
+case: when with function calls in values
+in:
+  - computed:
+      $when: showComputed
+      result: "${add(10, 20)}"
+  - showComputed: true
+out:
+  computed:
+    result: 30
+---
+case: empty array after all when conditions false
+in:
+  - items:
+      - $when: false
+        id: 1
+      - $when: showSecond
+        id: 2
+      - $when: showThird
+        id: 3
+  - showSecond: false
+    showThird: false
+  - functions: {}
+out:
+  items: []
+---
+case: when at root level
+in:
+  - $when: includeEverything
+    prop1: "value1"
+    prop2: "value2"
+    nested:
+      prop3: "value3"
+  - includeEverything: true
+  - functions: {}
+out:
+  prop1: "value1"
+  prop2: "value2"
+  nested:
+    prop3: "value3"
+---
+case: when at root level false returns empty object
+in:
+  - $when: includeEverything
+    prop1: "value1"
+    prop2: "value2"
+  - includeEverything: false
+  - functions: {}
+out: {}

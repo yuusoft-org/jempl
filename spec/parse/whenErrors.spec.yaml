@@ -1,0 +1,179 @@
+file: '../customFunctions.js'
+group: parseAndRender
+suites: [whenErrors]
+---
+### When Directive Error Tests
+suite: whenErrors
+exportName: default
+---
+case: missing when condition expression (null)
+in:
+  - "$when": null
+    value: "test"
+  - {}
+throws: "Parse Error: Missing condition expression after '$when'"
+---
+case: empty when condition
+in:
+  - "$when": ""
+    value: "test"
+  - {}
+throws: "Parse Error: Empty condition expression after '$when'"
+---
+case: when with invalid operator (parser doesn't validate)
+in:
+  - "$when": "age === 18"
+    value: "test"
+  - age: 18
+# Parser doesn't validate operators, === evaluates as false
+out: {}
+---
+case: when with incomplete comparison (parser doesn't validate)
+in:
+  - "$when": "age >"
+    value: "test"
+  - age: 20
+# Parser doesn't validate expression completeness, evaluates as truthy
+out:
+  value: "test"
+---
+case: when combined with if at same level (both work)
+in:
+  - "$when": "showThis"
+    "$if isActive":
+      status: "active"
+    value: "test"
+  - showThis: false
+    isActive: true
+# When is false so entire object excluded
+out: {}
+---
+case: when combined with elif at same level
+in:
+  - "$when": "showThis"
+    "$elif condition":
+      status: "elif"
+    value: "test"
+  - {}
+# $elif without $if throws its own error
+throws: "Parse Error: '$elif' without matching '$if'"
+---
+case: when combined with else at same level
+in:
+  - "$when": "showThis"
+    "$else":
+      status: "else"
+    value: "test"
+  - {}
+# $else without $if throws its own error
+throws: "Parse Error: '$else' without matching '$if'"
+---
+case: when with malformed logical expression (parser doesn't validate)
+in:
+  - "$when": "isActive && "
+    value: "test"
+  - isActive: true
+# Parser doesn't validate expression completeness
+out: {}
+---
+case: when with unbalanced parentheses (parser doesn't validate)
+in:
+  - "$when": "(isActive && hasPermission"
+    value: "test"
+  - isActive: true
+    hasPermission: true
+# Parser doesn't validate parentheses balance
+out: {}
+---
+case: when with invalid negation syntax (parser doesn't validate)
+in:
+  - "$when": "! "
+    value: "test"
+  - {}
+# Parser doesn't validate negation syntax, evaluates as truthy
+out:
+  value: "test"
+---
+case: when in array of objects (valid)
+in:
+  - - "$when": "condition"
+      item: "test"
+  - condition: false
+# Array with object that has $when is valid
+out: []
+---
+case: when as string value (not a directive)
+in:
+  - key: "$when: condition"
+  - {}
+# This is just a string value, not a directive
+out:
+  key: "$when: condition"
+---
+case: multiple when with ID syntax
+in:
+  - "$when": "condition1"
+    "$when#2": "condition2"
+    value: "test"
+  - {}
+# Parser treats $when#2 as invalid syntax
+throws: "Parse Error: '$when' does not support ID syntax or inline conditions - use '$when' as a property"
+---
+case: when with circular reference (valid)
+in:
+  - "$when": "self.value"
+    value: true
+  - self:
+      value: true
+# This works fine - evaluates self.value
+out:
+  value: true
+---
+case: when with invalid variable name (parser doesn't validate)
+in:
+  - "$when": "123invalid"
+    value: "test"
+  - "123invalid": true
+# Parser doesn't validate variable names, value is truthy
+out:
+  value: "test"
+---
+case: when with unsupported operator (parser doesn't validate)
+in:
+  - "$when": "value ** 2"
+    result: "test"
+  - value: 3
+# Parser doesn't validate operators
+out: {}
+---
+case: when with assignment operator (parser doesn't validate)
+in:
+  - "$when": "value = 5"
+    result: "test"
+  - value: 5
+# Parser doesn't validate operators
+out: {}
+---
+case: when with only directive (valid)
+in:
+  - value:
+      "$when": "condition"
+  - condition: false
+# Object with only $when returns undefined, parent omits it
+out: {}
+---
+case: when with undefined function (parser doesn't validate at parse time)
+in:
+  - "$when": "undefinedFunc()"
+    value: "test"
+  - {}
+# Parser doesn't validate function names at parse time, evaluates as false
+out: {}
+---
+case: when with invalid in operator usage (parser doesn't validate)
+in:
+  - "$when": "in values"
+    value: "test"
+  - values: ["a", "b"]
+# Parser doesn't validate 'in' operator syntax
+out: {}

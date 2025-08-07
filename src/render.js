@@ -34,7 +34,12 @@ import {
  * // result: { timestamp: 1234567890123 }
  */
 const render = (ast, data, functions = {}) => {
-  return renderNode(ast, functions, data, {});
+  const result = renderNode(ast, functions, data, {});
+  // Convert undefined to empty object at root level (for $when: false at root)
+  if (result === undefined) {
+    return {};
+  }
+  return result;
 };
 
 /**
@@ -985,6 +990,11 @@ const renderLoop = (node, functions, data, scope) => {
  * Ultra-fast path for deeply nested static structures (todo app pattern)
  */
 const renderObjectDeepUltraFast = (node, functions, data, scope) => {
+  // Skip if this node has a whenCondition - let the main path handle it
+  if (node.whenCondition) {
+    return null;
+  }
+  
   // Detect todo app-like nested structure pattern
   if (node.properties.length === 1) {
     const prop = node.properties[0];
@@ -996,7 +1006,8 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
     // Fast path for nested objects with mostly static structure
     if (
       valueNode.type === NodeType.OBJECT &&
-      valueNode.properties.length <= 10
+      valueNode.properties.length <= 10 &&
+      !valueNode.whenCondition // Skip if nested object has whenCondition
     ) {
       const result = {};
       const nestedResult = {};
@@ -1093,6 +1104,15 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
  * Renders objects
  */
 const renderObject = (node, functions, data, scope) => {
+  // Check $when condition first
+  if (node.whenCondition) {
+    const conditionResult = evaluateCondition(node.whenCondition, functions, data, scope);
+    if (!conditionResult) {
+      // Return undefined to signal this object should be excluded
+      return undefined;
+    }
+  }
+
   // Try ultra-fast deep nesting path first
   const deepResult = renderObjectDeepUltraFast(node, functions, data, scope);
   if (deepResult !== null) {
@@ -1243,8 +1263,9 @@ const renderArray = (node, functions, data, scope) => {
     } else {
       const rendered = renderNode(item, functions, data, scope);
       // Skip empty objects that come from failed conditionals with no else branch
+      // Also skip undefined values from objects with false $when conditions
       // Use reference equality for better performance than Object.keys()
-      if (rendered !== EMPTY_OBJECT) {
+      if (rendered !== EMPTY_OBJECT && rendered !== undefined) {
         results.push(rendered);
       }
     }
