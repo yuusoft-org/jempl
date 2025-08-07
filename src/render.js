@@ -994,7 +994,7 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
   if (node.whenCondition) {
     return null;
   }
-  
+
   // Detect todo app-like nested structure pattern
   if (node.properties.length === 1) {
     const prop = node.properties[0];
@@ -1106,7 +1106,12 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
 const renderObject = (node, functions, data, scope) => {
   // Check $when condition first
   if (node.whenCondition) {
-    const conditionResult = evaluateCondition(node.whenCondition, functions, data, scope);
+    const conditionResult = evaluateCondition(
+      node.whenCondition,
+      functions,
+      data,
+      scope,
+    );
     if (!conditionResult) {
       // Return undefined to signal this object should be excluded
       return undefined;

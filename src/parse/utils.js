@@ -93,21 +93,26 @@ export const parseObject = (obj, functions) => {
   for (const [key, value] of entries) {
     if (key === "$when") {
       if (whenCondition !== null) {
-        throw new JemplParseError("Multiple '$when' directives on the same object are not allowed");
+        throw new JemplParseError(
+          "Multiple '$when' directives on the same object are not allowed",
+        );
       }
       // Allow boolean and string values
       if (value === undefined || value === null) {
         throw new JemplParseError("Missing condition expression after '$when'");
       }
       // Convert non-string values to string for parsing
-      const conditionStr = typeof value === "string" ? value : JSON.stringify(value);
+      const conditionStr =
+        typeof value === "string" ? value : JSON.stringify(value);
       if (conditionStr.trim() === "") {
         throw new JemplParseError("Empty condition expression after '$when'");
       }
       whenCondition = parseConditionExpression(conditionStr);
       hasDynamicContent = true;
     } else if (key.startsWith("$when#") || key.startsWith("$when ")) {
-      throw new JemplParseError("'$when' does not support ID syntax or inline conditions - use '$when' as a property");
+      throw new JemplParseError(
+        "'$when' does not support ID syntax or inline conditions - use '$when' as a property",
+      );
     }
   }
 
