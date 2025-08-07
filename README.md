@@ -226,6 +226,182 @@ cases:
       name: "John"
 ```
 
+### Object Conditionals with $when
+
+The `$when` directive conditionally includes or excludes entire objects based on a condition. Unlike `$if` which merges properties into the parent, `$when` controls whether the entire object exists.
+
+#### Key Differences from $if
+
+- **$if**: Merges properties into parent object when true
+- **$when**: Includes/excludes the entire object based on condition
+
+#### Basic Usage
+
+```yaml
+template:
+  # Object is included only if condition is true
+  user:
+    $when: showUserInfo
+    name: "${name}"
+    email: "${email}"
+    age: "${age}"
+
+cases:
+  - data:
+      showUserInfo: true
+      name: "Alice"
+      email: "alice@example.com"
+      age: 30
+    output:
+      user:
+        name: "Alice"
+        email: "alice@example.com"
+        age: 30
+  
+  - data:
+      showUserInfo: false
+      name: "Bob"
+      email: "bob@example.com"
+      age: 25
+    output: {}  # user object is excluded entirely
+```
+
+#### Arrays with $when
+
+`$when` is particularly useful for filtering arrays - objects with false conditions are automatically excluded:
+
+```yaml
+template:
+  menu:
+    - $when: true
+      label: "Home"
+      path: "/"
+    - $when: isLoggedIn
+      label: "Dashboard"
+      path: "/dashboard"
+    - $when: isAdmin
+      label: "Admin Panel"
+      path: "/admin"
+    - $when: false
+      label: "Hidden"
+      path: "/hidden"
+
+cases:
+  - data:
+      isLoggedIn: true
+      isAdmin: false
+    output:
+      menu:
+        - label: "Home"
+          path: "/"
+        - label: "Dashboard"
+          path: "/dashboard"
+        # Admin and Hidden items are excluded
+```
+
+#### Complex Conditions
+
+`$when` supports all the same operators and expressions as `$if`:
+
+```yaml
+template:
+  permissions:
+    - $when: userRole == "admin" || userRole == "moderator"
+      action: "delete"
+      resource: "posts"
+    - $when: age >= 18 && hasConsent
+      action: "purchase"
+      resource: "products"
+    - $when: !isBlocked && emailVerified
+      action: "comment"
+      resource: "articles"
+
+cases:
+  - data:
+      userRole: "moderator"
+      age: 25
+      hasConsent: true
+      isBlocked: false
+      emailVerified: true
+    output:
+      permissions:
+        - action: "delete"
+          resource: "posts"
+        - action: "purchase"
+          resource: "products"
+        - action: "comment"
+          resource: "articles"
+```
+
+#### Combining $when with $if
+
+You can use `$when` and `$if` together - `$when` is evaluated first:
+
+```yaml
+template:
+  card:
+    $when: showCard
+    title: "User Card"
+    $if isPremium:
+      badge: "Premium"
+      features: ["Feature A", "Feature B", "Feature C"]
+    $else:
+      badge: "Basic"
+      features: ["Feature A"]
+
+cases:
+  - data:
+      showCard: true
+      isPremium: true
+    output:
+      card:
+        title: "User Card"
+        badge: "Premium"
+        features: ["Feature A", "Feature B", "Feature C"]
+  
+  - data:
+      showCard: false
+      isPremium: true
+    output: {}  # Entire card is excluded, $if is never evaluated
+```
+
+#### Nested $when Conditions
+
+```yaml
+template:
+  app:
+    $when: appEnabled
+    header:
+      $when: showHeader
+      title: "My App"
+      logo: "logo.png"
+    content:
+      $when: hasContent
+      text: "Welcome"
+    footer:
+      copyright: "2024"
+
+cases:
+  - data:
+      appEnabled: true
+      showHeader: true
+      hasContent: false
+    output:
+      app:
+        header:
+          title: "My App"
+          logo: "logo.png"
+        footer:
+          copyright: "2024"
+        # content is excluded
+  
+  - data:
+      appEnabled: false
+      showHeader: true
+      hasContent: true
+    output: {}  # Entire app is excluded, nested conditions are not evaluated
+```
+
 ### Supported Operators
 
 #### Comparison Operators

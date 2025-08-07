@@ -84,12 +84,46 @@ export const parseArray = (arr, functions) => {
 export const parseObject = (obj, functions) => {
   const properties = [];
   let hasDynamicContent = false;
+  let whenCondition = null;
 
   const entries = Object.entries(obj);
   let i = 0;
 
+  // First pass: check for $when directive
+  for (const [key, value] of entries) {
+    if (key === "$when") {
+      if (whenCondition !== null) {
+        throw new JemplParseError(
+          "Multiple '$when' directives on the same object are not allowed",
+        );
+      }
+      // Allow boolean and string values
+      if (value === undefined || value === null) {
+        throw new JemplParseError("Missing condition expression after '$when'");
+      }
+      // Convert non-string values to string for parsing
+      const conditionStr =
+        typeof value === "string" ? value : JSON.stringify(value);
+      if (conditionStr.trim() === "") {
+        throw new JemplParseError("Empty condition expression after '$when'");
+      }
+      whenCondition = parseConditionExpression(conditionStr);
+      hasDynamicContent = true;
+    } else if (key.startsWith("$when#") || key.startsWith("$when ")) {
+      throw new JemplParseError(
+        "'$when' does not support ID syntax or inline conditions - use '$when' as a property",
+      );
+    }
+  }
+
   while (i < entries.length) {
     const [key, value] = entries[i];
+
+    // Skip $when as it's already processed
+    if (key === "$when") {
+      i++;
+      continue;
+    }
 
     // Check if this is a conditional structure
     if (
@@ -149,11 +183,17 @@ export const parseObject = (obj, functions) => {
     }
   }
 
-  return {
+  const result = {
     type: NodeType.OBJECT,
     properties,
     fast: !hasDynamicContent,
   };
+
+  if (whenCondition) {
+    result.whenCondition = whenCondition;
+  }
+
+  return result;
 };
 
 /**

@@ -1,0 +1,601 @@
+file: '../../src/render.js'
+group: render
+suites: [when]
+---
+### When Directive Rendering Tests
+suite: when
+exportName: default
+---
+case: render object when condition is true
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 1
+      path: "showObject"
+    properties:
+      - key: message
+        value:
+          type: 0
+          value: "Hello"
+      - key: count
+        value:
+          type: 0
+          value: 42
+  - showObject: true
+  - functions: {}
+out:
+  message: "Hello"
+  count: 42
+---
+case: exclude object when condition is false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 1
+      path: "showObject"
+    properties:
+      - key: message
+        value:
+          type: 0
+          value: "Hello"
+  - showObject: false
+  - functions: {}
+out: {}
+---
+case: when with comparison true
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 4  # >=
+      left:
+        type: 1
+        path: "age"
+      right:
+        type: 0
+        value: 18
+    properties:
+      - key: status
+        value:
+          type: 0
+          value: "adult"
+  - age: 25
+  - functions: {}
+out:
+  status: "adult"
+---
+case: when with comparison false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 4  # >=
+      left:
+        type: 1
+        path: "age"
+      right:
+        type: 0
+        value: 18
+    properties:
+      - key: status
+        value:
+          type: 0
+          value: "adult"
+  - age: 16
+  - functions: {}
+out: {}
+---
+case: when with logical AND all true
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 6  # &&
+      left:
+        type: 1
+        path: "isActive"
+      right:
+        type: 1
+        path: "hasPermission"
+    properties:
+      - key: action
+        value:
+          type: 0
+          value: "allowed"
+  - isActive: true
+    hasPermission: true
+  - functions: {}
+out:
+  action: "allowed"
+---
+case: when with logical AND one false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 6  # &&
+      left:
+        type: 1
+        path: "isActive"
+      right:
+        type: 1
+        path: "hasPermission"
+    properties:
+      - key: action
+        value:
+          type: 0
+          value: "allowed"
+  - isActive: true
+    hasPermission: false
+  - functions: {}
+out: {}
+---
+case: when with logical OR at least one true
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 7  # ||
+      left:
+        type: 1
+        path: "isAdmin"
+      right:
+        type: 1
+        path: "isOwner"
+    properties:
+      - key: canEdit
+        value:
+          type: 0
+          value: true
+  - isAdmin: false
+    isOwner: true
+  - functions: {}
+out:
+  canEdit: true
+---
+case: when with logical OR all false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 7  # ||
+      left:
+        type: 1
+        path: "isAdmin"
+      right:
+        type: 1
+        path: "isOwner"
+    properties:
+      - key: canEdit
+        value:
+          type: 0
+          value: true
+  - isAdmin: false
+    isOwner: false
+  - functions: {}
+out: {}
+---
+case: when with negation false becomes true
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 5
+      op: 0  # !
+      operand:
+        type: 1
+        path: "isDeleted"
+    properties:
+      - key: visible
+        value:
+          type: 0
+          value: true
+  - isDeleted: false
+  - functions: {}
+out:
+  visible: true
+---
+case: when with negation true becomes false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 5
+      op: 0  # !
+      operand:
+        type: 1
+        path: "isDeleted"
+    properties:
+      - key: visible
+        value:
+          type: 0
+          value: true
+  - isDeleted: true
+  - functions: {}
+out: {}
+---
+case: array with when conditions filters correctly
+in:
+  - type: 9
+    fast: false
+    items:
+      - type: 8
+        fast: false
+        whenCondition:
+          type: 1
+          path: "showFirst"
+        properties:
+          - key: id
+            value:
+              type: 0
+              value: 1
+      - type: 8
+        fast: false
+        whenCondition:
+          type: 1
+          path: "showSecond"
+        properties:
+          - key: id
+            value:
+              type: 0
+              value: 2
+      - type: 8
+        fast: true
+        properties:
+          - key: id
+            value:
+              type: 0
+              value: 3
+  - showFirst: true
+    showSecond: false
+  - functions: {}
+out:
+  - id: 1
+  - id: 3
+---
+case: array with all when conditions false
+in:
+  - type: 9
+    fast: false
+    items:
+      - type: 8
+        fast: false
+        whenCondition:
+          type: 1
+          path: "show1"
+        properties:
+          - key: id
+            value:
+              type: 0
+              value: 1
+      - type: 8
+        fast: false
+        whenCondition:
+          type: 1
+          path: "show2"
+        properties:
+          - key: id
+            value:
+              type: 0
+              value: 2
+  - show1: false
+    show2: false
+  - functions: {}
+out: []
+---
+case: nested object with when at parent excludes all
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: section
+        value:
+          type: 8
+          fast: false
+          whenCondition:
+            type: 1
+            path: "showSection"
+          properties:
+            - key: title
+              value:
+                type: 0
+                value: "Section Title"
+            - key: content
+              value:
+                type: 0
+                value: "Section Content"
+  - showSection: false
+  - functions: {}
+out: {}
+---
+case: nested object with when at parent includes all
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: section
+        value:
+          type: 8
+          fast: false
+          whenCondition:
+            type: 1
+            path: "showSection"
+          properties:
+            - key: title
+              value:
+                type: 0
+                value: "Section Title"
+            - key: content
+              value:
+                type: 0
+                value: "Section Content"
+  - showSection: true
+  - functions: {}
+out:
+  section:
+    title: "Section Title"
+    content: "Section Content"
+---
+case: when with variables in properties
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 1
+      path: "showUser"
+    properties:
+      - key: name
+        value:
+          type: 1
+          path: "user.name"
+      - key: email
+        value:
+          type: 1
+          path: "user.email"
+  - showUser: true
+    user:
+      name: "John Doe"
+      email: "john@example.com"
+  - functions: {}
+out:
+  name: "John Doe"
+  email: "john@example.com"
+---
+case: when condition with undefined variable treated as false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 1
+      path: "undefinedVar"
+    properties:
+      - key: message
+        value:
+          type: 0
+          value: "Should not appear"
+  - otherVar: true
+  - functions: {}
+out: {}
+---
+case: when with literal true always includes
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 0
+      value: true
+    properties:
+      - key: always
+        value:
+          type: 0
+          value: "shown"
+  - {}
+  - functions: {}
+out:
+  always: "shown"
+---
+case: when with literal false always excludes
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 0
+      value: false
+    properties:
+      - key: never
+        value:
+          type: 0
+          value: "shown"
+  - {}
+  - functions: {}
+out: {}
+---
+case: when with in operator array membership true
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 8  # in
+      left:
+        type: 1
+        path: "role"
+      right:
+        type: 1
+        path: "allowedRoles"
+    properties:
+      - key: hasAccess
+        value:
+          type: 0
+          value: true
+  - role: "admin"
+    allowedRoles: ["user", "admin", "moderator"]
+  - functions: {}
+out:
+  hasAccess: true
+---
+case: when with in operator array membership false
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 4
+      op: 8  # in
+      left:
+        type: 1
+        path: "role"
+      right:
+        type: 1
+        path: "allowedRoles"
+    properties:
+      - key: hasAccess
+        value:
+          type: 0
+          value: true
+  - role: "guest"
+    allowedRoles: ["user", "admin", "moderator"]
+  - functions: {}
+out: {}
+---
+case: complex nested structure with multiple when conditions
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: dashboard
+        value:
+          type: 8
+          fast: false
+          whenCondition:
+            type: 1
+            path: "user.isLoggedIn"
+          properties:
+            - key: header
+              value:
+                type: 8
+                fast: false
+                whenCondition:
+                  type: 1
+                  path: "user.showHeader"
+                properties:
+                  - key: title
+                    value:
+                      type: 0
+                      value: "Dashboard"
+            - key: sections
+              value:
+                type: 9
+                fast: false
+                items:
+                  - type: 8
+                    fast: false
+                    whenCondition:
+                      type: 1
+                      path: "user.hasSection1"
+                    properties:
+                      - key: id
+                        value:
+                          type: 0
+                          value: "section1"
+                  - type: 8
+                    fast: false
+                    whenCondition:
+                      type: 1
+                      path: "user.hasSection2"
+                    properties:
+                      - key: id
+                        value:
+                          type: 0
+                          value: "section2"
+  - user:
+      isLoggedIn: true
+      showHeader: false
+      hasSection1: true
+      hasSection2: false
+  - functions: {}
+out:
+  dashboard:
+    sections:
+      - id: "section1"
+---
+case: when combined with if statement inside
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 1
+      path: "isVisible"
+    properties:
+      - key: type
+        value:
+          type: 0
+          value: "container"
+      - key: "$if hasContent"
+        value:
+          type: 6
+          conditions:
+            - type: 1
+              path: "hasContent"
+            - null
+          bodies:
+            - type: 8
+              fast: true
+              properties:
+                - key: content
+                  value:
+                    type: 0
+                    value: "Some content"
+            - type: 8
+              fast: true
+              properties:
+                - key: content
+                  value:
+                    type: 0
+                    value: "Empty"
+          id: null
+  - isVisible: true
+    hasContent: true
+  - functions: {}
+out:
+  type: "container"
+  content: "Some content"
+---
+case: when false prevents if evaluation inside
+in:
+  - type: 8
+    fast: false
+    whenCondition:
+      type: 1
+      path: "isVisible"
+    properties:
+      - key: type
+        value:
+          type: 0
+          value: "container"
+      - key: "$if hasContent"
+        value:
+          type: 6
+          conditions:
+            - type: 1
+              path: "hasContent"
+          bodies:
+            - type: 8
+              fast: true
+              properties:
+                - key: content
+                  value:
+                    type: 0
+                    value: "Some content"
+          id: null
+  - isVisible: false
+    hasContent: true
+  - functions: {}
+out: {}

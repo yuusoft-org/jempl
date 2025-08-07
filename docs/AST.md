@@ -98,7 +98,7 @@ operand: Node
 
 ### 7. Conditional Node
 
-For `$if`, `$elif`, `$else` structures.
+For `$if`, `$elif`, `$else` structures. These merge their content into the parent object.
 
 ```yaml
 type: 6 # CONDITIONAL
@@ -106,6 +106,10 @@ conditions: [Node | null] # Flat array, null = else branch
 bodies: [Node] # Corresponding bodies for each condition
 id: string | null # For multiple conditionals like $if#1
 ```
+
+**Note on $if vs $when:**
+- `$if`: Merges the body content into the parent object when condition is true
+- `$when`: Controls whether the entire object exists (stored as `whenCondition` on Object nodes)
 
 ### 8. Loop Node
 
@@ -129,6 +133,7 @@ properties:
   - key: string
     value: Node
 fast: boolean # true if no conditionals/loops/functions
+whenCondition: Node | null # For $when directive (optional)
 ```
 
 ### 10. Array Node
@@ -266,6 +271,147 @@ properties:
                   value:
                     type: 1 # VARIABLE
                     path: "idx"
+```
+
+### Example 4: When Directive
+
+The `$when` directive controls whether an entire object exists in the output.
+
+Template:
+
+```yaml
+$when: isActive
+type: "button"
+label: "Click me"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+whenCondition:
+  type: 1 # VARIABLE
+  path: "isActive"
+properties:
+  - key: type
+    value:
+      type: 0 # LITERAL
+      value: "button"
+  - key: label
+    value:
+      type: 0 # LITERAL
+      value: "Click me"
+```
+
+### Example 5: When with Complex Condition
+
+Template:
+
+```yaml
+$when: isLoggedIn && (isAdmin || isOwner)
+dashboard: "Full Access"
+settings: "Edit All"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+whenCondition:
+  type: 4 # BINARY
+  op: 6 # && operator
+  left:
+    type: 1 # VARIABLE
+    path: "isLoggedIn"
+  right:
+    type: 4 # BINARY
+    op: 7 # || operator
+    left:
+      type: 1 # VARIABLE
+      path: "isAdmin"
+    right:
+      type: 1 # VARIABLE
+      path: "isOwner"
+properties:
+  - key: dashboard
+    value:
+      type: 0 # LITERAL
+      value: "Full Access"
+  - key: settings
+    value:
+      type: 0 # LITERAL
+      value: "Edit All"
+```
+
+### Example 6: When in Arrays
+
+Template:
+
+```yaml
+items:
+  - $when: showFirst
+    id: 1
+    name: "First"
+  - $when: showSecond
+    id: 2
+    name: "Second"
+  - id: 3
+    name: "Always"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+properties:
+  - key: items
+    value:
+      type: 9 # ARRAY
+      fast: false
+      items:
+        - type: 8 # OBJECT
+          fast: false
+          whenCondition:
+            type: 1 # VARIABLE
+            path: "showFirst"
+          properties:
+            - key: id
+              value:
+                type: 0 # LITERAL
+                value: 1
+            - key: name
+              value:
+                type: 0 # LITERAL
+                value: "First"
+        - type: 8 # OBJECT
+          fast: false
+          whenCondition:
+            type: 1 # VARIABLE
+            path: "showSecond"
+          properties:
+            - key: id
+              value:
+                type: 0 # LITERAL
+                value: 2
+            - key: name
+              value:
+                type: 0 # LITERAL
+                value: "Second"
+        - type: 8 # OBJECT
+          fast: true
+          whenCondition: null
+          properties:
+            - key: id
+              value:
+                type: 0 # LITERAL
+                value: 3
+            - key: name
+              value:
+                type: 0 # LITERAL
+                value: "Always"
 ```
 
 ## Optimizations
