@@ -1,0 +1,73 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [partialsErrors]
+---
+### Partials Errors
+suite: partialsErrors
+exportName: default
+---
+case: partial with invalid name type
+in:
+  - $partial: 123
+throws: "Parse Error: $partial value must be a string"
+---
+case: partial with null name
+in:
+  - $partial: null
+throws: "Parse Error: $partial value must be a string"
+---
+case: partial with array name
+in:
+  - $partial: ["userCard"]
+throws: "Parse Error: $partial value must be a string"
+---
+case: partial with object name
+in:
+  - $partial: { name: "userCard" }
+throws: "Parse Error: $partial value must be a string"
+---
+case: partial with conflicting $if directive
+in:
+  - $partial: "card"
+    $if: showCard
+    title: "My Card"
+throws: "Parse Error: Cannot use $partial with $if at the same level. Wrap $partial in a parent object if you need conditionals."
+---
+case: partial with conflicting $elif directive
+in:
+  - $partial: "card"
+    $elif: condition
+    title: "My Card"
+throws: "Parse Error: Cannot use $partial with $elif at the same level. Wrap $partial in a parent object if you need conditionals."
+---
+case: partial with conflicting $else directive
+in:
+  - $partial: "card"
+    $else:
+      fallback: true
+throws: "Parse Error: Cannot use $partial with $else at the same level. Wrap $partial in a parent object if you need conditionals."
+---
+case: partial with conflicting $for directive
+in:
+  - $partial: "item"
+    $for item in items:
+      - id: "${item.id}"
+throws: "Parse Error: Cannot use $partial with $for at the same level. Wrap $partial in a parent object if you need conditionals."
+---
+case: partial with multiple conflicting directives
+in:
+  - $partial: "complex"
+    $if: condition1
+    $for: items
+    data: "value"
+throws: "Parse Error: Cannot use $partial with $if, $for at the same level. Wrap $partial in a parent object if you need conditionals."
+---
+case: partial with empty string name
+in:
+  - $partial: ""
+throws: "Parse Error: $partial value cannot be an empty string"
+---
+case: partial with whitespace-only name
+in:
+  - $partial: "   "
+throws: "Parse Error: $partial value cannot be an empty string"

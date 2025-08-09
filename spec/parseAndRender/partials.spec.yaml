@@ -1,0 +1,233 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [partials]
+---
+### Partials End-to-End Tests
+suite: partials
+exportName: default
+---
+case: simple partial usage
+in:
+  - $partial: "greeting"
+  - name: "World"
+  - partials:
+      greeting:
+        message: "Hello ${name}!"
+out:
+  message: "Hello World!"
+---
+case: partial with inline data override
+in:
+  - $partial: "userCard"
+    name: "Alice"
+    role: "Admin"
+  - name: "Bob"
+    role: "User"
+  - partials:
+      userCard:
+        name: "${name}"
+        role: "${role}"
+        display: "${name} (${role})"
+out:
+  name: "Alice"
+  role: "Admin"
+  display: "Alice (Admin)"
+---
+case: partial in loop
+in:
+  - items:
+      $for item, i in items:
+        - $partial: "itemCard"
+  - items:
+      - id: 1
+        name: "First"
+      - id: 2
+        name: "Second"
+      - id: 3
+        name: "Third"
+  - partials:
+      itemCard:
+        id: "${item.id}"
+        label: "${item.name}"
+        index: "${i}"
+out:
+  items:
+    - id: 1
+      label: "First"
+      index: 0
+    - id: 2
+      label: "Second"
+      index: 1
+    - id: 3
+      label: "Third"
+      index: 2
+---
+case: nested partials
+in:
+  - $partial: "page"
+    title: "My Page"
+  - user: "John"
+  - partials:
+      page:
+        header:
+          $partial: "header"
+        content: "Welcome to ${title}"
+      header:
+        title: "${title}"
+        user: "${user}"
+        greeting: "Hello ${user}!"
+out:
+  header:
+    title: "My Page"
+    user: "John"
+    greeting: "Hello John!"
+  content: "Welcome to My Page"
+---
+case: partial with conditionals
+in:
+  - users:
+      - $partial: "userStatus"
+        name: "Alice"
+        age: 25
+      - $partial: "userStatus"
+        name: "Bob"
+        age: 16
+  - {}
+  - partials:
+      userStatus:
+        name: "${name}"
+        age: "${age}"
+        $if age >= 18:
+          status: "adult"
+          canVote: true
+        $else:
+          status: "minor"
+          canVote: false
+out:
+  users:
+    - name: "Alice"
+      age: 25
+      status: "adult"
+      canVote: true
+    - name: "Bob"
+      age: 16
+      status: "minor"
+      canVote: false
+---
+case: partial with $when in array
+in:
+  - menu:
+      - $when: true
+        $partial: "menuItem"
+        label: "Home"
+        path: "/"
+      - $when: isLoggedIn
+        $partial: "menuItem"
+        label: "Dashboard"
+        path: "/dashboard"
+      - $when: isAdmin
+        $partial: "menuItem"
+        label: "Admin"
+        path: "/admin"
+  - isLoggedIn: true
+    isAdmin: false
+  - partials:
+      menuItem:
+        label: "${label}"
+        path: "${path}"
+        active: false
+out:
+  menu:
+    - label: "Home"
+      path: "/"
+      active: false
+    - label: "Dashboard"
+      path: "/dashboard"
+      active: false
+---
+case: partial with escaped dollar properties
+in:
+  - $partial: "pricing"
+    \$price: 99.99
+    $$currency: "USD"
+    displayPrice: "$99.99"
+  - {}
+  - partials:
+      pricing:
+        price: "${$price}"
+        currency: "${$currency}"
+        display: "${displayPrice}"
+out:
+  price: 99.99
+  currency: "USD"
+  display: "$99.99"
+---
+case: complex nested structure with partials
+in:
+  - dashboard:
+      $partial: "dashboard"
+      widgets:
+        - $partial: "widget"
+          type: "chart"
+          data: [10, 20, 30]
+        - $partial: "widget"
+          type: "table"
+          data: ["A", "B", "C"]
+  - user: "Admin"
+  - partials:
+      dashboard:
+        title: "Dashboard for ${user}"
+        widgets: "${widgets}"
+      widget:
+        type: "${type}"
+        data: "${data}"
+        $if type == "chart":
+          visualization: "bar"
+        $elif type == "table":
+          visualization: "grid"
+out:
+  dashboard:
+    title: "Dashboard for Admin"
+    widgets:
+      - type: "chart"
+        data: [10, 20, 30]
+        visualization: "bar"
+      - type: "table"
+        data: ["A", "B", "C"]
+        visualization: "grid"
+---
+case: partial used multiple times with different data
+in:
+  - cards:
+      primary:
+        $partial: "card"
+        title: "Primary"
+        color: "blue"
+      secondary:
+        $partial: "card"
+        title: "Secondary"
+        color: "gray"
+      alert:
+        $partial: "card"
+        title: "Alert"
+        color: "red"
+  - {}
+  - partials:
+      card:
+        title: "${title}"
+        color: "${color}"
+        style: "card-${color}"
+out:
+  cards:
+    primary:
+      title: "Primary"
+      color: "blue"
+      style: "card-blue"
+    secondary:
+      title: "Secondary"
+      color: "gray"
+      style: "card-gray"
+    alert:
+      title: "Alert"
+      color: "red"
+      style: "card-red"

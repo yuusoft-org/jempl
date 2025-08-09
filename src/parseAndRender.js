@@ -45,7 +45,7 @@ import * as defaultFunctions from "./functions.js";
  * // result: { greeting: "Hello WORLD!", timestamp: 1234567890123 }
  */
 const parseAndRender = (template, data, options = {}) => {
-  const { functions = {} } = options;
+  const { functions = {}, partials = {} } = options;
 
   // Merge default functions with custom functions
   const allFunctions = { ...defaultFunctions, ...functions };
@@ -53,8 +53,17 @@ const parseAndRender = (template, data, options = {}) => {
   // Parse the template into an AST
   const ast = parse(template, { functions: allFunctions });
 
-  // Render the AST with the data
-  return render(ast, data, allFunctions);
+  // Parse all partials into ASTs
+  const parsedPartials = {};
+  for (const [name, partialTemplate] of Object.entries(partials)) {
+    parsedPartials[name] = parse(partialTemplate, { functions: allFunctions });
+  }
+
+  // Render the AST with the data and partials
+  return render(ast, data, {
+    functions: allFunctions,
+    partials: parsedPartials,
+  });
 };
 
 export default parseAndRender;
