@@ -2,6 +2,7 @@ import { NodeType, BinaryOp, UnaryOp } from "./parse/constants.js";
 import {
   createIterationRenderError,
   createUnknownFunctionRenderError,
+  JemplRenderError,
 } from "./errors.js";
 
 /**
@@ -33,8 +34,24 @@ import {
  * const result = render(ast, {}, { now: () => Date.now() });
  * // result: { timestamp: 1234567890123 }
  */
-const render = (ast, data, functions = {}) => {
-  const result = renderNode(ast, functions, data, {});
+const render = (ast, data, options = {}) => {
+  // Handle backward compatibility - if third arg is not an object with functions/partials keys,
+  // assume it's the old functions object
+  let functions = {};
+  let partials = {};
+  
+  if (options && typeof options === 'object') {
+    if (options.functions !== undefined || options.partials !== undefined) {
+      // New API
+      functions = options.functions || {};
+      partials = options.partials || {};
+    } else if (typeof options === 'object') {
+      // Old API - assume it's functions object for backward compatibility
+      functions = options;
+    }
+  }
+  
+  const result = renderNode(ast, { functions, partials }, data, {});
   // Convert undefined to empty object at root level (for $when: false at root)
   if (result === undefined) {
     return {};
@@ -45,12 +62,14 @@ const render = (ast, data, functions = {}) => {
 /**
  * Renders a single AST node
  * @param {Object} node
- * @param {Object} functions
+ * @param {Object} options - Contains functions and partials
  * @param {Object} data
  * @param {Object} scope - local scope for loops
  * @returns {any} rendered value
  */
-const renderNode = (node, functions, data, scope) => {
+const renderNode = (node, options, data, scope) => {
+  // For backward compatibility within the function
+  const functions = options.functions || options;
   // Handle malformed variable nodes that have 'var' instead of 'type' and 'path'
   if (node.var && !node.type) {
     return getVariableValue(node.var, data, scope);
@@ -66,31 +85,34 @@ const renderNode = (node, functions, data, scope) => {
   }
 
   if (node.type === NodeType.INTERPOLATION) {
-    return renderInterpolation(node.parts, functions, data, scope);
+    return renderInterpolation(node.parts, options, data, scope);
   }
 
   // Continue with switch for less common types
   switch (node.type) {
     case NodeType.FUNCTION:
-      return renderFunction(node, functions, data, scope);
+      return renderFunction(node, options, data, scope);
 
     case NodeType.BINARY:
-      return renderBinaryOperation(node, functions, data, scope);
+      return renderBinaryOperation(node, options, data, scope);
 
     case NodeType.UNARY:
-      return renderUnaryOperation(node, functions, data, scope);
+      return renderUnaryOperation(node, options, data, scope);
 
     case NodeType.CONDITIONAL:
-      return renderConditional(node, functions, data, scope);
+      return renderConditional(node, options, data, scope);
 
     case NodeType.LOOP:
-      return renderLoop(node, functions, data, scope);
+      return renderLoop(node, options, data, scope);
 
     case NodeType.OBJECT:
-      return renderObject(node, functions, data, scope);
+      return renderObject(node, options, data, scope);
 
     case NodeType.ARRAY:
-      return renderArray(node, functions, data, scope);
+      return renderArray(node, options, data, scope);
+
+    case NodeType.PARTIAL:
+      return renderPartial(node, options, data, scope);
 
     default:
       throw new Error(`Unknown node type: ${node.type}`);
@@ -226,7 +248,7 @@ const getVariableValue = (path, data, scope) => {
 /**
  * Renders string interpolation
  */
-const renderInterpolation = (parts, functions, data, scope) => {
+const renderInterpolation = (parts, options, data, scope) => {
   // Use array join for better performance than string concatenation
   const segments = [];
 
@@ -234,8 +256,8 @@ const renderInterpolation = (parts, functions, data, scope) => {
     if (typeof part === "string") {
       segments.push(part);
     } else {
-      // Handle AST nodes (variables, functions, etc.)
-      const value = renderNode(part, functions, data, scope);
+      // Handle AST nodes (variables, options, etc.)
+      const value = renderNode(part, options, data, scope);
       segments.push(value != null ? String(value) : "");
     }
   }
@@ -246,20 +268,21 @@ const renderInterpolation = (parts, functions, data, scope) => {
 /**
  * Renders function calls
  */
-const renderFunction = (node, functions, data, scope) => {
+const renderFunction = (node, options, data, scope) => {
+  const functions = options.functions || options;
   const func = functions[node.name];
   if (!func) {
     throw createUnknownFunctionRenderError(node.name, functions);
   }
 
-  const args = node.args.map((arg) => renderNode(arg, functions, data, scope));
+  const args = node.args.map((arg) => renderNode(arg, options, data, scope));
   return func(...args);
 };
 
 /**
  * Evaluates a condition node without converting undefined to string
  */
-const evaluateCondition = (node, functions, data, scope) => {
+const evaluateCondition = (node, options, data, scope) => {
   // Handle malformed variable nodes that have 'var' instead of 'type' and 'path'
   if (node.var && !node.type) {
     return getVariableValue(node.var, data, scope);
@@ -274,28 +297,28 @@ const evaluateCondition = (node, functions, data, scope) => {
       return node.value;
 
     case NodeType.BINARY:
-      return renderBinaryOperation(node, functions, data, scope);
+      return renderBinaryOperation(node, options, data, scope);
 
     case NodeType.UNARY:
-      return renderUnaryOperation(node, functions, data, scope);
+      return renderUnaryOperation(node, options, data, scope);
 
     case NodeType.FUNCTION:
-      return renderFunction(node, functions, data, scope);
+      return renderFunction(node, options, data, scope);
 
     default:
       // For other node types, use regular rendering
-      return renderNode(node, functions, data, scope);
+      return renderNode(node, options, data, scope);
   }
 };
 
 /**
  * Renders binary operations
  */
-const renderBinaryOperation = (node, functions, data, scope) => {
+const renderBinaryOperation = (node, options, data, scope) => {
   // For logical operations, use evaluateCondition to preserve undefined
   if (node.op === BinaryOp.AND || node.op === BinaryOp.OR) {
-    const left = evaluateCondition(node.left, functions, data, scope);
-    const right = evaluateCondition(node.right, functions, data, scope);
+    const left = evaluateCondition(node.left, options, data, scope);
+    const right = evaluateCondition(node.right, options, data, scope);
 
     switch (node.op) {
       case BinaryOp.AND:
@@ -306,8 +329,8 @@ const renderBinaryOperation = (node, functions, data, scope) => {
   }
 
   // For other operations, use renderNode
-  const left = renderNode(node.left, functions, data, scope);
-  const right = renderNode(node.right, functions, data, scope);
+  const left = renderNode(node.left, options, data, scope);
+  const right = renderNode(node.right, options, data, scope);
 
   switch (node.op) {
     case BinaryOp.EQ:
@@ -332,12 +355,12 @@ const renderBinaryOperation = (node, functions, data, scope) => {
 /**
  * Renders unary operations
  */
-const renderUnaryOperation = (node, functions, data, scope) => {
+const renderUnaryOperation = (node, options, data, scope) => {
   // For NOT operation, use evaluateCondition to preserve undefined
   const operand =
     node.op === UnaryOp.NOT
-      ? evaluateCondition(node.operand, functions, data, scope)
-      : renderNode(node.operand, functions, data, scope);
+      ? evaluateCondition(node.operand, options, data, scope)
+      : renderNode(node.operand, options, data, scope);
 
   switch (node.op) {
     case UnaryOp.NOT:
@@ -350,7 +373,7 @@ const renderUnaryOperation = (node, functions, data, scope) => {
 /**
  * Ultra-fast conditional for simple variable checks (most common case)
  */
-const renderConditionalUltraFast = (node, functions, data, scope) => {
+const renderConditionalUltraFast = (node, options, data, scope) => {
   // Fast path for simple if/else with variable conditions
   if (node.conditions.length === 2 && node.conditions[1] === null) {
     const condition = node.conditions[0];
@@ -369,7 +392,7 @@ const renderConditionalUltraFast = (node, functions, data, scope) => {
           const result = {};
           for (const prop of trueBody.properties) {
             const key = prop.parsedKey
-              ? renderNode(prop.parsedKey, functions, data, scope)
+              ? renderNode(prop.parsedKey, options, data, scope)
               : prop.key;
             const valueNode = prop.value;
 
@@ -388,14 +411,14 @@ const renderConditionalUltraFast = (node, functions, data, scope) => {
                   segments.push(value != null ? String(value) : "");
                 } else {
                   // Fall back for complex interpolations
-                  const value = renderNode(part, functions, data, scope);
+                  const value = renderNode(part, options, data, scope);
                   segments.push(value != null ? String(value) : "");
                 }
               }
               result[key] = segments.join("");
             } else {
               // Fall back for complex nodes
-              result[key] = renderNode(valueNode, functions, data, scope);
+              result[key] = renderNode(valueNode, options, data, scope);
             }
           }
           return result;
@@ -410,7 +433,7 @@ const renderConditionalUltraFast = (node, functions, data, scope) => {
           const result = {};
           for (const prop of falseBody.properties) {
             const key = prop.parsedKey
-              ? renderNode(prop.parsedKey, functions, data, scope)
+              ? renderNode(prop.parsedKey, options, data, scope)
               : prop.key;
             const valueNode = prop.value;
 
@@ -429,14 +452,14 @@ const renderConditionalUltraFast = (node, functions, data, scope) => {
                   segments.push(value != null ? String(value) : "");
                 } else {
                   // Fall back for complex interpolations
-                  const value = renderNode(part, functions, data, scope);
+                  const value = renderNode(part, options, data, scope);
                   segments.push(value != null ? String(value) : "");
                 }
               }
               result[key] = segments.join("");
             } else {
               // Fall back for complex nodes
-              result[key] = renderNode(valueNode, functions, data, scope);
+              result[key] = renderNode(valueNode, options, data, scope);
             }
           }
           return result;
@@ -451,9 +474,9 @@ const renderConditionalUltraFast = (node, functions, data, scope) => {
 /**
  * Renders conditional statements
  */
-const renderConditional = (node, functions, data, scope) => {
+const renderConditional = (node, options, data, scope) => {
   // Try ultra-fast path first
-  const ultraResult = renderConditionalUltraFast(node, functions, data, scope);
+  const ultraResult = renderConditionalUltraFast(node, options, data, scope);
   if (ultraResult !== null) {
     return ultraResult;
   }
@@ -464,13 +487,13 @@ const renderConditional = (node, functions, data, scope) => {
 
     // null condition means else branch
     if (condition === null) {
-      return renderNode(node.bodies[i], functions, data, scope);
+      return renderNode(node.bodies[i], options, data, scope);
     }
 
     // Evaluate condition - don't convert undefined to "undefined" string
-    const conditionValue = evaluateCondition(condition, functions, data, scope);
+    const conditionValue = evaluateCondition(condition, options, data, scope);
     if (conditionValue) {
-      return renderNode(node.bodies[i], functions, data, scope);
+      return renderNode(node.bodies[i], options, data, scope);
     }
   }
 
@@ -725,7 +748,7 @@ const renderLoopUltraFast = (node, iterable) => {
 /**
  * Fast path for rendering simple object loops (most common case)
  */
-const renderLoopFastPath = (node, functions, data, scope, iterable) => {
+const renderLoopFastPath = (node, options, data, scope, iterable) => {
   const results = [];
   const body = node.body;
 
@@ -748,7 +771,7 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
       // Inline object property rendering to avoid function calls
       for (const prop of body.properties) {
         const key = prop.parsedKey
-          ? renderNode(prop.parsedKey, functions, data, loopScope)
+          ? renderNode(prop.parsedKey, options, data, loopScope)
           : prop.key;
         const valueNode = prop.value;
 
@@ -827,7 +850,7 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
                 [itemVar]: item,
                 ...(indexVar && { [indexVar]: i }),
               };
-              const value = renderNode(part, functions, data, newScope);
+              const value = renderNode(part, options, data, newScope);
               segments.push(value != null ? String(value) : "");
             }
           }
@@ -839,7 +862,7 @@ const renderLoopFastPath = (node, functions, data, scope, iterable) => {
             [itemVar]: item,
             ...(indexVar && { [indexVar]: i }),
           };
-          result[key] = renderNode(valueNode, functions, data, newScope);
+          result[key] = renderNode(valueNode, options, data, newScope);
         }
       }
 
@@ -928,8 +951,8 @@ const renderConditionalTestPatternNuclear = (node, iterable, itemVar) => {
 /**
  * Renders loops
  */
-const renderLoop = (node, functions, data, scope) => {
-  const iterable = renderNode(node.iterable, functions, data, scope);
+const renderLoop = (node, options, data, scope) => {
+  const iterable = renderNode(node.iterable, options, data, scope);
 
   if (!Array.isArray(iterable)) {
     // Create the loop expression for error message
@@ -959,7 +982,7 @@ const renderLoop = (node, functions, data, scope) => {
   }
 
   // Try regular fast path
-  const fastResult = renderLoopFastPath(node, functions, data, scope, iterable);
+  const fastResult = renderLoopFastPath(node, options, data, scope, iterable);
   if (fastResult !== null) {
     return fastResult;
   }
@@ -973,7 +996,7 @@ const renderLoop = (node, functions, data, scope) => {
       ? { ...scope, [node.itemVar]: iterable[i], [node.indexVar]: i }
       : { ...scope, [node.itemVar]: iterable[i] };
 
-    const rendered = renderNode(node.body, functions, data, newScope);
+    const rendered = renderNode(node.body, options, data, newScope);
 
     // If the body is an array with a single item, unwrap it
     if (Array.isArray(rendered) && rendered.length === 1) {
@@ -989,7 +1012,7 @@ const renderLoop = (node, functions, data, scope) => {
 /**
  * Ultra-fast path for deeply nested static structures (todo app pattern)
  */
-const renderObjectDeepUltraFast = (node, functions, data, scope) => {
+const renderObjectDeepUltraFast = (node, options, data, scope) => {
   // Skip if this node has a whenCondition - let the main path handle it
   if (node.whenCondition) {
     return null;
@@ -999,7 +1022,7 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
   if (node.properties.length === 1) {
     const prop = node.properties[0];
     const key = prop.parsedKey
-      ? renderNode(prop.parsedKey, functions, data, scope)
+      ? renderNode(prop.parsedKey, options, data, scope)
       : prop.key;
     const valueNode = prop.value;
 
@@ -1016,7 +1039,7 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
       let canUltraOptimize = true;
       for (const nestedProp of valueNode.properties) {
         const nestedKey = nestedProp.parsedKey
-          ? renderNode(nestedProp.parsedKey, functions, data, scope)
+          ? renderNode(nestedProp.parsedKey, options, data, scope)
           : nestedProp.key;
         const nestedValueNode = nestedProp.value;
 
@@ -1103,7 +1126,10 @@ const renderObjectDeepUltraFast = (node, functions, data, scope) => {
 /**
  * Renders objects
  */
-const renderObject = (node, functions, data, scope) => {
+const renderObject = (node, options, data, scope) => {
+  // Extract functions from options (for backward compatibility, options might be functions directly)
+  const functions = options.functions || options;
+  
   // Check $when condition first
   if (node.whenCondition) {
     const conditionResult = evaluateCondition(
@@ -1119,7 +1145,7 @@ const renderObject = (node, functions, data, scope) => {
   }
 
   // Try ultra-fast deep nesting path first
-  const deepResult = renderObjectDeepUltraFast(node, functions, data, scope);
+  const deepResult = renderObjectDeepUltraFast(node, options, data, scope);
   if (deepResult !== null) {
     return deepResult;
   }
@@ -1130,7 +1156,7 @@ const renderObject = (node, functions, data, scope) => {
     for (const prop of node.properties) {
       // Handle parsed keys (keys with variables) in fast path
       const key = prop.parsedKey
-        ? renderNode(prop.parsedKey, functions, data, scope)
+        ? renderNode(prop.parsedKey, options, data, scope)
         : prop.key;
       const valueNode = prop.value;
 
@@ -1149,14 +1175,14 @@ const renderObject = (node, functions, data, scope) => {
             segments.push(value != null ? String(value) : "");
           } else {
             // Fall back to full rendering for complex interpolations
-            const value = renderNode(part, functions, data, scope);
+            const value = renderNode(part, options, data, scope);
             segments.push(value != null ? String(value) : "");
           }
         }
         result[key] = segments.join("");
       } else {
         // Fall back to full rendering for complex nodes
-        result[key] = renderNode(valueNode, functions, data, scope);
+        result[key] = renderNode(valueNode, options, data, scope);
       }
     }
     return result;
@@ -1182,7 +1208,7 @@ const renderObject = (node, functions, data, scope) => {
 
   for (const prop of node.properties) {
     if (prop.key.startsWith("$if ") || prop.key.match(/^\$if\s+\w+.*:?$/)) {
-      const rendered = renderNode(prop.value, functions, data, scope);
+      const rendered = renderNode(prop.value, options, data, scope);
 
       // If object has only conditionals and the result is non-object, replace the entire object
       if (
@@ -1223,12 +1249,12 @@ const renderObject = (node, functions, data, scope) => {
         );
         if (loopProp) {
           // This property contains a loop - render the loop and assign the result
-          const loopResult = renderNode(loopProp.value, functions, data, scope);
+          const loopResult = renderNode(loopProp.value, options, data, scope);
           if (loopResult !== undefined) {
             result[prop.key] = loopResult;
           }
         } else {
-          const renderedValue = renderNode(prop.value, functions, data, scope);
+          const renderedValue = renderNode(prop.value, options, data, scope);
           if (renderedValue !== undefined) {
             result[prop.key] = renderedValue;
           }
@@ -1236,9 +1262,9 @@ const renderObject = (node, functions, data, scope) => {
       } else {
         // Render the key if it contains variables
         const renderedKey = prop.parsedKey
-          ? renderNode(prop.parsedKey, functions, data, scope)
+          ? renderNode(prop.parsedKey, options, data, scope)
           : prop.key;
-        const renderedValue = renderNode(prop.value, functions, data, scope);
+        const renderedValue = renderNode(prop.value, options, data, scope);
 
         // Only add the property if the value is not undefined
         if (renderedValue !== undefined) {
@@ -1257,16 +1283,16 @@ const EMPTY_OBJECT = {};
 /**
  * Renders arrays
  */
-const renderArray = (node, functions, data, scope) => {
+const renderArray = (node, options, data, scope) => {
   const results = [];
 
   for (const item of node.items) {
     if (item.type === NodeType.LOOP) {
       // Keep loop results as a single array item
-      const loopResults = renderNode(item, functions, data, scope);
+      const loopResults = renderNode(item, options, data, scope);
       results.push(loopResults);
     } else {
-      const rendered = renderNode(item, functions, data, scope);
+      const rendered = renderNode(item, options, data, scope);
       // Skip empty objects that come from failed conditionals with no else branch
       // Also skip undefined values from objects with false $when conditions
       // Use reference equality for better performance than Object.keys()
@@ -1277,6 +1303,73 @@ const renderArray = (node, functions, data, scope) => {
   }
 
   return results;
+};
+
+/**
+ * Renders a partial node
+ * @param {Object} node - Partial AST node
+ * @param {Object} options - Contains functions and partials
+ * @param {Object} data - Current data context
+ * @param {Object} scope - Current scope
+ * @returns {any} rendered partial
+ */
+const renderPartial = (node, options, data, scope) => {
+  const { name, data: partialData, whenCondition } = node;
+  const partials = options.partials || {};
+  const functions = options.functions || options;
+  
+  // Check $when condition if present
+  if (whenCondition) {
+    const conditionResult = evaluateCondition(
+      whenCondition,
+      functions,
+      data,
+      scope,
+    );
+    if (!conditionResult) {
+      // Return undefined to signal this partial should be excluded
+      return undefined;
+    }
+  }
+  
+  // Check if partial exists
+  if (!partials[name]) {
+    throw new JemplRenderError(`Partial '${name}' is not defined`);
+  }
+  
+  // Check for circular references
+  const partialStack = scope._partialStack || [];
+  if (partialStack.includes(name)) {
+    throw new JemplRenderError(`Circular partial reference detected: ${name}`);
+  }
+  
+  // Get the partial template
+  const partialTemplate = partials[name];
+  
+  // Prepare the context for the partial
+  let partialContext = data;
+  // Preserve scope but add the partial stack
+  let partialScope = { ...scope, _partialStack: [...partialStack, name] };
+  
+  // Merge scope variables (like loop variables) into the context
+  // This ensures loop variables like 'i' and 'item' are available in the partial
+  if (scope) {
+    partialContext = { ...data };
+    for (const key of Object.keys(scope)) {
+      if (!key.startsWith('_')) {
+        partialContext[key] = scope[key];
+      }
+    }
+  }
+  
+  // If there's inline data, merge it with the current context
+  if (partialData) {
+    const renderedData = renderNode(partialData, options, data, scope);
+    partialContext = { ...partialContext, ...renderedData };
+  }
+  
+  // Render the partial template with the merged context
+  return renderNode(partialTemplate, options, partialContext, partialScope);
 };
 
 export default render;

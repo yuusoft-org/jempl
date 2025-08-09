@@ -150,3 +150,149 @@ out:
         metadata:
           createdAt: 1640995200000
           version: 1
+---
+case: partials with custom functions - math operations
+in:
+  - $partial: "calculation"
+    x: 10
+    y: 5
+  - {}
+  - partials:
+      calculation:
+        input: "x=${x}, y=${y}"
+        sum: "${add(x, y)}"
+        product: "${multiply(x, y)}"
+        formula: "${multiply(add(x, y), 2)}"
+out:
+  input: "x=10, y=5"
+  sum: 15
+  product: 50
+  formula: 30
+---
+case: partials with custom functions - string manipulation
+in:
+  - profile:
+      $partial: "userProfile"
+      firstName: "john"
+      lastName: "doe"
+  - {}
+  - partials:
+      userProfile:
+        firstName: "${capitalize(firstName)}"
+        lastName: "${uppercase(lastName)}"
+        fullName: "${concat(capitalize(firstName), ' ', uppercase(lastName))}"
+        initials: "${getInitials(firstName, lastName)}"
+out:
+  profile:
+    firstName: "John"
+    lastName: "DOE"
+    fullName: "John DOE"
+    initials: "JD"
+---
+case: partials with functions returning objects
+in:
+  - users:
+      - $partial: "userCard"
+        name: "Alice"
+        age: 25
+        hobbies: ["reading", "coding"]
+      - $partial: "userCard"
+        name: "Bob"
+        age: 17
+        hobbies: []
+  - {}
+  - partials:
+      userCard:
+        user: "${createUser(name, age)}"
+        stats: "${getStats(hobbies)}"
+        summary: "${name} (${age}): ${size(hobbies)} hobbies"
+out:
+  users:
+    - user:
+        name: "Alice"
+        age: 25
+        isAdult: true
+        metadata:
+          createdAt: 1640995200000
+          version: 1
+      stats:
+        count: 2
+        isEmpty: false
+        summary: "2 items"
+      summary: "Alice (25): 2 hobbies"
+    - user:
+        name: "Bob"
+        age: 17
+        isAdult: false
+        metadata:
+          createdAt: 1640995200000
+          version: 1
+      stats:
+        count: 0
+        isEmpty: true
+        summary: "0 items"
+      summary: "Bob (17): 0 hobbies"
+---
+case: nested partials with custom functions
+in:
+  - $partial: "page"
+    title: "welcome page"
+    numbers: [1, 2, 3, 4, 5]
+  - {}
+  - partials:
+      page:
+        header:
+          $partial: "header"
+        content: "Numbers: ${join(numbers, ', ')}"
+        total: "${add(numbers[0], numbers[4])}"
+      header:
+        title: "${capitalize(title)}"
+        length: "${length(title)}"
+        uppercase: "${uppercase(title)}"
+out:
+  header:
+    title: "Welcome page"
+    length: 12
+    uppercase: "WELCOME PAGE"
+  content: "Numbers: 1, 2, 3, 4, 5"
+  total: 6
+---
+case: partials in loop with custom functions
+in:
+  - items:
+      $for item in items:
+        - $partial: "processedItem"
+  - items:
+      - name: "apple"
+        price: 1.50
+        quantity: 3
+      - name: "banana"
+        price: 0.75
+        quantity: 6
+      - name: "orange"
+        price: 2.00
+        quantity: 2
+  - partials:
+      processedItem:
+        name: "${capitalize(item.name)}"
+        price: "${item.price}"
+        quantity: "${item.quantity}"
+        total: "${multiply(item.price, item.quantity)}"
+        label: "${uppercase(item.name)}: ${round(multiply(item.price, item.quantity), 2)}"
+out:
+  items:
+    - name: "Apple"
+      price: 1.5
+      quantity: 3
+      total: 4.5
+      label: "APPLE: 4.5"
+    - name: "Banana"
+      price: 0.75
+      quantity: 6
+      total: 4.5
+      label: "BANANA: 4.5"
+    - name: "Orange"
+      price: 2
+      quantity: 2
+      total: 4
+      label: "ORANGE: 4"

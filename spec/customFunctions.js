@@ -28,6 +28,11 @@ const customFunctions = {
   
   // Utility functions
   concat: (...args) => args.join(''),
+  getInitials: (firstName, lastName) => {
+    const f = String(firstName || '').toUpperCase();
+    const l = String(lastName || '').toUpperCase();
+    return (f[0] || '') + (l[0] || '');
+  },
   
   // Object-returning functions
   createUser: (name, age) => ({
@@ -49,8 +54,8 @@ const customFunctions = {
 
 export default (template, data, options = {}) => {
   // Merge custom functions with any functions passed from tests
-  const { functions = {} } = options;
+  const { functions = {}, partials = {} } = options;
   const allFunctions = { ...customFunctions, ...functions };
   
-  return parseAndRender(template, data, { functions: allFunctions });
+  return parseAndRender(template, data, { functions: allFunctions, partials });
 }

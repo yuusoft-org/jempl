@@ -1,0 +1,193 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [partials]
+---
+### Partials
+suite: partials
+exportName: default
+---
+case: simple partial reference
+in:
+  - $partial: "userCard"
+out:
+  type: 10  # PARTIAL type (new)
+  name: "userCard"
+  data: null
+---
+case: partial with inline data
+in:
+  - $partial: "userCard"
+    name: "Alice"
+    email: "alice@example.com"
+out:
+  type: 10  # PARTIAL type
+  name: "userCard"
+  data:
+    type: 8  # OBJECT type
+    fast: true
+    properties:
+      - key: "name"
+        value:
+          type: 0  # LITERAL type
+          value: "Alice"
+      - key: "email"
+        value:
+          type: 0  # LITERAL type
+          value: "alice@example.com"
+---
+case: partial with variables in data
+in:
+  - $partial: "button"
+    label: "${buttonText}"
+    disabled: "${isDisabled}"
+out:
+  type: 10  # PARTIAL type
+  name: "button"
+  data:
+    type: 8  # OBJECT type
+    fast: false
+    properties:
+      - key: "label"
+        value:
+          type: 1  # VARIABLE type (optimized from INTERPOLATION when string is just one variable)
+          path: "buttonText"
+      - key: "disabled"
+        value:
+          type: 1  # VARIABLE type
+          path: "isDisabled"
+---
+case: partial with escaped dollar properties
+in:
+  - $partial: "pricing"
+    \$price: 99.99
+    $$currency: "USD"
+    regular: "value"
+out:
+  type: 10  # PARTIAL type
+  name: "pricing"
+  data:
+    type: 8  # OBJECT type
+    fast: true
+    properties:
+      - key: "$price"
+        value:
+          type: 0  # LITERAL type
+          value: 99.99
+      - key: "$currency"
+        value:
+          type: 0  # LITERAL type
+          value: "USD"
+      - key: "regular"
+        value:
+          type: 0  # LITERAL type
+          value: "value"
+---
+case: partial in object
+in:
+  - card:
+      $partial: "cardContent"
+      title: "My Card"
+out:
+  type: 8  # OBJECT type
+  fast: false
+  properties:
+    - key: "card"
+      value:
+        type: 10  # PARTIAL type
+        name: "cardContent"
+        data:
+          type: 8  # OBJECT type
+          fast: true
+          properties:
+            - key: "title"
+              value:
+                type: 0  # LITERAL type
+                value: "My Card"
+---
+case: partial in array
+in:
+  - - $partial: "item"
+      id: 1
+    - $partial: "item"
+      id: 2
+out:
+  type: 9  # ARRAY type
+  fast: false  # Contains PARTIAL nodes which are dynamic
+  items:
+    - type: 10  # PARTIAL type
+      name: "item"
+      data:
+        type: 8  # OBJECT type
+        fast: true
+        properties:
+          - key: "id"
+            value:
+              type: 0  # LITERAL type
+              value: 1
+    - type: 10  # PARTIAL type
+      name: "item"
+      data:
+        type: 8  # OBJECT type
+        fast: true
+        properties:
+          - key: "id"
+            value:
+              type: 0  # LITERAL type
+              value: 2
+---
+case: nested partials in data
+in:
+  - $partial: "layout"
+    header:
+      $partial: "header"
+      title: "Page Title"
+    footer:
+      $partial: "footer"
+out:
+  type: 10  # PARTIAL type
+  name: "layout"
+  data:
+    type: 8  # OBJECT type
+    fast: false
+    properties:
+      - key: "header"
+        value:
+          type: 10  # PARTIAL type
+          name: "header"
+          data:
+            type: 8  # OBJECT type
+            fast: true
+            properties:
+              - key: "title"
+                value:
+                  type: 0  # LITERAL type
+                  value: "Page Title"
+      - key: "footer"
+        value:
+          type: 10  # PARTIAL type
+          name: "footer"
+          data: null
+---
+case: partial with expression in data
+in:
+  - $partial: "statusCard"
+    isActive: "${count > 0}"
+    message: "Count: ${count}"
+out:
+  type: 10  # PARTIAL type
+  name: "statusCard"
+  data:
+    type: 8  # OBJECT type
+    fast: false
+    properties:
+      - key: "isActive"
+        value:
+          type: 1  # VARIABLE type (optimized from INTERPOLATION when string is just one expression)
+          path: "count > 0"
+      - key: "message"
+        value:
+          type: 2  # INTERPOLATION type
+          parts:
+            - "Count: "  # LITERAL string
+            - type: 1  # VARIABLE type
+              path: "count"

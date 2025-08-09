@@ -1,0 +1,264 @@
+file: '../../src/render.js'
+group: render
+suites: [partials]
+---
+### Partials
+suite: partials
+exportName: default
+---
+case: render simple partial
+in:
+  - type: 10  # PARTIAL type
+    name: "greeting"
+    data: null
+  - name: "World"
+  - partials:
+      greeting:
+        type: 2  # INTERPOLATION type
+        parts:
+          - type: 0  # LITERAL
+            value: "Hello "
+          - type: 1  # VARIABLE
+            path: "name"
+          - type: 0  # LITERAL
+            value: "!"
+out: "Hello World!"
+---
+case: render partial with inline data
+in:
+  - type: 10  # PARTIAL type
+    name: "userCard"
+    data:
+      type: 8  # OBJECT type
+      fast: true
+      properties:
+        - key: "name"
+          value:
+            type: 0  # LITERAL
+            value: "Alice"
+        - key: "role"
+          value:
+            type: 0  # LITERAL
+            value: "Admin"
+  - name: "Bob"
+    role: "User"
+  - partials:
+      userCard:
+        type: 8  # OBJECT type
+        fast: false
+        properties:
+          - key: "name"
+            value:
+              type: 1  # VARIABLE
+              path: "name"
+          - key: "role"
+            value:
+              type: 1  # VARIABLE
+              path: "role"
+out:
+  name: "Alice"
+  role: "Admin"
+---
+case: render partial inheriting context
+in:
+  - type: 10  # PARTIAL type
+    name: "profile"
+    data: null
+  - user:
+      name: "John"
+      email: "john@example.com"
+    theme: "dark"
+  - partials:
+      profile:
+        type: 8  # OBJECT type
+        fast: false
+        properties:
+          - key: "displayName"
+            value:
+              type: 1  # VARIABLE
+              path: "user.name"
+          - key: "email"
+            value:
+              type: 1  # VARIABLE
+              path: "user.email"
+          - key: "theme"
+            value:
+              type: 1  # VARIABLE
+              path: "theme"
+out:
+  displayName: "John"
+  email: "john@example.com"
+  theme: "dark"
+---
+case: render nested partials
+in:
+  - type: 10  # PARTIAL type
+    name: "page"
+    data:
+      type: 8  # OBJECT type
+      fast: false
+      properties:
+        - key: "header"
+          value:
+            type: 10  # PARTIAL type
+            name: "header"
+            data:
+              type: 8  # OBJECT type
+              fast: true
+              properties:
+                - key: "title"
+                  value:
+                    type: 0  # LITERAL
+                    value: "Welcome"
+  - {}
+  - partials:
+      page:
+        type: 8  # OBJECT type
+        fast: false
+        properties:
+          - key: "header"
+            value:
+              type: 1  # VARIABLE
+              path: "header"
+          - key: "content"
+            value:
+              type: 0  # LITERAL
+              value: "Page content"
+      header:
+        type: 8  # OBJECT type
+        fast: false
+        properties:
+          - key: "title"
+            value:
+              type: 1  # VARIABLE
+              path: "title"
+          - key: "style"
+            value:
+              type: 0  # LITERAL
+              value: "default"
+out:
+  header:
+    title: "Welcome"
+    style: "default"
+  content: "Page content"
+---
+case: render partial in array
+in:
+  - type: 9  # ARRAY type
+    items:
+      - type: 10  # PARTIAL type
+        name: "item"
+        data:
+          type: 8  # OBJECT type
+          fast: true
+          properties:
+            - key: "id"
+              value:
+                type: 0  # LITERAL
+                value: 1
+      - type: 10  # PARTIAL type
+        name: "item"
+        data:
+          type: 8  # OBJECT type
+          fast: true
+          properties:
+            - key: "id"
+              value:
+                type: 0  # LITERAL
+                value: 2
+  - {}
+  - partials:
+      item:
+        type: 8  # OBJECT type
+        fast: false
+        properties:
+          - key: "id"
+            value:
+              type: 1  # VARIABLE
+              path: "id"
+          - key: "label"
+            value:
+              type: 2  # INTERPOLATION type
+              parts:
+                - type: 0  # LITERAL
+                  value: "Item "
+                - type: 1  # VARIABLE
+                  path: "id"
+out:
+  - id: 1
+    label: "Item 1"
+  - id: 2
+    label: "Item 2"
+---
+case: error - undefined partial
+in:
+  - type: 10  # PARTIAL type
+    name: "nonexistent"
+    data: null
+  - {}
+  - partials: {}
+throws: "Render Error: Partial 'nonexistent' is not defined"
+---
+case: error - circular reference direct
+in:
+  - type: 10  # PARTIAL type
+    name: "recursive"
+    data: null
+  - {}
+  - partials:
+      recursive:
+        type: 10  # PARTIAL type
+        name: "recursive"
+        data: null
+throws: "Render Error: Circular partial reference detected: recursive"
+---
+case: error - circular reference indirect
+in:
+  - type: 10  # PARTIAL type
+    name: "partialA"
+    data: null
+  - {}
+  - partials:
+      partialA:
+        type: 10  # PARTIAL type
+        name: "partialB"
+        data: null
+      partialB:
+        type: 10  # PARTIAL type
+        name: "partialA"
+        data: null
+throws: "Render Error: Circular partial reference detected: partialA"
+---
+case: render partial with escaped dollar properties
+in:
+  - type: 10  # PARTIAL type
+    name: "pricing"
+    data:
+      type: 8  # OBJECT type
+      fast: true
+      properties:
+        - key: "$price"
+          value:
+            type: 0  # LITERAL
+            value: 99.99
+        - key: "$currency"
+          value:
+            type: 0  # LITERAL
+            value: "USD"
+  - {}
+  - partials:
+      pricing:
+        type: 8  # OBJECT type
+        fast: false
+        properties:
+          - key: "price"
+            value:
+              type: 1  # VARIABLE
+              path: "$price"
+          - key: "currency"
+            value:
+              type: 1  # VARIABLE
+              path: "$currency"
+out:
+  price: 99.99
+  currency: "USD"

@@ -9,6 +9,7 @@ export const NodeType = {
   LOOP: 7,
   OBJECT: 8,
   ARRAY: 9,
+  PARTIAL: 10,
 };
 
 export const BinaryOp = {

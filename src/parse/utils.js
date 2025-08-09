@@ -61,6 +61,7 @@ export const parseArray = (arr, functions) => {
       parsedItem.type === NodeType.FUNCTION ||
       parsedItem.type === NodeType.CONDITIONAL ||
       parsedItem.type === NodeType.LOOP ||
+      parsedItem.type === NodeType.PARTIAL ||
       (parsedItem.type === NodeType.OBJECT && !parsedItem.fast) ||
       (parsedItem.type === NodeType.ARRAY && !parsedItem.fast)
     ) {
@@ -89,7 +90,111 @@ export const parseObject = (obj, functions) => {
   const entries = Object.entries(obj);
   let i = 0;
 
-  // First pass: check for $when directive
+  // First pass: check for $partial directive
+  if (obj.$partial !== undefined) {
+    // Validate partial name
+    if (typeof obj.$partial !== "string") {
+      throw new JemplParseError("$partial value must be a string");
+    }
+    if (obj.$partial.trim() === "") {
+      throw new JemplParseError("$partial value cannot be an empty string");
+    }
+    
+    // Check for conflicting directives
+    // Note: $when is allowed with $partial since $when controls object inclusion
+    const conflictingDirectives = ["$if", "$elif", "$else", "$for"];
+    const conflicts = [];
+    for (const [key] of entries) {
+      // Check for any key that starts with these directives
+      for (const directive of conflictingDirectives) {
+        if (key === directive || key.startsWith(directive + " ") || key.startsWith(directive + "#")) {
+          conflicts.push(directive);
+          break;
+        }
+      }
+    }
+    if (conflicts.length > 0) {
+      throw new JemplParseError(
+        `Cannot use $partial with ${conflicts.join(", ")} at the same level. ` +
+        `Wrap $partial in a parent object if you need conditionals.`
+      );
+    }
+    
+    // Extract and process sibling properties as data
+    // Note: $when is special - it controls whether the partial is rendered
+    const { $partial, $when, ...rawData } = obj;
+    
+    // Handle escaped $ properties
+    const data = {};
+    let hasData = false;
+    for (const [key, value] of Object.entries(rawData)) {
+      let actualKey = key;
+      if (key.startsWith("\\$")) {
+        // \$price becomes $price
+        actualKey = key.slice(1);
+      } else if (key.startsWith("$$")) {
+        // $$theme becomes $theme
+        actualKey = key.slice(1);
+      }
+      data[actualKey] = value;
+      hasData = true;
+    }
+    
+    // Parse the data object if it exists
+    let parsedData = null;
+    if (hasData) {
+      parsedData = parseValue(data, functions);
+      // For partials, we need to check if the data contains any variables or interpolations
+      // If it does, we should mark it as non-fast since it needs runtime evaluation
+      if (parsedData.type === NodeType.OBJECT) {
+        let hasDynamicData = false;
+        for (const prop of parsedData.properties) {
+          if (prop.value.type === NodeType.VARIABLE || 
+              prop.value.type === NodeType.INTERPOLATION ||
+              prop.value.type === NodeType.FUNCTION ||
+              prop.value.type === NodeType.CONDITIONAL ||
+              prop.value.type === NodeType.LOOP ||
+              (prop.value.type === NodeType.OBJECT && !prop.value.fast) ||
+              (prop.value.type === NodeType.ARRAY && !prop.value.fast)) {
+            hasDynamicData = true;
+            break;
+          }
+        }
+        if (hasDynamicData) {
+          parsedData.fast = false;
+        }
+      }
+    }
+    
+    const result = {
+      type: NodeType.PARTIAL,
+      name: $partial,
+      data: parsedData,
+    };
+    
+    // Handle $when condition if present
+    if ($when !== undefined) {
+      // Parse the when condition
+      let whenCondition;
+      if (typeof $when === "string") {
+        if ($when.trim() === "") {
+          throw new JemplParseError("Empty condition expression after '$when'");
+        }
+        whenCondition = parseConditionExpression($when);
+      } else {
+        // Boolean or other literal value
+        whenCondition = {
+          type: NodeType.LITERAL,
+          value: $when,
+        };
+      }
+      result.whenCondition = whenCondition;
+    }
+    
+    return result;
+  }
+
+  // Second pass: check for $when directive
   for (const [key, value] of entries) {
     if (key === "$when") {
       if (whenCondition !== null) {
@@ -158,11 +263,12 @@ export const parseObject = (obj, functions) => {
     } else {
       const parsedValue = parseValue(value, functions);
 
-      // Check if this property has complex dynamic content (conditionals/loops/functions)
+      // Check if this property has complex dynamic content (conditionals/loops/functions/partials)
       if (
         parsedValue.type === NodeType.FUNCTION ||
         parsedValue.type === NodeType.CONDITIONAL ||
         parsedValue.type === NodeType.LOOP ||
+        parsedValue.type === NodeType.PARTIAL ||
         (parsedValue.type === NodeType.OBJECT && !parsedValue.fast) ||
         (parsedValue.type === NodeType.ARRAY && !parsedValue.fast)
       ) {
