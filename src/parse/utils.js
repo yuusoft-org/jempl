@@ -99,7 +99,7 @@ export const parseObject = (obj, functions) => {
     if (obj.$partial.trim() === "") {
       throw new JemplParseError("$partial value cannot be an empty string");
     }
-    
+
     // Check for conflicting directives
     // Note: $when is allowed with $partial since $when controls object inclusion
     const conflictingDirectives = ["$if", "$elif", "$else", "$for"];
@@ -107,7 +107,11 @@ export const parseObject = (obj, functions) => {
     for (const [key] of entries) {
       // Check for any key that starts with these directives
       for (const directive of conflictingDirectives) {
-        if (key === directive || key.startsWith(directive + " ") || key.startsWith(directive + "#")) {
+        if (
+          key === directive ||
+          key.startsWith(directive + " ") ||
+          key.startsWith(directive + "#")
+        ) {
           conflicts.push(directive);
           break;
         }
@@ -116,14 +120,14 @@ export const parseObject = (obj, functions) => {
     if (conflicts.length > 0) {
       throw new JemplParseError(
         `Cannot use $partial with ${conflicts.join(", ")} at the same level. ` +
-        `Wrap $partial in a parent object if you need conditionals.`
+          `Wrap $partial in a parent object if you need conditionals.`,
       );
     }
-    
+
     // Extract and process sibling properties as data
     // Note: $when is special - it controls whether the partial is rendered
     const { $partial, $when, ...rawData } = obj;
-    
+
     // Handle escaped $ properties
     const data = {};
     let hasData = false;
@@ -139,7 +143,7 @@ export const parseObject = (obj, functions) => {
       data[actualKey] = value;
       hasData = true;
     }
-    
+
     // Parse the data object if it exists
     let parsedData = null;
     if (hasData) {
@@ -149,13 +153,15 @@ export const parseObject = (obj, functions) => {
       if (parsedData.type === NodeType.OBJECT) {
         let hasDynamicData = false;
         for (const prop of parsedData.properties) {
-          if (prop.value.type === NodeType.VARIABLE || 
-              prop.value.type === NodeType.INTERPOLATION ||
-              prop.value.type === NodeType.FUNCTION ||
-              prop.value.type === NodeType.CONDITIONAL ||
-              prop.value.type === NodeType.LOOP ||
-              (prop.value.type === NodeType.OBJECT && !prop.value.fast) ||
-              (prop.value.type === NodeType.ARRAY && !prop.value.fast)) {
+          if (
+            prop.value.type === NodeType.VARIABLE ||
+            prop.value.type === NodeType.INTERPOLATION ||
+            prop.value.type === NodeType.FUNCTION ||
+            prop.value.type === NodeType.CONDITIONAL ||
+            prop.value.type === NodeType.LOOP ||
+            (prop.value.type === NodeType.OBJECT && !prop.value.fast) ||
+            (prop.value.type === NodeType.ARRAY && !prop.value.fast)
+          ) {
             hasDynamicData = true;
             break;
           }
@@ -165,13 +171,13 @@ export const parseObject = (obj, functions) => {
         }
       }
     }
-    
+
     const result = {
       type: NodeType.PARTIAL,
       name: $partial,
       data: parsedData,
     };
-    
+
     // Handle $when condition if present
     if ($when !== undefined) {
       // Parse the when condition
@@ -190,7 +196,7 @@ export const parseObject = (obj, functions) => {
       }
       result.whenCondition = whenCondition;
     }
-    
+
     return result;
   }
 

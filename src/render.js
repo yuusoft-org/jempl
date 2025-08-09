@@ -39,18 +39,18 @@ const render = (ast, data, options = {}) => {
   // assume it's the old functions object
   let functions = {};
   let partials = {};
-  
-  if (options && typeof options === 'object') {
+
+  if (options && typeof options === "object") {
     if (options.functions !== undefined || options.partials !== undefined) {
       // New API
       functions = options.functions || {};
       partials = options.partials || {};
-    } else if (typeof options === 'object') {
+    } else if (typeof options === "object") {
       // Old API - assume it's functions object for backward compatibility
       functions = options;
     }
   }
-  
+
   const result = renderNode(ast, { functions, partials }, data, {});
   // Convert undefined to empty object at root level (for $when: false at root)
   if (result === undefined) {
@@ -1129,7 +1129,7 @@ const renderObjectDeepUltraFast = (node, options, data, scope) => {
 const renderObject = (node, options, data, scope) => {
   // Extract functions from options (for backward compatibility, options might be functions directly)
   const functions = options.functions || options;
-  
+
   // Check $when condition first
   if (node.whenCondition) {
     const conditionResult = evaluateCondition(
@@ -1317,7 +1317,7 @@ const renderPartial = (node, options, data, scope) => {
   const { name, data: partialData, whenCondition } = node;
   const partials = options.partials || {};
   const functions = options.functions || options;
-  
+
   // Check $when condition if present
   if (whenCondition) {
     const conditionResult = evaluateCondition(
@@ -1331,43 +1331,43 @@ const renderPartial = (node, options, data, scope) => {
       return undefined;
     }
   }
-  
+
   // Check if partial exists
   if (!partials[name]) {
     throw new JemplRenderError(`Partial '${name}' is not defined`);
   }
-  
+
   // Check for circular references
   const partialStack = scope._partialStack || [];
   if (partialStack.includes(name)) {
     throw new JemplRenderError(`Circular partial reference detected: ${name}`);
   }
-  
+
   // Get the partial template
   const partialTemplate = partials[name];
-  
+
   // Prepare the context for the partial
   let partialContext = data;
   // Preserve scope but add the partial stack
   let partialScope = { ...scope, _partialStack: [...partialStack, name] };
-  
+
   // Merge scope variables (like loop variables) into the context
   // This ensures loop variables like 'i' and 'item' are available in the partial
   if (scope) {
     partialContext = { ...data };
     for (const key of Object.keys(scope)) {
-      if (!key.startsWith('_')) {
+      if (!key.startsWith("_")) {
         partialContext[key] = scope[key];
       }
     }
   }
-  
+
   // If there's inline data, merge it with the current context
   if (partialData) {
     const renderedData = renderNode(partialData, options, data, scope);
     partialContext = { ...partialContext, ...renderedData };
   }
-  
+
   // Render the partial template with the merged context
   return renderNode(partialTemplate, options, partialContext, partialScope);
 };

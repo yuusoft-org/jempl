@@ -60,7 +60,10 @@ const parseAndRender = (template, data, options = {}) => {
   }
 
   // Render the AST with the data and partials
-  return render(ast, data, { functions: allFunctions, partials: parsedPartials });
+  return render(ast, data, {
+    functions: allFunctions,
+    partials: parsedPartials,
+  });
 };
 
 export default parseAndRender;
