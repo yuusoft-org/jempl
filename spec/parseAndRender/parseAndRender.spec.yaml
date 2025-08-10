@@ -740,3 +740,17 @@ out:
     - name: "Team B"
       firstMember: "Carol"
       lastTask: "Execute"
+---
+case: date variable replacement - no transformation
+in:
+  - createdAt: "${date}"
+    message: "Document created on ${date}"
+    user:
+      lastLogin: "${date}"
+  - date: "2014-01-15"
+  - functions: {}
+out:
+  createdAt: "2014-01-15"
+  message: "Document created on 2014-01-15"
+  user:
+    lastLogin: "2014-01-15"
