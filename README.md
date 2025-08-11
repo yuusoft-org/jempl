@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/jempl.svg)](https://www.npmjs.com/package/jempl)
 
-Jempl is a JSON templating engine with conditionals, loops, and custom functions.
+Jempl is a JSON templating engine with conditionals, loops, partials, and custom functions.
 
 ## Table of Contents
 
@@ -11,6 +11,7 @@ Jempl is a JSON templating engine with conditionals, loops, and custom functions
 - [Variable Replacement](#variable-replacement)
 - [Conditionals](#conditionals)
 - [Loops](#loops)
+- [Partials](#partials)
 - [Custom Functions](#custom-functions)
 - [Escaping](#escaping)
 - [Performance](#performance)
@@ -512,6 +513,327 @@ output:
       age: 10
       index: 2
 ```
+
+## Partials
+
+Partials allow you to define reusable template fragments that can be included and parameterized throughout your templates. This enables better code organization and reusability.
+
+### Basic Usage
+
+Partials are defined in the `partials` section of the options and referenced using `$partial`:
+
+```javascript
+import { parseAndRender } from 'jempl';
+
+const template = {
+  header: {
+    $partial: "greeting"
+  }
+};
+
+const data = {
+  name: "World"
+};
+
+const partials = {
+  greeting: {
+    message: "Hello ${name}!"
+  }
+};
+
+const result = parseAndRender(template, data, { partials });
+// Output: { header: { message: "Hello World!" } }
+```
+
+### Inline Data Override
+
+You can pass data directly to a partial, which overrides the context data:
+
+```yaml
+template:
+  card:
+    $partial: "userCard"
+    name: "Alice"
+    role: "Admin"
+
+data:
+  name: "Bob"
+  role: "User"
+
+partials:
+  userCard:
+    name: "${name}"
+    role: "${role}"
+    display: "${name} (${role})"
+
+output:
+  card:
+    name: "Alice"
+    role: "Admin"
+    display: "Alice (Admin)"
+```
+
+### Partials in Arrays
+
+Partials work seamlessly within arrays and loops:
+
+```yaml
+template:
+  menu:
+    - $partial: "menuItem"
+      label: "Home"
+      path: "/"
+    - $partial: "menuItem"
+      label: "About"
+      path: "/about"
+    - $partial: "menuItem"
+      label: "Contact"
+      path: "/contact"
+
+partials:
+  menuItem:
+    label: "${label}"
+    path: "${path}"
+    active: false
+
+output:
+  menu:
+    - label: "Home"
+      path: "/"
+      active: false
+    - label: "About"
+      path: "/about"
+      active: false
+    - label: "Contact"
+      path: "/contact"
+      active: false
+```
+
+### Partials with Loops
+
+Combine partials with `$for` loops for dynamic content generation:
+
+```yaml
+template:
+  items:
+    $for item, i in items:
+      - $partial: "itemCard"
+
+data:
+  items:
+    - id: 1
+      name: "First"
+    - id: 2
+      name: "Second"
+
+partials:
+  itemCard:
+    id: "${item.id}"
+    label: "${item.name}"
+    index: "${i}"
+
+output:
+  items:
+    - id: 1
+      label: "First"
+      index: 0
+    - id: 2
+      label: "Second"
+      index: 1
+```
+
+### Nested Partials
+
+Partials can include other partials, enabling complex component hierarchies:
+
+```yaml
+template:
+  page:
+    $partial: "layout"
+    title: "My Page"
+
+data:
+  user: "John"
+
+partials:
+  layout:
+    header:
+      $partial: "header"
+    content: "Welcome to ${title}"
+  header:
+    title: "${title}"
+    user: "${user}"
+    greeting: "Hello ${user}!"
+
+output:
+  page:
+    header:
+      title: "My Page"
+      user: "John"
+      greeting: "Hello John!"
+    content: "Welcome to My Page"
+```
+
+### Partials with Conditionals
+
+Use conditionals within partials for dynamic rendering:
+
+```yaml
+template:
+  users:
+    - $partial: "userStatus"
+      name: "Alice"
+      age: 25
+    - $partial: "userStatus"
+      name: "Bob"
+      age: 16
+
+partials:
+  userStatus:
+    name: "${name}"
+    age: "${age}"
+    $if age >= 18:
+      status: "adult"
+      canVote: true
+    $else:
+      status: "minor"
+      canVote: false
+
+output:
+  users:
+    - name: "Alice"
+      age: 25
+      status: "adult"
+      canVote: true
+    - name: "Bob"
+      age: 16
+      status: "minor"
+      canVote: false
+```
+
+### Partials with $when
+
+Combine partials with `$when` for conditional inclusion:
+
+```yaml
+template:
+  menu:
+    - $when: true
+      $partial: "menuItem"
+      label: "Home"
+      path: "/"
+    - $when: isLoggedIn
+      $partial: "menuItem"
+      label: "Dashboard"
+      path: "/dashboard"
+    - $when: isAdmin
+      $partial: "menuItem"
+      label: "Admin"
+      path: "/admin"
+
+data:
+  isLoggedIn: true
+  isAdmin: false
+
+partials:
+  menuItem:
+    label: "${label}"
+    path: "${path}"
+    active: false
+
+output:
+  menu:
+    - label: "Home"
+      path: "/"
+      active: false
+    - label: "Dashboard"
+      path: "/dashboard"
+      active: false
+```
+
+### Escaped Properties in Partials
+
+Partials support escaped dollar properties for keys that start with `$`:
+
+```yaml
+template:
+  pricing:
+    $partial: "pricing"
+    \$price: 99.99
+    $$currency: "USD"
+    displayPrice: "$99.99"
+
+partials:
+  pricing:
+    price: "${$price}"
+    currency: "${$currency}"
+    display: "${displayPrice}"
+
+output:
+  pricing:
+    price: 99.99
+    currency: "USD"
+    display: "$99.99"
+```
+
+### Complex Example
+
+Here's a comprehensive example showing partials used in a dashboard:
+
+```yaml
+template:
+  dashboard:
+    $partial: "dashboard"
+    widgets:
+      - $partial: "widget"
+        type: "chart"
+        data: [10, 20, 30]
+      - $partial: "widget"
+        type: "table"
+        data: ["A", "B", "C"]
+
+data:
+  user: "Admin"
+
+partials:
+  dashboard:
+    title: "Dashboard for ${user}"
+    widgets: "${widgets}"
+  widget:
+    type: "${type}"
+    data: "${data}"
+    $if type == "chart":
+      visualization: "bar"
+    $elif type == "table":
+      visualization: "grid"
+
+output:
+  dashboard:
+    title: "Dashboard for Admin"
+    widgets:
+      - type: "chart"
+        data: [10, 20, 30]
+        visualization: "bar"
+      - type: "table"
+        data: ["A", "B", "C"]
+        visualization: "grid"
+```
+
+### Error Handling
+
+Jempl provides clear error messages for common partial issues:
+
+- **Undefined Partial**: `Render Error: Partial 'nonexistent' is not defined`
+- **Circular Reference**: `Render Error: Circular partial reference detected: recursive`
+- **Invalid Name**: `Parse Error: $partial value must be a string`
+- **Conflicting Directives**: `Parse Error: Cannot use $partial with $if at the same level`
+
+### Partial Restrictions
+
+- Partial names must be non-empty strings
+- Cannot use `$partial` with `$if`, `$elif`, `$else`, or `$for` at the same level
+- Circular references between partials are detected and prevented
+- Partials inherit the current context but can override with inline data
 
 ## Escaping
 
