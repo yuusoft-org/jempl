@@ -15,6 +15,7 @@ Jempl is a JSON templating engine with conditionals, loops, partials, and custom
 - [Custom Functions](#custom-functions)
 - [Escaping](#escaping)
 - [Performance](#performance)
+- [Development](#development)
 - [Alternative Libraries](#alternative-libraries)
 
 ## Installation
@@ -1043,6 +1044,16 @@ Jempl achieves **sub-millisecond rendering** for most templates, making it suita
 - Mobile applications where performance is critical
 
 > **📖 Full Performance Documentation**: See [PERFORMANCE.md](./PERFORMANCE.md) for detailed benchmarks, optimization techniques, and performance tuning tips.
+
+## Development
+
+For developers contributing to Jempl, please refer to our [Development Guide](./DEVELOPMENT.md) which covers:
+
+- Development setup and prerequisites (using Bun)
+- JavaScript conventions and coding standards
+- Testing guidelines
+- Architecture decisions and design rationale
+- Common development tasks
 
 ## Alternative libraries
 
