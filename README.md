@@ -11,6 +11,7 @@ Jempl is a JSON templating engine with conditionals, loops, partials, and custom
 - [Variable Replacement](#variable-replacement)
 - [Conditionals](#conditionals)
 - [Loops](#loops)
+- [Path References](#path-references)
 - [Partials](#partials)
 - [Custom Functions](#custom-functions)
 - [Escaping](#escaping)
@@ -515,6 +516,122 @@ output:
       index: 2
 ```
 
+## Path References
+
+Path references provide a way to get the full path to a loop variable rather than its value. This is useful for data binding in UI frameworks that need to know the location of data, not just its value.
+
+### Basic Syntax
+
+Path references use `#{variableName}` syntax and are only valid within loops:
+
+```yaml
+template:
+  items:
+    $for item in items:
+      - path: "#{item}"
+        value: "${item}"
+
+data:
+  items: ["first", "second", "third"]
+
+output:
+  items:
+    - path: "items[0]"
+      value: "first"
+    - path: "items[1]"
+      value: "second"
+    - path: "items[2]"
+      value: "third"
+```
+
+### Property Access
+
+You can reference properties of loop variables:
+
+```yaml
+template:
+  products:
+    $for product in products:
+      - binding: "#{product.price}"
+        name: "${product.name}"
+        price: "${product.price}"
+
+data:
+  products:
+    - { name: "Widget", price: 9.99 }
+    - { name: "Gadget", price: 19.99 }
+
+output:
+  products:
+    - binding: "products[0].price"
+      name: "Widget"
+      price: 9.99
+    - binding: "products[1].price"
+      name: "Gadget"
+      price: 19.99
+```
+
+### Nested Loops
+
+Path references work correctly in nested loops, maintaining the full path from root:
+
+```yaml
+template:
+  $for category in categories:
+    - name: "${category.name}"
+      products:
+        $for product in category.products:
+          - path: "#{product}"
+            name: "${product.name}"
+
+data:
+  categories:
+    - name: "Electronics"
+      products:
+        - { name: "Phone" }
+        - { name: "Laptop" }
+    - name: "Books"
+      products:
+        - { name: "Novel" }
+
+output:
+  - name: "Electronics"
+    products:
+      - path: "categories[0].products[0]"
+        name: "Phone"
+      - path: "categories[0].products[1]"
+        name: "Laptop"
+  - name: "Books"
+    products:
+      - path: "categories[1].products[0]"
+        name: "Novel"
+```
+
+### Use Cases
+
+Path references are particularly useful for:
+
+1. **Component Data Binding**: When UI components need to know where data comes from for two-way binding
+2. **Form Generation**: Creating form fields that map back to specific data locations
+3. **Debugging**: Tracking which data is being rendered where
+4. **State Management**: Connecting rendered elements to their source data in state stores
+
+### Important Notes
+
+- Path references (`#{}`) only work with loop variables, not with global data
+- They cannot contain expressions, functions, or array indices
+- The syntax is designed to be visually distinct from value references (`${}`)
+- Index variables in loops return just the number: `#{i}` → `"0"`, `"1"`, etc.
+
+### Comparison with Value References
+
+| Syntax | Purpose | Example Input | Example Output |
+|--------|---------|---------------|----------------|
+| `${item}` | Get the value | `item = {id: 1}` | `{id: 1}` |
+| `#{item}` | Get the path | Loop variable `item` | `"items[0]"` |
+| `${item.id}` | Get property value | `item.id = 1` | `1` |
+| `#{item.id}` | Get property path | Loop variable `item` | `"items[0].id"` |
+
 ## Partials
 
 Partials allow you to define reusable template fragments that can be included and parameterized throughout your templates. This enables better code organization and reusability.
@@ -838,21 +955,34 @@ Jempl provides clear error messages for common partial issues:
 
 ## Escaping
 
-To output literal `${` in strings, use `\${`:
+To output literal `${` or `#{` in strings, use backslash escaping:
 
 ```yaml
 data:
   price: 100
+  items: ["first"]
 
 template:
-  message: "The price is \\${price} (literal)"
-  actual: "The actual price is ${price}"
-  doubleEscape: "Backslash and variable: \\\\${price}"
+  # Variable escaping
+  varLiteral: "The price is \\${price} (literal)"
+  varActual: "The actual price is ${price}"
+  varDouble: "Backslash and variable: \\\\${price}"
+  
+  # Path reference escaping (within loops)
+  items:
+    $for item in items:
+      - pathLiteral: "Use \\#{item} for path references"
+        pathActual: "Path is #{item}"
+        pathDouble: "Backslash and path: \\\\#{item}"
 
 output:
-  message: "The price is ${price} (literal)"
-  actual: "The actual price is 100"
-  doubleEscape: "Backslash and variable: \\100"
+  varLiteral: "The price is ${price} (literal)"
+  varActual: "The actual price is 100"
+  varDouble: "Backslash and variable: \\100"
+  items:
+    - pathLiteral: "Use #{item} for path references"
+      pathActual: "Path is items[0]"
+      pathDouble: "Backslash and path: \\items[0]"
 ```
 
 ## Functions

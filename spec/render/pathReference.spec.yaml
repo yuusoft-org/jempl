@@ -1,0 +1,268 @@
+file: '../../src/render.js'
+group: render
+suites: [pathReference]
+---
+### Path Reference Rendering
+suite: pathReference
+exportName: default
+---
+case: simple path reference in loop
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: items
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for item in items"
+              value:
+                type: 7
+                itemVar: "item"
+                indexVar: null
+                iterable:
+                  type: 1
+                  path: "items"
+                body:
+                  type: 9
+                  fast: true
+                  items:
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: path
+                          value:
+                            type: 11
+                            path: "item"
+                        - key: value
+                          value:
+                            type: 1
+                            path: "item"
+  - items: ["first", "second", "third"]
+out:
+  items:
+    - path: "items[0]"
+      value: "first"
+    - path: "items[1]"
+      value: "second"
+    - path: "items[2]"
+      value: "third"
+---
+case: path reference with property access
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: products
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for product in products"
+              value:
+                type: 7
+                itemVar: "product"
+                indexVar: null
+                iterable:
+                  type: 1
+                  path: "products"
+                body:
+                  type: 9
+                  fast: true
+                  items:
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: idPath
+                          value:
+                            type: 11
+                            path: "product.id"
+                        - key: namePath
+                          value:
+                            type: 11
+                            path: "product.name"
+                        - key: id
+                          value:
+                            type: 1
+                            path: "product.id"
+  - products:
+      - {id: 1, name: "Widget"}
+      - {id: 2, name: "Gadget"}
+out:
+  products:
+    - idPath: "products[0].id"
+      namePath: "products[0].name"
+      id: 1
+    - idPath: "products[1].id"
+      namePath: "products[1].name"
+      id: 2
+---
+case: path reference with index variable
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: list
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for item, idx in items"
+              value:
+                type: 7
+                itemVar: "item"
+                indexVar: "idx"
+                iterable:
+                  type: 1
+                  path: "items"
+                body:
+                  type: 9
+                  fast: true
+                  items:
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: itemPath
+                          value:
+                            type: 11
+                            path: "item"
+                        - key: indexPath
+                          value:
+                            type: 11
+                            path: "idx"
+                        - key: index
+                          value:
+                            type: 1
+                            path: "idx"
+  - items: ["a", "b", "c"]
+out:
+  list:
+    - itemPath: "items[0]"
+      indexPath: "0"
+      index: 0
+    - itemPath: "items[1]"
+      indexPath: "1"
+      index: 1
+    - itemPath: "items[2]"
+      indexPath: "2"
+      index: 2
+---
+case: nested loops with path references
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: categories
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for cat in categories"
+              value:
+                type: 7
+                itemVar: "cat"
+                indexVar: null
+                iterable:
+                  type: 1
+                  path: "categories"
+                body:
+                  type: 9
+                  fast: false
+                  items:
+                    - type: 8
+                      fast: false
+                      properties:
+                        - key: name
+                          value:
+                            type: 1
+                            path: "cat.name"
+                        - key: products
+                          value:
+                            type: 8
+                            fast: false
+                            properties:
+                              - key: "$for prod in cat.products"
+                                value:
+                                  type: 7
+                                  itemVar: "prod"
+                                  indexVar: null
+                                  iterable:
+                                    type: 1
+                                    path: "cat.products"
+                                  body:
+                                    type: 9
+                                    fast: true
+                                    items:
+                                      - type: 8
+                                        fast: true
+                                        properties:
+                                          - key: path
+                                            value:
+                                              type: 11
+                                              path: "prod"
+                                          - key: name
+                                            value:
+                                              type: 1
+                                              path: "prod.name"
+  - categories:
+      - name: "Electronics"
+        products:
+          - {name: "Phone"}
+          - {name: "Laptop"}
+      - name: "Clothing"
+        products:
+          - {name: "Shirt"}
+out:
+  categories:
+    - name: "Electronics"
+      products:
+        - path: "categories[0].products[0]"
+          name: "Phone"
+        - path: "categories[0].products[1]"
+          name: "Laptop"
+    - name: "Clothing"
+      products:
+        - path: "categories[1].products[0]"
+          name: "Shirt"
+---
+case: path reference in interpolation
+in:
+  - type: 8
+    fast: false
+    properties:
+      - key: messages
+        value:
+          type: 8
+          fast: false
+          properties:
+            - key: "$for msg in messages"
+              value:
+                type: 7
+                itemVar: "msg"
+                indexVar: null
+                iterable:
+                  type: 1
+                  path: "messages"
+                body:
+                  type: 9
+                  fast: true
+                  items:
+                    - type: 8
+                      fast: true
+                      properties:
+                        - key: text
+                          value:
+                            type: 2
+                            parts:
+                              - "Message at "
+                              - {type: 11, path: "msg"}
+                              - " contains: "
+                              - {type: 1, path: "msg.content"}
+  - messages:
+      - {content: "Hello"}
+      - {content: "World"}
+out:
+  messages:
+    - text: "Message at messages[0] contains: Hello"
+    - text: "Message at messages[1] contains: World"

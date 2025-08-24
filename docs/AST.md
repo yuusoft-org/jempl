@@ -30,6 +30,8 @@ const NodeType = {
   LOOP: 7,
   OBJECT: 8,
   ARRAY: 9,
+  PARTIAL: 10,
+  PATH_REFERENCE: 11,
 };
 ```
 
@@ -145,6 +147,32 @@ type: 9 # ARRAY
 items: [Node]
 fast: boolean # true if no conditionals/loops/functions
 ```
+
+### 11. Partial Node
+
+For partial template inclusion.
+
+```yaml
+type: 10 # PARTIAL
+name: string # Name of the partial to include
+data: Node | null # Optional inline data to pass to the partial
+whenCondition: Node | null # Optional $when condition
+```
+
+### 12. Path Reference Node
+
+For path references like `#{item}` or `#{product.id}` that resolve to the path of a loop variable.
+
+```yaml
+type: 11 # PATH_REFERENCE
+path: string # "item" or "item.property" - must be a loop variable
+```
+
+**Note on path references:**
+- Only valid within loops - references to loop variables only
+- Resolves to the full path from root (e.g., `"categories[0].products[1]"`)
+- Does not support functions, expressions, or array indices
+- Used for data binding in UI frameworks that need paths rather than values
 
 ## Examples
 
@@ -412,6 +440,70 @@ properties:
               value:
                 type: 0 # LITERAL
                 value: "Always"
+```
+
+### Example 7: Path References in Loops
+
+Template:
+
+```yaml
+products:
+  $for product in products:
+    - binding: "#{product}"
+      name: "${product.name}"
+      pricePath: "#{product.price}"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+properties:
+  - key: products
+    value:
+      type: 8 # OBJECT
+      fast: false
+      properties:
+        - key: "$for product in products"
+          value:
+            type: 7 # LOOP
+            itemVar: "product"
+            indexVar: null
+            iterable:
+              type: 1 # VARIABLE
+              path: "products"
+            body:
+              type: 9 # ARRAY
+              fast: true
+              items:
+                - type: 8 # OBJECT
+                  fast: true
+                  properties:
+                    - key: binding
+                      value:
+                        type: 11 # PATH_REFERENCE
+                        path: "product"
+                    - key: name
+                      value:
+                        type: 1 # VARIABLE
+                        path: "product.name"
+                    - key: pricePath
+                      value:
+                        type: 11 # PATH_REFERENCE
+                        path: "product.price"
+```
+
+When rendered with `products: [{name: "Widget", price: 99.99}, {name: "Gadget", price: 49.99}]`:
+
+```yaml
+products:
+  - binding: "products[0]"
+    name: "Widget"
+    pricePath: "products[0].price"
+  - binding: "products[1]"
+    name: "Gadget"
+    pricePath: "products[1].price"
 ```
 
 ## Optimizations

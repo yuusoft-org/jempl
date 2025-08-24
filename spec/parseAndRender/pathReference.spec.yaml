@@ -1,0 +1,144 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [pathReference]
+---
+### Path Reference End-to-End Tests
+suite: pathReference
+exportName: default
+---
+case: simple path reference example
+in:
+  - result:
+      $for item in items:
+        - path: "#{item}"
+          value: "${item}"
+  - items: ["first", "second", "third"]
+  - functions: {}
+out:
+  result:
+    - path: "items[0]"
+      value: "first"
+    - path: "items[1]"
+      value: "second"
+    - path: "items[2]"
+      value: "third"
+---
+case: component binding example
+in:
+  - dashboard:
+      $for widget in widgets:
+        - component: "Widget"
+          binding: "#{widget}"
+          title: "${widget.title}"
+  - widgets:
+      - {title: "Sales Chart", data: [10, 20, 30]}
+      - {title: "User Stats", data: [100, 200]}
+  - functions: {}
+out:
+  dashboard:
+    - component: "Widget"
+      binding: "widgets[0]"
+      title: "Sales Chart"
+    - component: "Widget"
+      binding: "widgets[1]"
+      title: "User Stats"
+---
+case: nested loops real-world example
+in:
+  - result:
+      $for category in categories:
+        - name: "${category.name}"
+          products:
+            $for product in category.products:
+              - div:
+                  class: "product-card"
+                  data-path: "#{product}"
+                  content: "${product.name} - $${product.price}"
+  - categories:
+      - name: "Electronics"
+        products:
+          - {name: "Laptop", price: 999}
+          - {name: "Phone", price: 599}
+      - name: "Books"
+        products:
+          - {name: "Novel", price: 15}
+  - functions: {}
+out:
+  result:
+    - name: "Electronics"
+      products:
+        - div:
+            class: "product-card"
+            data-path: "categories[0].products[0]"
+            content: "Laptop - $999"
+        - div:
+            class: "product-card"
+            data-path: "categories[0].products[1]"
+            content: "Phone - $599"
+    - name: "Books"
+      products:
+        - div:
+            class: "product-card"
+            data-path: "categories[1].products[0]"
+            content: "Novel - $15"
+---
+case: mixed variables and path references
+in:
+  - items:
+      $for item, i in data:
+        - index: "${i}"
+          indexPath: "#{i}"
+          itemPath: "#{item}"
+          value: "${item.value}"
+          propertyPath: "#{item.value}"
+  - data:
+      - {value: "alpha"}
+      - {value: "beta"}
+  - functions: {}
+out:
+  items:
+    - index: 0
+      indexPath: "0"
+      itemPath: "data[0]"
+      value: "alpha"
+      propertyPath: "data[0].value"
+    - index: 1
+      indexPath: "1"
+      itemPath: "data[1]"
+      value: "beta"
+      propertyPath: "data[1].value"
+---
+case: conditional with path reference
+in:
+  - results:
+      $for item in items:
+        - $if item.active:
+            path: "#{item}"
+            status: "active"
+          $else:
+            path: "#{item}"
+            status: "inactive"
+  - items:
+      - {name: "A", active: true}
+      - {name: "B", active: false}
+  - functions: {}
+out:
+  results:
+    - path: "items[0]"
+      status: "active"
+    - path: "items[1]"
+      status: "inactive"
+---
+case: path reference in complex interpolation
+in:
+  - logs:
+      $for entry, idx in entries:
+        - message: "[${idx}] Item at #{entry} has value ${entry.val} (path: #{entry.val})"
+  - entries:
+      - {val: "test1"}
+      - {val: "test2"}
+  - functions: {}
+out:
+  logs:
+    - message: "[0] Item at entries[0] has value test1 (path: entries[0].val)"
+    - message: "[1] Item at entries[1] has value test2 (path: entries[1].val)"

@@ -51,7 +51,11 @@ const render = (ast, data, options = {}) => {
     }
   }
 
-  const result = renderNode(ast, { functions, partials }, data, {});
+  // Only enable path tracking if the AST contains path references
+  // This avoids performance overhead when not using the feature
+  const initialScope = {};
+  
+  const result = renderNode(ast, { functions, partials }, data, initialScope);
   // Convert undefined to empty object at root level (for $when: false at root)
   if (result === undefined) {
     return {};
@@ -113,6 +117,9 @@ const renderNode = (node, options, data, scope) => {
 
     case NodeType.PARTIAL:
       return renderPartial(node, options, data, scope);
+
+    case NodeType.PATH_REFERENCE:
+      return renderPathReference(node, options, data, scope);
 
     default:
       throw new Error(`Unknown node type: ${node.type}`);
@@ -768,6 +775,31 @@ const renderLoopFastPath = (node, options, data, scope, iterable) => {
         ...(indexVar && { [indexVar]: i }),
       };
 
+      // Add path tracking
+      if (!loopScope.__paths__) {
+        loopScope.__paths__ = scope.__paths__ || {};
+      }
+      let iterablePath = node.iterable.path || "";
+      
+      // If the iterable references a loop variable, resolve its full path
+      if (scope && scope.__paths__ && iterablePath) {
+        const parts = iterablePath.split('.');
+        const base = parts[0];
+        if (base in scope.__paths__) {
+          // Replace the base with its full path
+          iterablePath = scope.__paths__[base];
+          if (parts.length > 1) {
+            iterablePath += '.' + parts.slice(1).join('.');
+          }
+        }
+      }
+      
+      loopScope.__paths__ = {
+        ...loopScope.__paths__,
+        [itemVar]: `${iterablePath}[${i}]`,
+        ...(indexVar && { [indexVar]: i }),
+      };
+
       // Inline object property rendering to avoid function calls
       for (const prop of body.properties) {
         const key = prop.parsedKey
@@ -990,11 +1022,40 @@ const renderLoop = (node, options, data, scope) => {
   // Fall back to general path
   const results = [];
 
+  // Get the path to the iterable
+  let iterablePath = node.iterable.path || "";
+  
+  // If the iterable references a loop variable, resolve its full path
+  if (scope && scope.__paths__ && iterablePath) {
+    const parts = iterablePath.split('.');
+    const base = parts[0];
+    if (base in scope.__paths__) {
+      // Replace the base with its full path
+      iterablePath = scope.__paths__[base];
+      if (parts.length > 1) {
+        iterablePath += '.' + parts.slice(1).join('.');
+      }
+    }
+  }
+
   for (let i = 0; i < iterable.length; i++) {
     // Use spread operator instead of Object.create for better performance
     const newScope = node.indexVar
       ? { ...scope, [node.itemVar]: iterable[i], [node.indexVar]: i }
       : { ...scope, [node.itemVar]: iterable[i] };
+
+    // Add path tracking for path references
+    // Always track paths in loops since we might encounter path references in the body
+    if (!newScope.__paths__) {
+      newScope.__paths__ = scope.__paths__ || {};
+    }
+    newScope.__paths__ = {
+      ...newScope.__paths__,
+      [node.itemVar]: `${iterablePath}[${i}]`,
+    };
+    if (node.indexVar) {
+      newScope.__paths__[node.indexVar] = i;
+    }
 
     const rendered = renderNode(node.body, options, data, newScope);
 
@@ -1370,6 +1431,65 @@ const renderPartial = (node, options, data, scope) => {
 
   // Render the partial template with the merged context
   return renderNode(partialTemplate, options, partialContext, partialScope);
+};
+
+/**
+ * Renders a path reference node
+ * @param {Object} node - Path reference AST node
+ * @param {Object} options - Contains functions
+ * @param {Object} data - Current data context
+ * @param {Object} scope - Current scope with path tracking
+ * @returns {string} The path to the referenced variable
+ */
+const renderPathReference = (node, options, data, scope) => {
+  const { path } = node;
+  
+  // Split path into base and properties
+  const parts = path.split('.');
+  const base = parts[0];
+  const properties = parts.slice(1);
+  
+  // Check if it's in scope (loop variable)
+  if (!scope || !(base in scope)) {
+    throw new JemplRenderError(
+      `Path reference '#{${path}}' refers to '${base}' which is not a loop variable in the current scope`
+    );
+  }
+  
+  // Enable path tracking if not already enabled
+  if (!scope.__paths__) {
+    // We need to reconstruct the path for the current scope
+    // This is a fallback that shouldn't normally happen
+    scope.__paths__ = {};
+  }
+  
+  // Check if we have the path for this variable
+  if (!(base in scope.__paths__)) {
+    // This shouldn't happen in normal operation but handle gracefully
+    throw new JemplRenderError(
+      `Path reference '#{${path}}' cannot be resolved - path tracking may not be initialized properly`
+    );
+  }
+  
+  // Get the base path
+  let fullPath = scope.__paths__[base];
+  
+  // Handle index variables specially - they should return just the number
+  if (typeof fullPath === 'number') {
+    if (properties.length > 0) {
+      throw new JemplRenderError(
+        `Path reference '#{${path}}' - cannot access properties on index variable '${base}'`
+      );
+    }
+    return String(fullPath);
+  }
+  
+  // Append any properties
+  if (properties.length > 0) {
+    fullPath += '.' + properties.join('.');
+  }
+  
+  return fullPath;
 };
 
 export default render;
