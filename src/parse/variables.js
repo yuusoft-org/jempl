@@ -202,7 +202,7 @@ export const parsePathReference = (expr) => {
         `Offending expression: "#{${expr}}"`,
     );
   }
-  
+
   // Check for arithmetic operators (with or without spaces)
   if (/[+\-*/%]/.test(trimmed)) {
     throw new JemplParseError(
@@ -220,7 +220,7 @@ export const parsePathReference = (expr) => {
         `Offending expression: "#{${expr}}"`,
     );
   }
-  
+
   // Check for ternary operator
   if (trimmed.includes("?") && trimmed.includes(":")) {
     throw new JemplParseError(
@@ -294,7 +294,10 @@ export const parseStringValue = (str, functions = {}) => {
   if (str.includes("\\${") || str.includes("\\#{")) {
     // First replace \\${ and \\#{ (double escape) with special markers
     processedStr = str.replace(/\\\\(\$\{[^}]*\})/g, "\\DOUBLE_ESC_VAR$1");
-    processedStr = processedStr.replace(/\\\\(#\{[^}]*\})/g, "\\DOUBLE_ESC_PATH$1");
+    processedStr = processedStr.replace(
+      /\\\\(#\{[^}]*\})/g,
+      "\\DOUBLE_ESC_PATH$1",
+    );
 
     // Then replace \${ and \#{ (single escape) with placeholders
     processedStr = processedStr.replace(
@@ -324,11 +327,11 @@ export const parseStringValue = (str, functions = {}) => {
 
   const varMatches = [...processedStr.matchAll(VARIABLE_REGEX)];
   const pathMatches = [...processedStr.matchAll(PATH_REFERENCE_REGEX)];
-  
+
   // Combine and sort all matches by index
   const allMatches = [
-    ...varMatches.map(m => ({ match: m, type: 'variable' })),
-    ...pathMatches.map(m => ({ match: m, type: 'pathref' }))
+    ...varMatches.map((m) => ({ match: m, type: "variable" })),
+    ...pathMatches.map((m) => ({ match: m, type: "pathref" })),
   ].sort((a, b) => a.match.index - b.match.index);
 
   if (allMatches.length === 0) {
@@ -351,7 +354,7 @@ export const parseStringValue = (str, functions = {}) => {
     // Single variable or path reference that is the entire string, no escapes
     const { match, type } = allMatches[0];
     try {
-      if (type === 'variable') {
+      if (type === "variable") {
         return parseVariable(match[1], functions);
       } else {
         return parsePathReference(match[1]);
@@ -392,7 +395,7 @@ export const parseStringValue = (str, functions = {}) => {
     // Parse the expression
     try {
       let parsedExpr;
-      if (type === 'variable') {
+      if (type === "variable") {
         parsedExpr = parseVariable(expr.trim(), functions);
       } else {
         parsedExpr = parsePathReference(expr.trim());

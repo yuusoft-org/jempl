@@ -54,7 +54,7 @@ const render = (ast, data, options = {}) => {
   // Only enable path tracking if the AST contains path references
   // This avoids performance overhead when not using the feature
   const initialScope = {};
-  
+
   const result = renderNode(ast, { functions, partials }, data, initialScope);
   // Convert undefined to empty object at root level (for $when: false at root)
   if (result === undefined) {
@@ -780,20 +780,20 @@ const renderLoopFastPath = (node, options, data, scope, iterable) => {
         loopScope.__paths__ = scope.__paths__ || {};
       }
       let iterablePath = node.iterable.path || "";
-      
+
       // If the iterable references a loop variable, resolve its full path
       if (scope && scope.__paths__ && iterablePath) {
-        const parts = iterablePath.split('.');
+        const parts = iterablePath.split(".");
         const base = parts[0];
         if (base in scope.__paths__) {
           // Replace the base with its full path
           iterablePath = scope.__paths__[base];
           if (parts.length > 1) {
-            iterablePath += '.' + parts.slice(1).join('.');
+            iterablePath += "." + parts.slice(1).join(".");
           }
         }
       }
-      
+
       loopScope.__paths__ = {
         ...loopScope.__paths__,
         [itemVar]: `${iterablePath}[${i}]`,
@@ -1024,16 +1024,16 @@ const renderLoop = (node, options, data, scope) => {
 
   // Get the path to the iterable
   let iterablePath = node.iterable.path || "";
-  
+
   // If the iterable references a loop variable, resolve its full path
   if (scope && scope.__paths__ && iterablePath) {
-    const parts = iterablePath.split('.');
+    const parts = iterablePath.split(".");
     const base = parts[0];
     if (base in scope.__paths__) {
       // Replace the base with its full path
       iterablePath = scope.__paths__[base];
       if (parts.length > 1) {
-        iterablePath += '.' + parts.slice(1).join('.');
+        iterablePath += "." + parts.slice(1).join(".");
       }
     }
   }
@@ -1443,52 +1443,52 @@ const renderPartial = (node, options, data, scope) => {
  */
 const renderPathReference = (node, options, data, scope) => {
   const { path } = node;
-  
+
   // Split path into base and properties
-  const parts = path.split('.');
+  const parts = path.split(".");
   const base = parts[0];
   const properties = parts.slice(1);
-  
+
   // Check if it's in scope (loop variable)
   if (!scope || !(base in scope)) {
     throw new JemplRenderError(
-      `Path reference '#{${path}}' refers to '${base}' which is not a loop variable in the current scope`
+      `Path reference '#{${path}}' refers to '${base}' which is not a loop variable in the current scope`,
     );
   }
-  
+
   // Enable path tracking if not already enabled
   if (!scope.__paths__) {
     // We need to reconstruct the path for the current scope
     // This is a fallback that shouldn't normally happen
     scope.__paths__ = {};
   }
-  
+
   // Check if we have the path for this variable
   if (!(base in scope.__paths__)) {
     // This shouldn't happen in normal operation but handle gracefully
     throw new JemplRenderError(
-      `Path reference '#{${path}}' cannot be resolved - path tracking may not be initialized properly`
+      `Path reference '#{${path}}' cannot be resolved - path tracking may not be initialized properly`,
     );
   }
-  
+
   // Get the base path
   let fullPath = scope.__paths__[base];
-  
+
   // Handle index variables specially - they should return just the number
-  if (typeof fullPath === 'number') {
+  if (typeof fullPath === "number") {
     if (properties.length > 0) {
       throw new JemplRenderError(
-        `Path reference '#{${path}}' - cannot access properties on index variable '${base}'`
+        `Path reference '#{${path}}' - cannot access properties on index variable '${base}'`,
       );
     }
     return String(fullPath);
   }
-  
+
   // Append any properties
   if (properties.length > 0) {
-    fullPath += '.' + properties.join('.');
+    fullPath += "." + properties.join(".");
   }
-  
+
   return fullPath;
 };
 
