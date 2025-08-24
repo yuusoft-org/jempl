@@ -1,0 +1,47 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [pathReferenceErrors]
+---
+### Path Reference Error Cases
+suite: pathReferenceErrors
+exportName: default
+---
+case: path reference with function call not allowed
+in:
+  - template:
+      value: "#{now()}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Functions are not supported in path references - path references can only refer to loop variables. Offending expression: \"#{now()}\""
+---
+case: path reference with arithmetic expression
+in:
+  - template:
+      value: "#{item + 1}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Arithmetic expressions not supported in path references - path references can only refer to loop variables. Offending expression: \"#{item + 1}\""
+---
+case: path reference with logical operator
+in:
+  - template:
+      value: "#{item || fallback}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Logical operators not supported in path references - path references can only refer to loop variables. Offending expression: \"#{item || fallback}\""
+---
+case: path reference with array index
+in:
+  - template:
+      value: "#{items[0]}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Array indices not supported in path references - use simple variable names or properties. Offending expression: \"#{items[0]}\""
+---
+case: path reference with ternary operator
+in:
+  - template:
+      value: "#{isActive ? item : null}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Complex expressions not supported in path references - path references can only refer to loop variables. Offending expression: \"#{isActive ? item : null}\""

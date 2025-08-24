@@ -10,6 +10,7 @@ export const NodeType = {
   OBJECT: 8,
   ARRAY: 9,
   PARTIAL: 10,
+  PATH_REFERENCE: 11,
 };
 
 export const BinaryOp = {

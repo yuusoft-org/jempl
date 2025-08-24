@@ -1,0 +1,244 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [pathReference]
+---
+### Path Reference Syntax
+suite: pathReference
+exportName: default
+---
+case: simple path reference
+in:
+  - items:
+      $for item in items:
+        - path: "#{item}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item in items"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "items"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: path
+                        value:
+                          type: 11
+                          path: "item"
+---
+case: path reference with property access
+in:
+  - products:
+      $for product in products:
+        - productPath: "#{product.id}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: products
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for product in products"
+            value:
+              type: 7
+              itemVar: "product"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "products"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: productPath
+                        value:
+                          type: 11
+                          path: "product.id"
+---
+case: path reference with index variable
+in:
+  - list:
+      $for item, idx in items:
+        - itemPath: "#{item}"
+          indexPath: "#{idx}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: list
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item, idx in items"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: "idx"
+              iterable:
+                type: 1
+                path: "items"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: itemPath
+                        value:
+                          type: 11
+                          path: "item"
+                      - key: indexPath
+                        value:
+                          type: 11
+                          path: "idx"
+---
+case: path reference in interpolation
+in:
+  - messages:
+      $for msg in messages:
+        - text: "Message at path #{msg}: ${msg.content}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: messages
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for msg in messages"
+            value:
+              type: 7
+              itemVar: "msg"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "messages"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: text
+                        value:
+                          type: 2
+                          parts:
+                            - "Message at path "
+                            - {type: 11, path: "msg"}
+                            - ": "
+                            - {type: 1, path: "msg.content"}
+---
+case: nested loops with path references
+in:
+  - categories:
+      $for category in categories:
+        - name: "${category.name}"
+          products:
+            $for product in category.products:
+              - path: "#{product}"
+                name: "${product.name}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: categories
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for category in categories"
+            value:
+              type: 7
+              itemVar: "category"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "categories"
+              body:
+                type: 9
+                fast: false
+                items:
+                  - type: 8
+                    fast: false
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "category.name"
+                      - key: products
+                        value:
+                          type: 8
+                          fast: false
+                          properties:
+                            - key: "$for product in category.products"
+                              value:
+                                type: 7
+                                itemVar: "product"
+                                indexVar: null
+                                iterable:
+                                  type: 1
+                                  path: "category.products"
+                                body:
+                                  type: 9
+                                  fast: true
+                                  items:
+                                    - type: 8
+                                      fast: true
+                                      properties:
+                                        - key: path
+                                          value:
+                                            type: 11
+                                            path: "product"
+                                        - key: name
+                                          value:
+                                            type: 1
+                                            path: "product.name"
+---
+case: escaped path reference
+in:
+  - text: "Use \\#{variable} for path references"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: text
+      value:
+        type: 0
+        value: "Use #{variable} for path references"
+---
+case: double escaped path reference
+in:
+  - text: "Literal backslash: \\\\#{item}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: text
+      value:
+        type: 2
+        parts:
+          - "Literal backslash: \\"
+          - {type: 11, path: "item"}

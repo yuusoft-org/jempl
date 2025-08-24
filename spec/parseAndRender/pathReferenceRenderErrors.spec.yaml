@@ -1,0 +1,32 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [pathReferenceRenderErrors]
+---
+### Path Reference Render Error Tests
+suite: pathReferenceRenderErrors
+exportName: default
+---
+case: path reference outside of loop
+in:
+  - value: "#{item}"
+  - {}
+  - functions: {}
+throws: "Render Error: Path reference '#{item}' refers to 'item' which is not a loop variable in the current scope"
+---
+case: path reference to non-existent variable
+in:
+  - items:
+      $for item in items:
+        - path: "#{product}"
+  - items: ["test"]
+  - functions: {}
+throws: "Render Error: Path reference '#{product}' refers to 'product' which is not a loop variable in the current scope"
+---
+case: property access on index variable
+in:
+  - items:
+      $for item, i in items:
+        - path: "#{i.invalid}"
+  - items: ["test"]
+  - functions: {}
+throws: "Render Error: Path reference '#{i.invalid}' - cannot access properties on index variable 'i'"

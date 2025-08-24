@@ -2,6 +2,7 @@ import { NodeType } from "./constants.js";
 import { JemplParseError } from "../errors.js";
 
 const VARIABLE_REGEX = /\$\{([^}]*)\}/g;
+const PATH_REFERENCE_REGEX = /#\{([^}]*)\}/g;
 
 /**
  * Checks if expression is a function call and returns parsed function node
@@ -177,6 +178,65 @@ const validateVariableExpression = (expr) => {
 };
 
 /**
+ * Parses a path reference expression like #{name} or #{item.property}
+ * @param {string} expr - The expression without #{ and }
+ * @returns {Object} Path reference node
+ */
+export const parsePathReference = (expr) => {
+  const trimmed = expr.trim();
+
+  // Path references don't support functions or complex expressions
+  if (FUNCTION_CALL_REGEX.test(trimmed)) {
+    throw new JemplParseError(
+      `Functions are not supported in path references - ` +
+        `path references can only refer to loop variables. ` +
+        `Offending expression: "#{${expr}}"`,
+    );
+  }
+
+  // Check for invalid array syntax
+  if (trimmed.includes("[")) {
+    throw new JemplParseError(
+      `Array indices not supported in path references - ` +
+        `use simple variable names or properties. ` +
+        `Offending expression: "#{${expr}}"`,
+    );
+  }
+
+  // Check for arithmetic operators (with or without spaces)
+  if (/[+\-*/%]/.test(trimmed)) {
+    throw new JemplParseError(
+      `Arithmetic expressions not supported in path references - ` +
+        `path references can only refer to loop variables. ` +
+        `Offending expression: "#{${expr}}"`,
+    );
+  }
+
+  // Check for logical operators
+  if (/\|\||&&/.test(trimmed)) {
+    throw new JemplParseError(
+      `Logical operators not supported in path references - ` +
+        `path references can only refer to loop variables. ` +
+        `Offending expression: "#{${expr}}"`,
+    );
+  }
+
+  // Check for ternary operator
+  if (trimmed.includes("?") && trimmed.includes(":")) {
+    throw new JemplParseError(
+      `Complex expressions not supported in path references - ` +
+        `path references can only refer to loop variables. ` +
+        `Offending expression: "#{${expr}}"`,
+    );
+  }
+
+  return {
+    type: NodeType.PATH_REFERENCE,
+    path: trimmed,
+  };
+};
+
+/**
  * Parses a variable expression like ${name} or ${user.profile.name} or function calls like ${now()}
  * @param {string} expr - The expression without ${ and }
  * @param {Object} functions - Available functions for validation
@@ -230,12 +290,16 @@ export const parseStringValue = (str, functions = {}) => {
   let processedStr = str;
   const escapedParts = [];
 
-  // Handle escaped sequences - need to process double escapes carefully
-  if (str.includes("\\${")) {
-    // First replace \\${ (double escape) with a special marker to preserve it
-    processedStr = str.replace(/\\\\(\$\{[^}]*\})/g, "\\DOUBLE_ESC$1");
+  // Handle escaped sequences for both ${} and #{}
+  if (str.includes("\\${") || str.includes("\\#{")) {
+    // First replace \\${ and \\#{ (double escape) with special markers
+    processedStr = str.replace(/\\\\(\$\{[^}]*\})/g, "\\DOUBLE_ESC_VAR$1");
+    processedStr = processedStr.replace(
+      /\\\\(#\{[^}]*\})/g,
+      "\\DOUBLE_ESC_PATH$1",
+    );
 
-    // Then replace \${ (single escape) with placeholder
+    // Then replace \${ and \#{ (single escape) with placeholders
     processedStr = processedStr.replace(
       /\\(\$\{[^}]*\})/g,
       (match, dollarExpr) => {
@@ -244,18 +308,34 @@ export const parseStringValue = (str, functions = {}) => {
         return placeholder;
       },
     );
+    processedStr = processedStr.replace(
+      /\\(#\{[^}]*\})/g,
+      (match, hashExpr) => {
+        const placeholder = `__ESCAPED_${escapedParts.length}__`;
+        escapedParts.push(hashExpr);
+        return placeholder;
+      },
+    );
 
-    // Restore double escapes as literal backslash + variable
-    processedStr = processedStr.replace(/\\DOUBLE_ESC/g, "\\");
+    // Restore double escapes as literal backslash + syntax
+    processedStr = processedStr.replace(/\\DOUBLE_ESC_VAR/g, "\\");
+    processedStr = processedStr.replace(/\\DOUBLE_ESC_PATH/g, "\\");
   }
 
   // Don't validate incomplete variables - let them be treated as literals
   // This preserves the original Jempl behavior where incomplete syntax is ignored
 
-  const matches = [...processedStr.matchAll(VARIABLE_REGEX)];
+  const varMatches = [...processedStr.matchAll(VARIABLE_REGEX)];
+  const pathMatches = [...processedStr.matchAll(PATH_REFERENCE_REGEX)];
 
-  if (matches.length === 0) {
-    // No variables, return literal (restore escapes)
+  // Combine and sort all matches by index
+  const allMatches = [
+    ...varMatches.map((m) => ({ match: m, type: "variable" })),
+    ...pathMatches.map((m) => ({ match: m, type: "pathref" })),
+  ].sort((a, b) => a.match.index - b.match.index);
+
+  if (allMatches.length === 0) {
+    // No variables or path references, return literal (restore escapes)
     let finalValue = processedStr;
     for (let i = 0; i < escapedParts.length; i++) {
       finalValue = finalValue.replace(`__ESCAPED_${i}__`, escapedParts[i]);
@@ -267,13 +347,18 @@ export const parseStringValue = (str, functions = {}) => {
   }
 
   if (
-    matches.length === 1 &&
-    matches[0][0] === processedStr &&
+    allMatches.length === 1 &&
+    allMatches[0].match[0] === processedStr &&
     escapedParts.length === 0
   ) {
-    // Single variable that is the entire string, no escapes
+    // Single variable or path reference that is the entire string, no escapes
+    const { match, type } = allMatches[0];
     try {
-      return parseVariable(matches[0][1], functions);
+      if (type === "variable") {
+        return parseVariable(match[1], functions);
+      } else {
+        return parsePathReference(match[1]);
+      }
     } catch (e) {
       // Only catch our specific array syntax error
       if (e.message === "Invalid array index syntax") {
@@ -291,11 +376,11 @@ export const parseStringValue = (str, functions = {}) => {
   const parts = [];
   let lastIndex = 0;
 
-  for (const match of matches) {
-    const [fullMatch, varName] = match;
+  for (const { match, type } of allMatches) {
+    const [fullMatch, expr] = match;
     const index = match.index;
 
-    // Add literal part before the variable
+    // Add literal part before the variable/path reference
     if (index > lastIndex) {
       let literalPart = processedStr.substring(lastIndex, index);
       // Restore escaped parts in this literal section
@@ -307,9 +392,14 @@ export const parseStringValue = (str, functions = {}) => {
       }
     }
 
-    // Parse the expression (could be variable or function)
+    // Parse the expression
     try {
-      const parsedExpr = parseVariable(varName.trim(), functions);
+      let parsedExpr;
+      if (type === "variable") {
+        parsedExpr = parseVariable(expr.trim(), functions);
+      } else {
+        parsedExpr = parsePathReference(expr.trim());
+      }
       parts.push(parsedExpr);
     } catch (e) {
       // Only catch our specific array syntax error
