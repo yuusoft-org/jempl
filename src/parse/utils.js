@@ -583,16 +583,35 @@ export const parseAtomicExpression = (expr) => {
  * @returns {Object} Variable or Function AST node
  */
 export const parseIterableExpression = (expr, functions) => {
-  // Try to parse as a variable/function using the existing parseVariable logic
+  const trimmed = expr.trim();
+
+  // Fast path: check if it looks like a function call pattern
+  // This avoids the expensive try-catch in parseVariable
+  const functionMatch = trimmed.match(/^(\w+)\((.*)\)$/);
+  if (functionMatch) {
+    // It looks like a function call, use parseVariable to handle it properly
+    return parseVariable(trimmed, functions);
+  }
+
+  // Fast path for simple variables (no operators, no special syntax)
+  // This covers 99% of non-function loop iterables
+  if (/^[a-zA-Z_$][\w.$]*$/.test(trimmed)) {
+    return {
+      type: NodeType.VARIABLE,
+      path: trimmed,
+    };
+  }
+
+  // For complex expressions, fall back to parseVariable
   try {
-    return parseVariable(expr, functions);
+    return parseVariable(trimmed, functions);
   } catch (error) {
     // If parseVariable throws an error about unsupported expressions,
     // fall back to treating it as a simple variable path
     if (error.message && error.message.includes("not supported")) {
       return {
         type: NodeType.VARIABLE,
-        path: expr,
+        path: trimmed,
       };
     }
     throw error;

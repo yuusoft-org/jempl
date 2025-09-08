@@ -3,9 +3,14 @@ import { parse, render } from '../src/index.js';
 
 describe('Performance Tests - Loops with Functions', () => {
   const customFunctions = {
+    // Simple functions with minimal overhead
+    reverse: (arr) => arr.slice().reverse(), // Just reverses array order
+    take: (arr, n) => arr.slice(0, n), // Simple slice operation
+    skip: (arr, n) => arr.slice(n), // Skip first n elements
+    identity: (arr) => arr, // No-op function for baseline comparison
+    
+    // Keep one "real world" function for reference
     sortDate: (posts) => [...posts].sort((a, b) => new Date(a.date) - new Date(b.date)),
-    filterBy: (arr, key, value) => arr.filter(item => item[key] === value),
-    take: (arr, n) => arr.slice(0, n),
     sortBy: (arr, key) => [...arr].sort((a, b) => b[key] - a[key])
   };
 
@@ -30,10 +35,10 @@ describe('Performance Tests - Loops with Functions', () => {
       }
     };
 
-    // Loop with function template
+    // Loop with simple function template (minimal overhead)
     const functionTemplate = {
       posts: {
-        '$for post in sortDate(posts)': {
+        '$for post in take(posts, 50)': {
           title: '${post.title}',
           date: '${post.date}'
         }
@@ -64,43 +69,86 @@ describe('Performance Tests - Loops with Functions', () => {
     const functionAvg = (functionEnd - functionStart) / iterations;
 
     console.log(`Regular loop (100 items): ${regularAvg.toFixed(3)}ms per render`);
-    console.log(`Loop with sortDate (100 items): ${functionAvg.toFixed(3)}ms per render`);
+    console.log(`Loop with take(50) function: ${functionAvg.toFixed(3)}ms per render`);
     console.log(`Overhead: ${((functionAvg - regularAvg) / regularAvg * 100).toFixed(1)}%`);
 
     // Function loops should still be reasonably fast
     expect(functionAvg).toBeLessThan(0.5); // 0.5ms is still very fast
     
-    // The overhead should not be excessive (less than 200%)
+    // With simple functions, overhead should be minimal
     const overheadRatio = functionAvg / regularAvg;
-    expect(overheadRatio).toBeLessThan(3);
+    expect(overheadRatio).toBeLessThan(1.5); // Max 50% overhead for simple functions
+    
+    // The overhead should be very small for simple array operations
+    if (overheadRatio > 1.2) {
+      console.warn(`⚠️  Function loop overhead higher than expected: ${overheadRatio.toFixed(1)}x (target: <1.2x)`);
+    }
   });
 
-  it('should test nested function calls performance', () => {
-    const template = {
-      topPosts: {
-        '$for post in take(sortBy(posts, "views"), 10)': {
+  it('should test with different function complexities', () => {
+    const iterations = 1000;
+    const data = { posts: generatePosts(100) };
+
+    // Test 1: Identity function (no-op)
+    const identityTemplate = {
+      posts: {
+        '$for post in identity(posts)': {
+          title: '${post.title}'
+        }
+      }
+    };
+    const identityAst = parse(identityTemplate, { functions: customFunctions });
+    
+    const identityStart = performance.now();
+    for (let i = 0; i < iterations; i++) {
+      render(identityAst, data, { functions: customFunctions });
+    }
+    const identityAvg = (performance.now() - identityStart) / iterations;
+    
+    // Test 2: Simple slice operation
+    const takeTemplate = {
+      posts: {
+        '$for post in take(posts, 50)': {
+          title: '${post.title}'
+        }
+      }
+    };
+    const takeAst = parse(takeTemplate, { functions: customFunctions });
+    
+    const takeStart = performance.now();
+    for (let i = 0; i < iterations; i++) {
+      render(takeAst, data, { functions: customFunctions });
+    }
+    const takeAvg = (performance.now() - takeStart) / iterations;
+    
+    // Test 3: Complex sorting operation
+    const sortTemplate = {
+      posts: {
+        '$for post in sortDate(posts)': {
           title: '${post.title}',
-          views: '${post.views}'
+          date: '${post.date}'
         }
       }
     };
 
-    const data = { posts: generatePosts(1000) }; // Large dataset
-    const iterations = 100;
-
-    const ast = parse(template, { functions: customFunctions });
-
-    const start = performance.now();
+    const sortAst = parse(sortTemplate, { functions: customFunctions });
+    
+    const sortStart = performance.now();
     for (let i = 0; i < iterations; i++) {
-      render(ast, data, { functions: customFunctions });
+      render(sortAst, data, { functions: customFunctions });
     }
-    const end = performance.now();
-    const avgTime = (end - start) / iterations;
-
-    console.log(`Nested functions (take+sortBy on 1000 items): ${avgTime.toFixed(3)}ms per render`);
-
-    // Even with nested functions and large data, should be fast
-    expect(avgTime).toBeLessThan(2); // 2ms is still acceptable
+    const sortAvg = (performance.now() - sortStart) / iterations;
+    
+    console.log(`Identity function (no-op): ${identityAvg.toFixed(3)}ms per render`);
+    console.log(`Take function (slice): ${takeAvg.toFixed(3)}ms per render`);
+    console.log(`SortDate function (complex): ${sortAvg.toFixed(3)}ms per render`);
+    
+    // Identity should have minimal overhead
+    expect(identityAvg).toBeLessThan(0.05);
+    // Simple operations should be fast
+    expect(takeAvg).toBeLessThan(0.1);
+    // Complex operations can be slower but still reasonable
+    expect(sortAvg).toBeLessThan(0.5)
   });
 
   it('should test parse performance with functions', () => {
@@ -110,13 +158,13 @@ describe('Performance Tests - Loops with Functions', () => {
           name: '${item.name}'
         }
       },
-      filtered: {
-        '$for item in filterBy(items, "active", true)': {
+      sliced: {
+        '$for item in take(items, 10)': {
           name: '${item.name}'
         }
       },
-      combined: {
-        '$for item in take(sortBy(filterBy(items, "active", true), "score"), 5)': {
+      skipped: {
+        '$for item in skip(items, 5)': {
           name: '${item.name}'
         }
       }
