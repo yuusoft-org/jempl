@@ -540,3 +540,227 @@ out:
                         value:
                           type: 0
                           value: "admin"
+---
+case: for loop with function call - no arguments
+in:
+  - items:
+      $for item in getItems():
+        - name: "${item.name}"
+          value: "${item.value}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item in getItems()"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: null
+              iterable:
+                type: 3
+                name: "getItems"
+                args: []
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "item.name"
+                      - key: value
+                        value:
+                          type: 1
+                          path: "item.value"
+---
+case: for loop with function call - single argument
+in:
+  - posts:
+      $for post in sortDate(blogPosts):
+        - title: "${post.title}"
+          date: "${post.date}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: posts
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for post in sortDate(blogPosts)"
+            value:
+              type: 7
+              itemVar: "post"
+              indexVar: null
+              iterable:
+                type: 3
+                name: "sortDate"
+                args:
+                  - type: 1
+                    path: "blogPosts"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: title
+                        value:
+                          type: 1
+                          path: "post.title"
+                      - key: date
+                        value:
+                          type: 1
+                          path: "post.date"
+---
+case: for loop with function call - multiple arguments
+in:
+  - filtered:
+      $for item, idx in filterBy(products, 'category', 'electronics'):
+        - index: "${idx}"
+          name: "${item.name}"
+          price: "${item.price}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: filtered
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item, idx in filterBy(products, 'category', 'electronics')"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: "idx"
+              iterable:
+                type: 3
+                name: "filterBy"
+                args:
+                  - type: 1
+                    path: "products"
+                  - type: 0
+                    value: "category"
+                  - type: 0
+                    value: "electronics"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: index
+                        value:
+                          type: 1
+                          path: "idx"
+                      - key: name
+                        value:
+                          type: 1
+                          path: "item.name"
+                      - key: price
+                        value:
+                          type: 1
+                          path: "item.price"
+---
+case: for loop with nested function calls
+in:
+  - recent:
+      $for post in take(sortDate(posts), 5):
+        - title: "${post.title}"
+          preview: "${post.preview}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: recent
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for post in take(sortDate(posts), 5)"
+            value:
+              type: 7
+              itemVar: "post"
+              indexVar: null
+              iterable:
+                type: 3
+                name: "take"
+                args:
+                  - type: 3
+                    name: "sortDate"
+                    args:
+                      - type: 1
+                        path: "posts"
+                  - type: 0
+                    value: 5
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: title
+                        value:
+                          type: 1
+                          path: "post.title"
+                      - key: preview
+                        value:
+                          type: 1
+                          path: "post.preview"
+---
+case: for loop with function using dot notation path
+in:
+  - sorted:
+      $for item in sortBy(data.items.active, 'priority'):
+        - id: "${item.id}"
+          name: "${item.name}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: sorted
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for item in sortBy(data.items.active, 'priority')"
+            value:
+              type: 7
+              itemVar: "item"
+              indexVar: null
+              iterable:
+                type: 3
+                name: "sortBy"
+                args:
+                  - type: 1
+                    path: "data.items.active"
+                  - type: 0
+                    value: "priority"
+              body:
+                type: 9
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: id
+                        value:
+                          type: 1
+                          path: "item.id"
+                      - key: name
+                        value:
+                          type: 1
+                          path: "item.name"
