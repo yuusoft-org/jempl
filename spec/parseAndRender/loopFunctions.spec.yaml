@@ -1,0 +1,218 @@
+file: '../loopFunctions.js'
+group: parseAndRender
+suites: [loopFunctions]
+---
+### Loops with Functions
+suite: loopFunctions
+exportName: default
+---
+case: for loop with sortDate function
+in:
+  - posts:
+      $for post in sortDate(blogPosts):
+        - title: "${post.title}"
+          date: "${post.date}"
+  - blogPosts:
+      - title: "Third Post"
+        date: "2024-03-15"
+      - title: "First Post"  
+        date: "2024-01-10"
+      - title: "Second Post"
+        date: "2024-02-20"
+out:
+  posts:
+    - title: "First Post"
+      date: "2024-01-10"
+    - title: "Second Post"
+      date: "2024-02-20"
+    - title: "Third Post"
+      date: "2024-03-15"
+---
+case: for loop with filterBy function
+in:
+  - activeItems:
+      $for item, idx in filterBy(products, 'inStock', true):
+        - index: "${idx}"
+          name: "${item.name}"
+          price: "$${item.price}"
+  - products:
+      - name: "Laptop"
+        price: 999
+        inStock: true
+      - name: "Mouse"
+        price: 29
+        inStock: false
+      - name: "Keyboard"
+        price: 79
+        inStock: true
+out:
+  activeItems:
+    - index: 0
+      name: "Laptop"
+      price: "$999"
+    - index: 1
+      name: "Keyboard"
+      price: "$79"
+---
+case: for loop with nested functions - take and sortBy
+in:
+  - topPosts:
+      $for post in take(sortBy(posts, 'views'), 3):
+        - title: "${post.title}"
+          views: "${post.views}"
+  - posts:
+      - title: "Post A"
+        views: 100
+      - title: "Post B"
+        views: 500
+      - title: "Post C"
+        views: 300
+      - title: "Post D"
+        views: 700
+      - title: "Post E"
+        views: 200
+out:
+  topPosts:
+    - title: "Post D"
+      views: 700
+    - title: "Post B"
+      views: 500
+    - title: "Post C"
+      views: 300
+---
+case: for loop with function returning empty array
+in:
+  - results:
+      $for item in getItems():
+        - name: "${item}"
+out:
+  results: []
+---
+case: for loop with function using complex data path
+in:
+  - sorted:
+      $for user in sortByAge(data.users.active):
+        - name: "${user.name}"
+          age: "${user.age}"
+  - data:
+      users:
+        active:
+          - name: "Charlie"
+            age: 35
+          - name: "Alice"
+            age: 25
+          - name: "Bob"
+            age: 30
+out:
+  sorted:
+    - name: "Alice"
+      age: 25
+    - name: "Bob"
+      age: 30
+    - name: "Charlie"
+      age: 35
+---
+case: for loop with function and conditionals in body
+in:
+  - users:
+      $for user in getActiveUsers(allUsers):
+        - name: "${user.name}"
+          $if user.role == 'admin':
+            permissions: ["read", "write", "delete"]
+          $else:
+            permissions: ["read"]
+  - allUsers:
+      - name: "Alice"
+        active: true
+        role: "admin"
+      - name: "Bob"
+        active: false
+        role: "user"
+      - name: "Charlie"
+        active: true
+        role: "user"
+out:
+  users:
+    - name: "Alice"
+      permissions: ["read", "write", "delete"]
+    - name: "Charlie"
+      permissions: ["read"]
+---
+case: nested for loops with functions
+in:
+  - categories:
+      $for cat in getCategories():
+        - name: "${cat.name}"
+          items:
+            $for item in filterByCategory(products, cat.id):
+              - name: "${item.name}"
+                price: "${item.price}"
+  - products:
+      - name: "Laptop"
+        categoryId: "electronics"
+        price: 999
+      - name: "Shirt"
+        categoryId: "clothing"
+        price: 49
+      - name: "Phone"
+        categoryId: "electronics"
+        price: 699
+      - name: "Pants"
+        categoryId: "clothing"
+        price: 79
+out:
+  categories:
+    - name: "Electronics"
+      items:
+        - name: "Laptop"
+          price: 999
+        - name: "Phone"
+          price: 699
+    - name: "Clothing"
+      items:
+        - name: "Shirt"
+          price: 49
+        - name: "Pants"
+          price: 79
+---
+case: for loop with function that transforms items
+in:
+  - formattedUsers:
+      $for user in transformUsers(rawUsers):
+        - displayName: "${user.displayName}"
+          joinDate: "${user.joinDate}"
+  - rawUsers:
+      - firstName: "John"
+        lastName: "Doe"
+        joined: "2024-01-15T10:30:00Z"
+      - firstName: "Jane"
+        lastName: "Smith"
+        joined: "2024-02-20T14:45:00Z"
+out:
+  formattedUsers:
+    - displayName: "John Doe"
+      joinDate: "1/15/2024"
+    - displayName: "Jane Smith"
+      joinDate: "2/20/2024"
+---
+case: for loop with built-in function (when implemented)
+in:
+  - timestamps:
+      $for i in range(3):
+        - index: "${i}"
+          time: "${now()}"
+out:
+  timestamps:
+    - index: 0
+      time: 1640995200000
+    - index: 1
+      time: 1640995200000
+    - index: 2
+      time: 1640995200000
+---
+case: error - function returns non-array
+in:
+  - items:
+      $for item in getString():
+        - name: "${item}"
+throws: "Render Error: Cannot iterate over non-array value in loop 'item in getString()' - got string instead"

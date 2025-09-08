@@ -121,9 +121,18 @@ For `$for` structures.
 type: 7 # LOOP
 itemVar: string # "p" in "$for p, i in people"
 indexVar: string | null # "i" or null if not provided
-iterable: Node # Variable or expression that evaluates to array
+iterable: Node # Variable or function that evaluates to array
 body: Node # Template for each iteration
 ```
+
+The `iterable` field can be:
+- A variable node (type 1) for simple array references: `$for item in items`
+- A function node (type 3) for function calls that return arrays: `$for item in sortDate(posts)`
+
+Functions in loop iterables enable data transformation during iteration:
+- `$for post in sortDate(posts):` - Sort array before iteration
+- `$for item in filterBy(items, 'active', true):` - Filter array
+- `$for item in take(sortBy(items, 'score'), 5):` - Nested functions
 
 ### 9. Object Node
 
@@ -254,7 +263,7 @@ properties:
       id: null
 ```
 
-### Example 3: Loop with Function Call
+### Example 3: Loop with Variable Iterable
 
 Template:
 
@@ -301,7 +310,131 @@ properties:
                     path: "idx"
 ```
 
-### Example 4: When Directive
+### Example 4: Loop with Function Iterable
+
+Template:
+
+```yaml
+posts:
+  $for post in sortDate(blogPosts):
+    - title: "${post.title}"
+      date: "${post.date}"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+properties:
+  - key: posts
+    value:
+      type: 8 # OBJECT
+      fast: false
+      properties:
+        - key: "$for post in sortDate(blogPosts)"
+          value:
+            type: 7 # LOOP
+            itemVar: post
+            indexVar: null
+            iterable:
+              type: 3 # FUNCTION
+              name: "sortDate"
+              args:
+                - type: 1 # VARIABLE
+                  path: "blogPosts"
+            body:
+              type: 9 # ARRAY
+              fast: true
+              items:
+                - type: 8 # OBJECT
+                  fast: true
+                  properties:
+                    - key: title
+                      value:
+                        type: 1 # VARIABLE
+                        path: "post.title"
+                    - key: date
+                      value:
+                        type: 1 # VARIABLE
+                        path: "post.date"
+```
+
+Note how the `iterable` field contains a function node (type 3) instead of a variable node (type 1). This allows functions to transform arrays before iteration.
+
+### Example 5: Loop with Nested Functions
+
+Template:
+
+```yaml
+topItems:
+  $for item, i in take(sortBy(items, 'score'), 5):
+    - rank: "${i + 1}"
+      name: "${item.name}"
+      score: "${item.score}"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+properties:
+  - key: topItems
+    value:
+      type: 8 # OBJECT
+      fast: false
+      properties:
+        - key: "$for item, i in take(sortBy(items, 'score'), 5)"
+          value:
+            type: 7 # LOOP
+            itemVar: item
+            indexVar: i
+            iterable:
+              type: 3 # FUNCTION
+              name: "take"
+              args:
+                - type: 3 # FUNCTION
+                  name: "sortBy"
+                  args:
+                    - type: 1 # VARIABLE
+                      path: "items"
+                    - type: 0 # LITERAL
+                      value: "score"
+                - type: 0 # LITERAL
+                  value: 5
+            body:
+              type: 9 # ARRAY
+              fast: false
+              items:
+                - type: 8 # OBJECT
+                  fast: false
+                  properties:
+                    - key: rank
+                      value:
+                        type: 2 # INTERPOLATION
+                        parts:
+                          - type: 4 # BINARY
+                            op: 0 # + operator (assuming addition is op 0)
+                            left:
+                              type: 1 # VARIABLE
+                              path: "i"
+                            right:
+                              type: 0 # LITERAL
+                              value: 1
+                    - key: name
+                      value:
+                        type: 1 # VARIABLE
+                        path: "item.name"
+                    - key: score
+                      value:
+                        type: 1 # VARIABLE
+                        path: "item.score"
+```
+
+This example shows how nested function calls are represented in the AST, with the inner function (`sortBy`) as an argument to the outer function (`take`).
+
+### Example 6: When Directive
 
 The `$when` directive controls whether an entire object exists in the output.
 

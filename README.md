@@ -484,7 +484,9 @@ cases:
 
 ## Loops
 
-Looping through arrays
+### Basic Array Iteration
+
+Loop through arrays using the `$for` directive:
 
 ```yaml
 data:
@@ -515,6 +517,109 @@ output:
       age: 10
       index: 2
 ```
+
+### Loops with Functions
+
+You can use functions to transform arrays before iteration:
+
+```yaml
+template:
+  # Sort posts by date
+  recentPosts:
+    $for post in sortDate(posts):
+      - title: "${post.title}"
+        date: "${post.date}"
+  
+  # Filter products by a property
+  inStockItems:
+    $for item in filterBy(products, 'inStock', true):
+      - name: "${item.name}"
+        price: "${item.price}"
+  
+  # Combine multiple functions
+  topPosts:
+    $for post in take(sortBy(posts, 'views'), 5):
+      - title: "${post.title}"
+        views: "${post.views}"
+```
+
+Custom functions for loops:
+
+```javascript
+import { parseAndRender } from "jempl";
+
+const customFunctions = {
+  // Sort array by date property
+  sortDate: (posts) => [...posts].sort((a, b) => 
+    new Date(a.date) - new Date(b.date)
+  ),
+  
+  // Sort by any property
+  sortBy: (arr, key) => [...arr].sort((a, b) => 
+    b[key] - a[key]
+  ),
+  
+  // Filter by property value
+  filterBy: (arr, key, value) => 
+    arr.filter(item => item[key] === value),
+  
+  // Take first n items
+  take: (arr, n) => arr.slice(0, n),
+};
+
+const template = {
+  recent: {
+    $for: "post in sortDate(posts)",
+    items: [{
+      title: "${post.title}",
+      date: "${post.date}"
+    }]
+  }
+};
+
+const data = {
+  posts: [
+    { title: "Third", date: "2024-03-15" },
+    { title: "First", date: "2024-01-10" },
+    { title: "Second", date: "2024-02-20" }
+  ]
+};
+
+const result = parseAndRender(template, data, { functions: customFunctions });
+// Output: sorted posts by date
+```
+
+### Loop Function Examples
+
+```yaml
+# Filter active users
+activeUsers:
+  $for user in filterActive(users):
+    - name: "${user.name}"
+      status: "online"
+
+# Sort and limit results  
+topScores:
+  $for score, rank in take(sortBy(scores, 'points'), 10):
+    - rank: "${rank + 1}"
+      player: "${score.player}"
+      points: "${score.points}"
+
+# Transform items during iteration
+formattedDates:
+  $for item in transformDates(events):
+    - event: "${item.name}"
+      when: "${item.formattedDate}"
+
+# Nested function calls
+filteredAndSorted:
+  $for item in sortBy(filterBy(items, 'active', true), 'priority'):
+    - id: "${item.id}"
+      name: "${item.name}"
+```
+
+**Note**: Functions used in loops must return arrays. If a function returns a non-array value, a clear error message will be displayed.
+
 
 ## Path References
 
@@ -631,6 +736,7 @@ Path references are particularly useful for:
 | `#{item}` | Get the path | Loop variable `item` | `"items[0]"` |
 | `${item.id}` | Get property value | `item.id = 1` | `1` |
 | `#{item.id}` | Get property path | Loop variable `item` | `"items[0].id"` |
+=======
 
 ## Partials
 

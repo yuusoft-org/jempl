@@ -153,9 +153,10 @@ export const createVariableRenderError = (path, issue) => {
  * Creates render error for iteration issues
  * @param {string} expr - Loop expression
  * @param {any} value - The value that couldn't be iterated
+ * @param {boolean} isFunction - Whether the iterable is a function call
  * @returns {JemplRenderError}
  */
-export const createIterationRenderError = (expr, value) => {
+export const createIterationRenderError = (expr, value, isFunction = false) => {
   if (value === null) {
     return new JemplRenderError(
       `Cannot iterate over null value at '$for ${expr}'`,
@@ -167,6 +168,12 @@ export const createIterationRenderError = (expr, value) => {
     );
   }
   const type = typeof value;
+  // Use different format for function calls vs variables
+  if (isFunction) {
+    return new JemplRenderError(
+      `Cannot iterate over non-array value in loop '${expr}' - got ${type} instead`,
+    );
+  }
   return new JemplRenderError(
     `Cannot iterate over non-array value (got: ${type}) at '$for ${expr}'`,
   );

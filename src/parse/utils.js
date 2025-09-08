@@ -1,5 +1,5 @@
 import { NodeType, BinaryOp, UnaryOp } from "./constants.js";
-import { parseStringValue } from "./variables.js";
+import { parseStringValue, parseVariable } from "./variables.js";
 import {
   validateConditionExpression,
   validateLoopSyntax,
@@ -577,6 +577,48 @@ export const parseAtomicExpression = (expr) => {
 };
 
 /**
+ * Parses an iterable expression (variable or function call)
+ * @param {string} expr - The iterable expression
+ * @param {Object} functions - Custom functions object
+ * @returns {Object} Variable or Function AST node
+ */
+export const parseIterableExpression = (expr, functions) => {
+  const trimmed = expr.trim();
+
+  // Fast path: check if it looks like a function call pattern
+  // This avoids the expensive try-catch in parseVariable
+  const functionMatch = trimmed.match(/^(\w+)\((.*)\)$/);
+  if (functionMatch) {
+    // It looks like a function call, use parseVariable to handle it properly
+    return parseVariable(trimmed, functions);
+  }
+
+  // Fast path for simple variables (no operators, no special syntax)
+  // This covers 99% of non-function loop iterables
+  if (/^[a-zA-Z_$][\w.$]*$/.test(trimmed)) {
+    return {
+      type: NodeType.VARIABLE,
+      path: trimmed,
+    };
+  }
+
+  // For complex expressions, fall back to parseVariable
+  try {
+    return parseVariable(trimmed, functions);
+  } catch (error) {
+    // If parseVariable throws an error about unsupported expressions,
+    // fall back to treating it as a simple variable path
+    if (error.message && error.message.includes("not supported")) {
+      return {
+        type: NodeType.VARIABLE,
+        path: trimmed,
+      };
+    }
+    throw error;
+  }
+};
+
+/**
  * Parses a loop structure ($for)
  * @param {string} key - The loop key (e.g., "$for p, i in people")
  * @param {any} value - The loop body
@@ -617,11 +659,8 @@ export const parseLoop = (key, value, functions) => {
     itemVar = varsExpr;
   }
 
-  // Parse the iterable (variable reference)
-  const iterable = {
-    type: NodeType.VARIABLE,
-    path: iterableExpr,
-  };
+  // Parse the iterable (variable reference or function call)
+  const iterable = parseIterableExpression(iterableExpr, functions);
 
   // Parse the loop body
   const body = parseValue(value, functions);
