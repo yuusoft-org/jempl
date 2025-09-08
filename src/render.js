@@ -993,20 +993,24 @@ const renderLoop = (node, options, data, scope) => {
     if (node.iterable.type === NodeType.FUNCTION) {
       isFunction = true;
       // Reconstruct function call string
-      const args = node.iterable.args.map(arg => {
-        if (arg.type === NodeType.LITERAL) {
-          return typeof arg.value === 'string' ? `'${arg.value}'` : String(arg.value);
-        } else if (arg.type === NodeType.VARIABLE) {
-          return arg.path;
-        } else if (arg.type === NodeType.FUNCTION) {
-          // Recursive function call - simplified for now
-          return `${arg.name}(...)`;
-        }
-        return '?';
-      }).join(', ');
+      const args = node.iterable.args
+        .map((arg) => {
+          if (arg.type === NodeType.LITERAL) {
+            return typeof arg.value === "string"
+              ? `'${arg.value}'`
+              : String(arg.value);
+          } else if (arg.type === NodeType.VARIABLE) {
+            return arg.path;
+          } else if (arg.type === NodeType.FUNCTION) {
+            // Recursive function call - simplified for now
+            return `${arg.name}(...)`;
+          }
+          return "?";
+        })
+        .join(", ");
       iterableStr = `${node.iterable.name}(${args})`;
     } else {
-      iterableStr = node.iterable.path || 'undefined';
+      iterableStr = node.iterable.path || "undefined";
     }
     const loopExpr = `${node.itemVar}${node.indexVar ? `, ${node.indexVar}` : ""} in ${iterableStr}`;
     throw createIterationRenderError(loopExpr, iterable, isFunction);
