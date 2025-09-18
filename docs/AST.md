@@ -79,14 +79,19 @@ args: [Node] # Arguments can be any node type
 
 ### 5. Binary Operation Node
 
-For comparisons and logical operations.
+For comparisons, logical operations, and arithmetic operations (in conditionals only).
 
 ```yaml
 type: 4 # BINARY
-op: 0..8 # Numeric operator codes: 0:==, 1:!=, 2:>, 3:<, 4:>=, 5:<=, 6:&&, 7:||, 8:in
+op: 0..11 # Numeric operator codes: 0:==, 1:!=, 2:>, 3:<, 4:>=, 5:<=, 6:&&, 7:||, 8:in, 9:not used, 10:+, 11:-
 left: Node
 right: Node
 ```
+
+**Note on arithmetic operators:**
+- Operators `+` (10) and `-` (11) are only supported in conditional expressions
+- Arithmetic operations require both operands to be numbers at runtime
+- Left-to-right evaluation order for arithmetic expressions
 
 ### 6. Unary Operation Node
 
@@ -112,6 +117,12 @@ id: string | null # For multiple conditionals like $if#1
 **Note on $if vs $when:**
 - `$if`: Merges the body content into the parent object when condition is true
 - `$when`: Controls whether the entire object exists (stored as `whenCondition` on Object nodes)
+
+**Functions and arithmetic in conditionals:**
+- Conditions can contain function calls: `$if isEven(num):`
+- Arithmetic operations are supported: `$if a + b > 10:`
+- Functions can be used with arithmetic: `$if getValue() - 5 > threshold:`
+- Nested function calls are allowed: `$if isPositive(calculate(x, y)):`
 
 ### 8. Loop Node
 
@@ -415,7 +426,7 @@ properties:
                         type: 2 # INTERPOLATION
                         parts:
                           - type: 4 # BINARY
-                            op: 0 # + operator (assuming addition is op 0)
+                            op: 10 # + operator
                             left:
                               type: 1 # VARIABLE
                               path: "i"
@@ -436,7 +447,7 @@ This example shows how nested function calls are represented in the AST, with th
 
 ### Example 6: When Directive
 
-The `$when` directive controls whether an entire object exists in the output.
+The `$when` directive controls whether an entire object exists in the output. Like `$if`, it supports functions and arithmetic operations.
 
 Template:
 
@@ -575,7 +586,135 @@ properties:
                 value: "Always"
 ```
 
-### Example 7: Path References in Loops
+### Example 7: Conditional with Function Call
+
+Template:
+
+```yaml
+$if isEven(count):
+  parity: "even"
+$else:
+  parity: "odd"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+properties:
+  - key: "$if isEven(count)"
+    value:
+      type: 6 # CONDITIONAL
+      conditions:
+        - type: 3 # FUNCTION
+          name: "isEven"
+          args:
+            - type: 1 # VARIABLE
+              path: "count"
+        - null # else branch
+      bodies:
+        - type: 8 # OBJECT
+          fast: true
+          properties:
+            - key: parity
+              value:
+                type: 0 # LITERAL
+                value: "even"
+        - type: 8 # OBJECT
+          fast: true
+          properties:
+            - key: parity
+              value:
+                type: 0 # LITERAL
+                value: "odd"
+      id: null
+```
+
+### Example 8: Conditional with Arithmetic
+
+Template:
+
+```yaml
+$if score + bonus - penalty > 100:
+  status: "high achiever"
+$elif score + bonus > 50:
+  status: "above average"
+$else:
+  status: "needs improvement"
+```
+
+AST:
+
+```yaml
+type: 8 # OBJECT
+fast: false
+properties:
+  - key: "$if score + bonus - penalty > 100"
+    value:
+      type: 6 # CONDITIONAL
+      conditions:
+        - type: 4 # BINARY
+          op: 2 # > operator
+          left:
+            type: 4 # BINARY
+            op: 11 # - operator
+            left:
+              type: 4 # BINARY
+              op: 10 # + operator
+              left:
+                type: 1 # VARIABLE
+                path: "score"
+              right:
+                type: 1 # VARIABLE
+                path: "bonus"
+            right:
+              type: 1 # VARIABLE
+              path: "penalty"
+          right:
+            type: 0 # LITERAL
+            value: 100
+        - type: 4 # BINARY
+          op: 2 # > operator
+          left:
+            type: 4 # BINARY
+            op: 10 # + operator
+            left:
+              type: 1 # VARIABLE
+              path: "score"
+            right:
+              type: 1 # VARIABLE
+              path: "bonus"
+          right:
+            type: 0 # LITERAL
+            value: 50
+        - null # else branch
+      bodies:
+        - type: 8 # OBJECT
+          fast: true
+          properties:
+            - key: status
+              value:
+                type: 0 # LITERAL
+                value: "high achiever"
+        - type: 8 # OBJECT
+          fast: true
+          properties:
+            - key: status
+              value:
+                type: 0 # LITERAL
+                value: "above average"
+        - type: 8 # OBJECT
+          fast: true
+          properties:
+            - key: status
+              value:
+                type: 0 # LITERAL
+                value: "needs improvement"
+      id: null
+```
+
+### Example 9: Path References in Loops
 
 Template:
 

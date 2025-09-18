@@ -423,6 +423,13 @@ cases:
 - `||` - Logical OR
 - `!` - Logical NOT (negation)
 
+#### Arithmetic Operators (in conditionals only)
+
+- `+` - Addition
+- `-` - Subtraction
+
+Note: Arithmetic operations are only supported in conditional expressions (`$if`, `$elif`, `$when`), not in variable replacements.
+
 #### Examples
 
 ```yaml
