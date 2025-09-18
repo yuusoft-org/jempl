@@ -23,6 +23,8 @@ export const BinaryOp = {
   AND: 6, // &&
   OR: 7, // ||
   IN: 8, // in
+  ADD: 10, // +
+  SUBTRACT: 11, // -
 };
 
 export const UnaryOp = {

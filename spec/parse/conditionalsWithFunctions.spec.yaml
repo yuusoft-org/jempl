@@ -1,0 +1,365 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [conditionalsWithFunctions]
+---
+### Conditionals With Functions
+suite: conditionalsWithFunctions
+exportName: default
+---
+case: simple function in conditional
+in:
+  - $if isEven(num):
+      result: "even"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if isEven(num)"
+      value:
+        type: 6
+        conditions:
+          - type: 3
+            name: "isEven"
+            args:
+              - {type: 1, path: "num"}
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: result
+                value:
+                  type: 0
+                  value: "even"
+        id: null
+---
+case: function in comparison
+in:
+  - $if getValue() > 10:
+      status: "high"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if getValue() > 10"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 2
+            left:
+              type: 3
+              name: "getValue"
+              args: []
+            right:
+              type: 0
+              value: 10
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "high"
+        id: null
+---
+case: function with arguments in comparison
+in:
+  - $if i == minusOne(items.length):
+      isLast: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if i == minusOne(items.length)"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 0
+            left:
+              type: 1
+              path: "i"
+            right:
+              type: 3
+              name: "minusOne"
+              args:
+                - {type: 1, path: "items.length"}
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: isLast
+                value:
+                  type: 0
+                  value: true
+        id: null
+---
+case: nested functions in conditional
+in:
+  - $if add(a, multiply(b, c)) > 100:
+      result: "high value"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if add(a, multiply(b, c)) > 100"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 2
+            left:
+              type: 3
+              name: "add"
+              args:
+                - {type: 1, path: "a"}
+                - type: 3
+                  name: "multiply"
+                  args:
+                    - {type: 1, path: "b"}
+                    - {type: 1, path: "c"}
+            right:
+              type: 0
+              value: 100
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: result
+                value:
+                  type: 0
+                  value: "high value"
+        id: null
+---
+case: function in logical operation
+in:
+  - $if hasPermission() && isActive:
+      canAccess: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if hasPermission() && isActive"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 6
+            left:
+              type: 3
+              name: "hasPermission"
+              args: []
+            right:
+              type: 1
+              path: "isActive"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: canAccess
+                value:
+                  type: 0
+                  value: true
+        id: null
+---
+case: function with negation
+in:
+  - $if !isEmpty(items):
+      hasItems: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if !isEmpty(items)"
+      value:
+        type: 6
+        conditions:
+          - type: 5
+            op: 0
+            operand:
+              type: 3
+              name: "isEmpty"
+              args:
+                - {type: 1, path: "items"}
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: hasItems
+                value:
+                  type: 0
+                  value: true
+        id: null
+---
+case: multiple functions in condition
+in:
+  - $if count(users) >= minAllowed(config):
+      status: "sufficient"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if count(users) >= minAllowed(config)"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 4
+            left:
+              type: 3
+              name: "count"
+              args:
+                - {type: 1, path: "users"}
+            right:
+              type: 3
+              name: "minAllowed"
+              args:
+                - {type: 1, path: "config"}
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: status
+                value:
+                  type: 0
+                  value: "sufficient"
+        id: null
+---
+case: function in complex condition with parentheses
+in:
+  - $if (getScore() > 80 && isPassing()) || hasException():
+      passed: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if (getScore() > 80 && isPassing()) || hasException()"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 7
+            left:
+              type: 4
+              op: 6
+              left:
+                type: 4
+                op: 2
+                left:
+                  type: 3
+                  name: "getScore"
+                  args: []
+                right:
+                  type: 0
+                  value: 80
+              right:
+                type: 3
+                name: "isPassing"
+                args: []
+            right:
+              type: 3
+              name: "hasException"
+              args: []
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: passed
+                value:
+                  type: 0
+                  value: true
+        id: null
+---
+case: function in if-elif-else chain
+in:
+  - $if isAdmin(user):
+      access: "full"
+    $elif isModerator(user):
+      access: "moderate"
+    $elif isMember(user):
+      access: "basic"
+    $else:
+      access: "none"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if isAdmin(user)"
+      value:
+        type: 6
+        conditions:
+          - type: 3
+            name: "isAdmin"
+            args:
+              - {type: 1, path: "user"}
+          - type: 3
+            name: "isModerator"
+            args:
+              - {type: 1, path: "user"}
+          - type: 3
+            name: "isMember"
+            args:
+              - {type: 1, path: "user"}
+          - null
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: access
+                value:
+                  type: 0
+                  value: "full"
+          - type: 8
+            fast: true
+            properties:
+              - key: access
+                value:
+                  type: 0
+                  value: "moderate"
+          - type: 8
+            fast: true
+            properties:
+              - key: access
+                value:
+                  type: 0
+                  value: "basic"
+          - type: 8
+            fast: true
+            properties:
+              - key: access
+                value:
+                  type: 0
+                  value: "none"
+        id: null
+---
+case: function in in operator
+in:
+  - $if getValue() in allowedValues:
+      valid: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$if getValue() in allowedValues"
+      value:
+        type: 6
+        conditions:
+          - type: 4
+            op: 8
+            left:
+              type: 3
+              name: "getValue"
+              args: []
+            right:
+              type: 1
+              path: "allowedValues"
+        bodies:
+          - type: 8
+            fast: true
+            properties:
+              - key: valid
+                value:
+                  type: 0
+                  value: true
+        id: null

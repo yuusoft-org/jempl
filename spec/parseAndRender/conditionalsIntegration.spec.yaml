@@ -1,0 +1,281 @@
+file: '../customFunctions.js'
+group: parseAndRender
+suites: [conditionalsIntegration]
+---
+### Conditionals Integration Tests (Functions + Arithmetic)
+suite: conditionalsIntegration
+exportName: default
+---
+case: function with arithmetic in condition
+in:
+  - $if count(items) - 1 == index:
+      status: "Last item"
+    $else:
+      status: "Not last"
+  - { items: ["a", "b", "c"], index: 2 }
+out:
+  status: "Last item"
+---
+case: arithmetic with function on right side
+in:
+  - $if index + 1 == count(items):
+      position: "last"
+    $else:
+      position: "middle"
+  - { items: ["x", "y", "z"], index: 2 }
+out:
+  position: "last"
+---
+case: multiple functions and arithmetic
+in:
+  - $if getValue() + getBonus() - getPenalty() > 100:
+      level: "expert"
+    $else:
+      level: "novice"
+  - {}
+out:
+  level: "expert"
+---
+case: function returning number for arithmetic
+in:
+  - $if score + doubleValue(bonus) > 150:
+      achievement: "Super score!"
+  - { score: 70, bonus: 40 }
+out:
+  achievement: "Super score!"
+---
+case: nested functions with arithmetic
+in:
+  - $if add(a, b) - subtract(c, d) == 0:
+      balanced: true
+    $else:
+      balanced: false
+  - { a: 10, b: 5, c: 20, d: 5 }
+out:
+  balanced: true
+---
+case: arithmetic in function arguments
+in:
+  - $if isInRange(value + 10, min, max):
+      status: "in range"
+  - { value: 15, min: 20, max: 30 }
+out:
+  status: "in range"
+---
+case: complex condition with functions and arithmetic
+in:
+  - $if (getBase() + getModifier()) - penalty > threshold && isActive():
+      canProceed: true
+    $else:
+      canProceed: false
+  - { penalty: 10, threshold: 50 }
+out:
+  canProceed: true
+---
+case: arithmetic with array length check
+in:
+  - $if i == items.length - 1:
+      isLast: true
+    $elif i + 1 < items.length:
+      isMiddle: true
+    $else:
+      isFirst: true
+  - { items: ["a", "b", "c", "d"], i: 3 }
+out:
+  isLast: true
+---
+case: function in arithmetic chain
+in:
+  - $if a + getValue() - b + c > 0:
+      result: "positive"
+  - { a: 5, b: 10, c: 8 }
+out:
+  result: "positive"
+---
+case: arithmetic with function result  
+in:
+  - $if countValue + getBonus() > 15:
+      status: "high"
+  - { countValue: 8 }
+out:
+  status: "high"
+---
+case: loop with arithmetic condition
+in:
+  - items:
+      $for item, index in items:
+        $if index == items.length - 1:
+          value: "${item} (last)"
+        $else:
+          value: "${item}"
+  - { items: ["first", "second", "third"] }
+out:
+  items:
+    - value: "first"
+    - value: "second"
+    - value: "third (last)"
+---
+case: type error with function returning non-number
+in:
+  - $if getStringValue() + 5 > 10:
+      result: "high"
+  - {}
+throws: "Render Error: Arithmetic operations require numbers. Got string + number"
+---
+case: when clause with arithmetic and function
+in:
+  - $if getCount() - 1 > limit:
+      data:
+        items: ["too", "many", "items"]
+    $else:
+      data:
+        items: ["ok"]
+  - { limit: 1 }
+out:
+  data:
+    items: ["too", "many", "items"]
+---
+case: loop with function in condition
+in:
+  - results:
+      $for item in items:
+        $if isValid(item):
+          name: "${item.name}"
+          valid: true
+        $else:
+          name: "${item.name}"
+          valid: false
+  - {items: [{name: "A", score: 80}, {name: "B", score: 40}, {name: "C", score: 90}]}
+out:
+  results:
+    - name: "A"
+      valid: true
+    - name: "B"
+      valid: false
+    - name: "C"
+      valid: true
+---
+case: nested loops with arithmetic conditions
+in:
+  - matrix:
+      $for row, i in rows:
+        $for col, j in row:
+          $if i + j == target:
+            value: "${col} (match)"
+          $else:
+            value: "${col}"
+  - {rows: [["a", "b"], ["c", "d"]], target: 2}
+out:
+  matrix:
+    - - value: "a"
+      - value: "b"
+    - - value: "c"
+      - value: "d (match)"
+---
+case: loop with multiple arithmetic conditions
+in:
+  - filtered:
+      $for item, index in items:
+        $if index > 0 && index < items.length - 1:
+          position: "middle"
+          value: "${item}"
+        $elif index == 0:
+          position: "first"
+          value: "${item}"
+        $else:
+          position: "last"
+          value: "${item}"
+  - {items: ["start", "mid1", "mid2", "end"]}
+out:
+  filtered:
+    - position: "first"
+      value: "start"
+    - position: "middle"
+      value: "mid1"
+    - position: "middle"
+      value: "mid2"
+    - position: "last"
+      value: "end"
+---
+case: loop with function and arithmetic combined
+in:
+  - processed:
+      $for value, i in values:
+        $if calculate(value) + i > threshold:
+          status: "above"
+          result: "${value} at ${i}"
+        $else:
+          status: "below"
+          result: "${value} at ${i}"
+  - {values: [10, 20, 30], threshold: 25}
+out:
+  processed:
+    - status: "below"
+      result: "10 at 0"
+    - status: "above"
+      result: "20 at 1"
+    - status: "above"
+      result: "30 at 2"
+---
+case: loop with complex nested conditions and functions
+in:
+  - report:
+      $for student in students:
+        name: "${student.name}"
+        $if getGrade(student.score) == "A" && student.attendance > 90:
+          status: "excellent"
+        $elif getGrade(student.score - 10) == "B":
+          status: "good"
+        $else:
+          status: "needs improvement"
+  - {students: [{name: "Alice", score: 95, attendance: 92}, {name: "Bob", score: 85, attendance: 88}]}
+out:
+  report:
+    - name: "Alice"
+      status: "excellent"
+    - name: "Bob"
+      status: "good"
+---
+case: loop generating conditional array items
+in:
+  - results:
+      $for num in numbers:
+        - $if isEven(num):
+            type: "even"
+            value: "${num}"
+        - $if isPrime(num):
+            type: "prime"  
+            value: "${num}"
+  - {numbers: [2, 3, 4, 5, 6]}
+out:
+  results:
+    - - type: "even"
+        value: "2"
+      - type: "prime"
+        value: "2"
+    - - type: "prime"
+        value: "3"
+    - - type: "even"
+        value: "4"
+    - - type: "prime"
+        value: "5"
+    - - type: "even"
+        value: "6"
+---
+case: parallel loops with shared condition logic
+in:
+  - comparison:
+      $for a, i in listA:
+        $for b, j in listB:
+          $if getValue(a) + getValue(b) - i - j > 0:
+            result: "${a}-${b}: positive"
+          $else:
+            result: "${a}-${b}: non-positive"
+  - {listA: ["x", "y"], listB: ["1", "2"]}
+out:
+  comparison:
+    - - result: "x-1: positive"
+      - result: "x-2: positive"
+    - - result: "y-1: positive"
+      - result: "y-2: positive"
+
