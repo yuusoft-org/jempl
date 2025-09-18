@@ -170,6 +170,66 @@ cases:
       welcome: "You are an adult"
 ```
 
+### Conditionals with Functions
+
+You can use custom functions in conditional expressions:
+
+```yaml
+$if isEven(count):
+  parity: "even"
+$else:
+  parity: "odd"
+```
+
+### Conditionals with Arithmetic
+
+Basic arithmetic operations (`+` and `-`) are supported in conditional expressions:
+
+```yaml
+$if score + bonus > 100:
+  grade: "A+"
+$elif score + bonus - penalty > 80:
+  grade: "A"
+$else:
+  grade: "B"
+```
+
+### Combining Functions and Arithmetic
+
+Functions and arithmetic can be combined in complex conditional expressions:
+
+```yaml
+$if getValue(item) + getBonus(item) > threshold:
+  status: "qualified"
+  
+$when hasDiscount(item) && price - discount > 0:
+  finalPrice: price - discount
+```
+
+### Conditionals in Loops
+
+Functions and arithmetic in conditionals work seamlessly within loops:
+
+```yaml
+items:
+  $for item, i in items:
+    - name: "${item.name}"
+      $if i == 0:
+        position: "first"
+      $elif i == items.length - 1:
+        position: "last"
+      $else:
+        position: "middle"
+      $if i + 1 < items.length:
+        hasNext: true
+      $else:
+        hasNext: false
+      $if isEven(i):
+        rowType: "even"
+      $else:
+        rowType: "odd"
+```
+
 ### Multiple Conditionals
 
 in case we want to have more than one conditional, we can use the `#1` syntax, it works as long as property name is unique.
