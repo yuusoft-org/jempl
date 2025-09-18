@@ -355,16 +355,16 @@ const renderBinaryOperation = (node, options, data, scope) => {
     case BinaryOp.IN:
       return Array.isArray(right) ? right.includes(left) : false;
     case BinaryOp.ADD:
-      if (typeof left !== 'number' || typeof right !== 'number') {
+      if (typeof left !== "number" || typeof right !== "number") {
         throw new JemplRenderError(
-          `Arithmetic operations require numbers. Got ${typeof left} + ${typeof right}`
+          `Arithmetic operations require numbers. Got ${typeof left} + ${typeof right}`,
         );
       }
       return left + right;
     case BinaryOp.SUBTRACT:
-      if (typeof left !== 'number' || typeof right !== 'number') {
+      if (typeof left !== "number" || typeof right !== "number") {
         throw new JemplRenderError(
-          `Arithmetic operations require numbers. Got ${typeof left} - ${typeof right}`
+          `Arithmetic operations require numbers. Got ${typeof left} - ${typeof right}`,
         );
       }
       return left - right;

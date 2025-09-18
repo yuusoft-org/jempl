@@ -395,7 +395,10 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       } else {
         // Validate elif condition expression
         validateConditionExpression(elifConditionExpr);
-        const elifCondition = parseConditionExpression(elifConditionExpr, functions);
+        const elifCondition = parseConditionExpression(
+          elifConditionExpr,
+          functions,
+        );
         conditions.push(elifCondition);
       }
       bodies.push(parseValue(value, functions));
@@ -435,17 +438,17 @@ export const parseConditionExpression = (expr, functions = {}) => {
     const inner = expr.slice(1, -1);
     let depth = 0;
     let valid = true;
-    
+
     for (let i = 0; i < inner.length; i++) {
-      if (inner[i] === '(') depth++;
-      else if (inner[i] === ')') depth--;
-      
+      if (inner[i] === "(") depth++;
+      else if (inner[i] === ")") depth--;
+
       if (depth < 0) {
         valid = false;
         break;
       }
     }
-    
+
     if (valid && depth === 0) {
       return parseConditionExpression(inner, functions);
     }
@@ -457,8 +460,14 @@ export const parseConditionExpression = (expr, functions = {}) => {
     return {
       type: NodeType.BINARY,
       op: BinaryOp.OR,
-      left: parseConditionExpression(expr.substring(0, orMatch).trim(), functions),
-      right: parseConditionExpression(expr.substring(orMatch + 2).trim(), functions),
+      left: parseConditionExpression(
+        expr.substring(0, orMatch).trim(),
+        functions,
+      ),
+      right: parseConditionExpression(
+        expr.substring(orMatch + 2).trim(),
+        functions,
+      ),
     };
   }
 
@@ -468,8 +477,14 @@ export const parseConditionExpression = (expr, functions = {}) => {
     return {
       type: NodeType.BINARY,
       op: BinaryOp.AND,
-      left: parseConditionExpression(expr.substring(0, andMatch).trim(), functions),
-      right: parseConditionExpression(expr.substring(andMatch + 2).trim(), functions),
+      left: parseConditionExpression(
+        expr.substring(0, andMatch).trim(),
+        functions,
+      ),
+      right: parseConditionExpression(
+        expr.substring(andMatch + 2).trim(),
+        functions,
+      ),
     };
   }
 
@@ -490,10 +505,13 @@ export const parseConditionExpression = (expr, functions = {}) => {
       return {
         type: NodeType.BINARY,
         op: type,
-        left: parseConditionExpression(expr.substring(0, opMatch).trim(), functions),
+        left: parseConditionExpression(
+          expr.substring(0, opMatch).trim(),
+          functions,
+        ),
         right: parseConditionExpression(
           expr.substring(opMatch + op.length).trim(),
-          functions
+          functions,
         ),
       };
     }
@@ -504,18 +522,18 @@ export const parseConditionExpression = (expr, functions = {}) => {
   // So we need to find the rightmost occurrence of either + or -
   let lastArithMatch = -1;
   let lastArithOp = null;
-  
+
   const arithmeticOps = [
     { op: " + ", type: BinaryOp.ADD },
     { op: " - ", type: BinaryOp.SUBTRACT },
   ];
-  
+
   for (const { op, type } of arithmeticOps) {
     let pos = 0;
     while (pos < expr.length) {
       const match = findOperatorOutsideParens(expr.substring(pos), op);
       if (match === -1) break;
-      
+
       const actualPos = pos + match;
       if (actualPos > lastArithMatch) {
         lastArithMatch = actualPos;
@@ -524,13 +542,19 @@ export const parseConditionExpression = (expr, functions = {}) => {
       pos = actualPos + op.length;
     }
   }
-  
+
   if (lastArithMatch !== -1 && lastArithOp) {
     return {
       type: NodeType.BINARY,
       op: lastArithOp.type,
-      left: parseConditionExpression(expr.substring(0, lastArithMatch).trim(), functions),
-      right: parseConditionExpression(expr.substring(lastArithMatch + lastArithOp.op.length).trim(), functions),
+      left: parseConditionExpression(
+        expr.substring(0, lastArithMatch).trim(),
+        functions,
+      ),
+      right: parseConditionExpression(
+        expr.substring(lastArithMatch + lastArithOp.op.length).trim(),
+        functions,
+      ),
     };
   }
 
