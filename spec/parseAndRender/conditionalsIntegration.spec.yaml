@@ -267,15 +267,138 @@ in:
   - comparison:
       $for a, i in listA:
         $for b, j in listB:
-          $if getValue(a) + getValue(b) - i - j > 0:
+          $if a + b - i - j > 4:
             result: "${a}-${b}: positive"
           $else:
             result: "${a}-${b}: non-positive"
-  - {listA: ["x", "y"], listB: ["1", "2"]}
+  - {listA: [1, 3], listB: [2, 4]}
 out:
   comparison:
-    - - result: "x-1: positive"
-      - result: "x-2: positive"
-    - - result: "y-1: positive"
-      - result: "y-2: positive"
+    - - result: "1-2: non-positive"
+      - result: "1-4: non-positive"
+    - - result: "3-2: non-positive"
+      - result: "3-4: positive"
+---
+case: arithmetic condition that triggers $else branch
+in:
+  - $if score + bonus - penalty > 100:
+      achievement: "legendary"
+    $else:
+      achievement: "normal"
+  - {score: 40, bonus: 20, penalty: 10}
+out:
+  achievement: "normal"
+---
+case: function and arithmetic triggering $elif branch
+in:
+  - $if getValue() + modifier > 50:
+      level: "high"
+    $elif getValue() + modifier > 15:
+      level: "medium" 
+    $else:
+      level: "low"
+  - {modifier: 15}
+out:
+  level: "medium"
+---
+case: multiple conditions all false, triggers $else
+in:
+  - $if count(items) > 10:
+      status: "many"
+    $elif count(items) > 5:
+      status: "some"
+    $elif count(items) > 2:
+      status: "few"
+    $else:
+      status: "minimal"
+  - {items: ["a", "b"]}
+out:
+  status: "minimal"
+---
+case: loop with arithmetic triggering different branches
+in:
+  - results:
+      $for value in values:
+        $if value + 10 > 50:
+          category: "high"
+          adjusted: "${value}"
+        $elif value + 10 > 25:
+          category: "medium"
+          adjusted: "${value}"
+        $else:
+          category: "low"
+          adjusted: "${value}"
+  - {values: [45, 20, 5]}
+out:
+  results:
+    - category: "high"
+      adjusted: 45
+    - category: "medium"
+      adjusted: 20
+    - category: "low"
+      adjusted: 5
+---
+case: nested arithmetic with function in $elif
+in:
+  - $if calculate(base) - cost > profit:
+      decision: "invest"
+    $elif calculate(base) - cost > 0:
+      decision: "break even"
+    $else:
+      decision: "loss"
+  - {base: 30, cost: 25, profit: 25}
+out:
+  decision: "break even"
+---
+case: complex condition chain with mixed true/false results
+in:
+  - grading:
+      $for student in students:
+        name: "${student.name}"
+        $if student.score + student.extra >= 90:
+          grade: "A"
+        $elif student.score + student.extra >= 80:
+          grade: "B"
+        $elif student.score + student.extra >= 70:
+          grade: "C"
+        $else:
+          grade: "F"
+  - {students: [
+      {name: "Alice", score: 85, extra: 8},
+      {name: "Bob", score: 75, extra: 3}, 
+      {name: "Charlie", score: 65, extra: 2},
+      {name: "Diana", score: 55, extra: 0}
+    ]}
+out:
+  grading:
+    - name: "Alice"
+      grade: "A"
+    - name: "Bob"
+      grade: "C"
+    - name: "Charlie"
+      grade: "F"
+    - name: "Diana"
+      grade: "F"
+---
+case: function returning false triggers $else
+in:
+  - $if isEnabled() && score - penalty > threshold:
+      access: "granted"
+    $else:
+      access: "denied"
+  - {score: 60, penalty: 20, threshold: 50}
+out:
+  access: "denied"
+---
+case: arithmetic with negative result in $elif
+in:
+  - $if balance + deposit - withdrawal > 1000:
+      account: "premium"
+    $elif balance + deposit - withdrawal > 0:
+      account: "standard"
+    $else:
+      account: "overdrawn"
+  - {balance: 200, deposit: 50, withdrawal: 300}
+out:
+  account: "overdrawn"
 
