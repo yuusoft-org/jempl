@@ -69,31 +69,13 @@ in:
 throws: "Parse Error: Invalid loop variable - variable name cannot be empty (got: '$for , index in people')"
 
 ---
-case: arithmetic expression in conditional - addition
-in:
-  - template:
-      "$if age + 5 > 25": "old enough"
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 5' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"age + 5\""
-
----
-case: arithmetic expression in conditional - subtraction
-in:
-  - template:
-      "$if items.length - 1 > 0": "has items"
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"items.length - 1\""
-
----
 case: arithmetic expression in conditional - multiplication
 in:
   - template:
       "$if count * 2 > 10": "many"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'count * 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"count * 2\""
+throws: "Parse Error: Arithmetic operations are not allowed in conditionals: \" * \""
 
 ---
 case: arithmetic expression in conditional - division
@@ -102,7 +84,7 @@ in:
       "$if total / count > 5": "high average"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'total / count' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"total / count\""
+throws: "Parse Error: Arithmetic operations are not allowed in conditionals: \" / \""
 
 ---
 case: arithmetic expression in conditional - modulo
@@ -111,30 +93,7 @@ in:
       "$if number % 2 == 0": "even"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'number % 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"number % 2\""
-
----
-case: arithmetic expression in elif
-in:
-  - template:
-      "$if age > 18": "adult"
-      "$elif age + 1 > 18": "almost adult"
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"age + 1\""
-
----
-case: arithmetic expression in loop conditional
-in:
-  - template:
-      items:
-        "$for item, index in items":
-          - name: "${item.name}"
-            "$if index < items.length - 1":
-              separator: ","
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"items.length - 1\""
+throws: "Parse Error: Arithmetic operations are not allowed in conditionals: \" % \""
 
 ---
 case: complex arithmetic expression
@@ -143,32 +102,7 @@ in:
       "$if (age + 5) * 2 > total": "complex"
     data: {}
     functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating '(age + 5) * 2' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"(age + 5) * 2\""
-
----
-case: arithmetic in both sides of comparison
-in:
-  - template:
-      "$if age + 1 > limit - 2": "both sides"
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in conditionals - consider calculating 'age + 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"age + 1\""
-
----
-case: arithmetic expression in variable replacement - addition
-in:
-  - template: "Result: ${count + 1}"
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'count + 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"count + 1\""
-
----
-case: arithmetic expression in variable replacement - subtraction
-in:
-  - template: "Index: ${items.length - 1}"
-    data: {}
-    functions: {}
-throws: "Parse Error: Arithmetic expressions not supported in variable replacements - consider calculating 'items.length - 1' in your data instead (expressions with +, -, *, /, % are not supported). Offending expression: \"items.length - 1\""
+throws: "Parse Error: Arithmetic operations are not allowed in conditionals: \" * \""
 
 ---
 case: arithmetic expression in variable replacement - multiplication

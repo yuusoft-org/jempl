@@ -186,7 +186,7 @@ export const parseObject = (obj, functions) => {
         if ($when.trim() === "") {
           throw new JemplParseError("Empty condition expression after '$when'");
         }
-        whenCondition = parseConditionExpression($when);
+        whenCondition = parseConditionExpression($when, functions);
       } else {
         // Boolean or other literal value
         whenCondition = {
@@ -218,7 +218,7 @@ export const parseObject = (obj, functions) => {
       if (conditionStr.trim() === "") {
         throw new JemplParseError("Empty condition expression after '$when'");
       }
-      whenCondition = parseConditionExpression(conditionStr);
+      whenCondition = parseConditionExpression(conditionStr, functions);
       hasDynamicContent = true;
     } else if (key.startsWith("$when#") || key.startsWith("$when ")) {
       throw new JemplParseError(
@@ -347,7 +347,7 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
   // Validate condition expression
   validateConditionExpression(conditionExpr);
 
-  const ifCondition = parseConditionExpression(conditionExpr);
+  const ifCondition = parseConditionExpression(conditionExpr, functions);
   conditions.push(ifCondition);
   bodies.push(parseValue(ifValue, functions));
   currentIndex++;
@@ -395,7 +395,10 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       } else {
         // Validate elif condition expression
         validateConditionExpression(elifConditionExpr);
-        const elifCondition = parseConditionExpression(elifConditionExpr);
+        const elifCondition = parseConditionExpression(
+          elifConditionExpr,
+          functions,
+        );
         conditions.push(elifCondition);
       }
       bodies.push(parseValue(value, functions));
@@ -426,12 +429,29 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
  * @param {string} expr - The condition expression
  * @returns {Object} AST node representing the condition
  */
-export const parseConditionExpression = (expr) => {
+export const parseConditionExpression = (expr, functions = {}) => {
   expr = expr.trim();
 
-  // Handle parentheses first
+  // Handle parentheses first - but only if they are balanced
   if (expr.startsWith("(") && expr.endsWith(")")) {
-    return parseConditionExpression(expr.slice(1, -1));
+    // Check if removing outer parentheses leaves a valid expression
+    const inner = expr.slice(1, -1);
+    let depth = 0;
+    let valid = true;
+
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === "(") depth++;
+      else if (inner[i] === ")") depth--;
+
+      if (depth < 0) {
+        valid = false;
+        break;
+      }
+    }
+
+    if (valid && depth === 0) {
+      return parseConditionExpression(inner, functions);
+    }
   }
 
   // Handle logical OR (||) - lowest precedence
@@ -440,8 +460,14 @@ export const parseConditionExpression = (expr) => {
     return {
       type: NodeType.BINARY,
       op: BinaryOp.OR,
-      left: parseConditionExpression(expr.substring(0, orMatch).trim()),
-      right: parseConditionExpression(expr.substring(orMatch + 2).trim()),
+      left: parseConditionExpression(
+        expr.substring(0, orMatch).trim(),
+        functions,
+      ),
+      right: parseConditionExpression(
+        expr.substring(orMatch + 2).trim(),
+        functions,
+      ),
     };
   }
 
@@ -451,8 +477,14 @@ export const parseConditionExpression = (expr) => {
     return {
       type: NodeType.BINARY,
       op: BinaryOp.AND,
-      left: parseConditionExpression(expr.substring(0, andMatch).trim()),
-      right: parseConditionExpression(expr.substring(andMatch + 2).trim()),
+      left: parseConditionExpression(
+        expr.substring(0, andMatch).trim(),
+        functions,
+      ),
+      right: parseConditionExpression(
+        expr.substring(andMatch + 2).trim(),
+        functions,
+      ),
     };
   }
 
@@ -473,23 +505,65 @@ export const parseConditionExpression = (expr) => {
       return {
         type: NodeType.BINARY,
         op: type,
-        left: parseConditionExpression(expr.substring(0, opMatch).trim()),
+        left: parseConditionExpression(
+          expr.substring(0, opMatch).trim(),
+          functions,
+        ),
         right: parseConditionExpression(
           expr.substring(opMatch + op.length).trim(),
+          functions,
         ),
       };
     }
   }
 
+  // Handle arithmetic operators (+ and - only)
+  // They have the same precedence and should be evaluated left-to-right
+  // So we need to find the rightmost occurrence of either + or -
+  let lastArithMatch = -1;
+  let lastArithOp = null;
+
+  const arithmeticOps = [
+    { op: " + ", type: BinaryOp.ADD },
+    { op: " - ", type: BinaryOp.SUBTRACT },
+  ];
+
+  for (const { op, type } of arithmeticOps) {
+    let pos = 0;
+    while (pos < expr.length) {
+      const match = findOperatorOutsideParens(expr.substring(pos), op);
+      if (match === -1) break;
+
+      const actualPos = pos + match;
+      if (actualPos > lastArithMatch) {
+        lastArithMatch = actualPos;
+        lastArithOp = { op, type };
+      }
+      pos = actualPos + op.length;
+    }
+  }
+
+  if (lastArithMatch !== -1 && lastArithOp) {
+    return {
+      type: NodeType.BINARY,
+      op: lastArithOp.type,
+      left: parseConditionExpression(
+        expr.substring(0, lastArithMatch).trim(),
+        functions,
+      ),
+      right: parseConditionExpression(
+        expr.substring(lastArithMatch + lastArithOp.op.length).trim(),
+        functions,
+      ),
+    };
+  }
+
   // Check for unsupported arithmetic operators
-  const arithmeticOps = [" + ", " - ", " * ", " / ", " % "];
-  for (const op of arithmeticOps) {
+  const blockedArithmeticOps = [" * ", " / ", " % "];
+  for (const op of blockedArithmeticOps) {
     if (findOperatorOutsideParens(expr, op) !== -1) {
       throw new JemplParseError(
-        `Arithmetic expressions not supported in conditionals - ` +
-          `consider calculating '${expr}' in your data instead ` +
-          `(expressions with +, -, *, /, % are not supported). ` +
-          `Offending expression: "${expr}"`,
+        `Arithmetic operations are not allowed in conditionals: "${op}"`,
       );
     }
   }
@@ -499,12 +573,12 @@ export const parseConditionExpression = (expr) => {
     return {
       type: NodeType.UNARY,
       op: UnaryOp.NOT,
-      operand: parseConditionExpression(expr.substring(1).trim()),
+      operand: parseConditionExpression(expr.substring(1).trim(), functions),
     };
   }
 
-  // Handle literals and variables
-  return parseAtomicExpression(expr);
+  // Handle literals and variables (including functions)
+  return parseIterableExpression(expr, functions);
 };
 
 /**
@@ -566,6 +640,14 @@ export const parseAtomicExpression = (expr) => {
     return { type: NodeType.LITERAL, value: "" };
   }
 
+  // Object and array literals for type testing
+  if (expr === "{}") {
+    return { type: NodeType.LITERAL, value: {} };
+  }
+  if (expr === "[]") {
+    return { type: NodeType.LITERAL, value: [] };
+  }
+
   // Number literals
   const num = Number(expr);
   if (!isNaN(num) && isFinite(num)) {
@@ -593,6 +675,13 @@ export const parseIterableExpression = (expr, functions) => {
     return parseVariable(trimmed, functions);
   }
 
+  // Check for literals first (numbers, booleans, strings, null)
+  // This is important for conditionals with literals like "18" or "true"
+  const atomicResult = parseAtomicExpression(trimmed);
+  if (atomicResult.type === NodeType.LITERAL) {
+    return atomicResult;
+  }
+
   // Fast path for simple variables (no operators, no special syntax)
   // This covers 99% of non-function loop iterables
   if (/^[a-zA-Z_$][\w.$]*$/.test(trimmed)) {
@@ -607,12 +696,10 @@ export const parseIterableExpression = (expr, functions) => {
     return parseVariable(trimmed, functions);
   } catch (error) {
     // If parseVariable throws an error about unsupported expressions,
-    // fall back to treating it as a simple variable path
+    // fall back to atomic expression parsing or variable
     if (error.message && error.message.includes("not supported")) {
-      return {
-        type: NodeType.VARIABLE,
-        path: trimmed,
-      };
+      // Try atomic expression again (which will return a variable if not a literal)
+      return atomicResult;
     }
     throw error;
   }

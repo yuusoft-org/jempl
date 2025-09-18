@@ -439,3 +439,116 @@ in:
   - includeEverything: false
   - functions: {}
 out: {}
+---
+case: when with function calls
+in:
+  - inventory:
+      $when: count(items) > 0
+      total: "${count(items)} items"
+      status: "has inventory"
+  - items: ["apple", "banana", "cherry"]
+out:
+  inventory:
+    total: "3 items"
+    status: "has inventory"
+---
+case: when with function calls - false condition
+in:
+  - inventory:
+      $when: count(items) > 5
+      total: "${count(items)} items"
+      status: "has inventory"
+  - items: ["apple", "banana"]
+out: {}
+---
+case: when with arithmetic in condition
+in:
+  - achievement:
+      $when: score + bonus > 100
+      level: "high achiever"
+      total: "${score} + ${bonus}"
+  - score: 75
+    bonus: 30
+out:
+  achievement:
+    level: "high achiever"
+    total: "75 + 30"
+---
+case: when with arithmetic - false condition
+in:
+  - achievement:
+      $when: score + bonus > 150
+      level: "high achiever"
+      total: "${score} + ${bonus}"
+  - score: 75
+    bonus: 30
+out: {}
+---
+case: when with function and arithmetic combined
+in:
+  - status:
+      $when: getValue() + getBonus() - getPenalty() > getThreshold()
+      message: "Threshold exceeded"
+      calculation: "result is above limit"
+  - {}
+out:
+  status:
+    message: "Threshold exceeded"
+    calculation: "result is above limit"
+---
+case: when in array with functions
+in:
+  - results:
+      - $when: isEven(num)
+        type: "even"
+        value: "${num}"
+      - $when: isPrime(num)
+        type: "prime"
+        value: "${num}"
+      - type: "always"
+        value: "constant"
+  - num: 4
+out:
+  results:
+    - type: "even"
+      value: 4
+    - type: "always"
+      value: "constant"
+---
+case: when with arithmetic in array filtering
+in:
+  - products:
+      - $when: price + tax <= budget
+        name: "Product A"
+        total: "${price} + ${tax} = within budget"
+      - $when: price + tax > budget
+        name: "Product B (over budget)"
+        total: "${price} + ${tax} = over budget"
+      - name: "Product C"
+        total: "no calculation"
+  - price: 80
+    tax: 15
+    budget: 100
+out:
+  products:
+    - name: "Product A"
+      total: "80 + 15 = within budget"
+    - name: "Product C"
+      total: "no calculation"
+---
+case: nested when with function conditions
+in:
+  - dashboard:
+      $when: count(notifications) > 0
+      header: "You have notifications"
+      content:
+        $when: count(notifications) > 5
+        warning: "Too many notifications!"
+        count: "${count(notifications)}"
+  - notifications: ["msg1", "msg2", "msg3", "msg4", "msg5", "msg6", "msg7"]
+out:
+  dashboard:
+    header: "You have notifications"
+    content:
+      warning: "Too many notifications!"
+      count: 7

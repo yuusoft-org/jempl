@@ -1,0 +1,43 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [conditionalsArithmeticErrors]
+---
+### Conditionals Arithmetic Parse Errors
+suite: conditionalsArithmeticErrors
+exportName: default
+---
+case: multiplication not allowed
+in:
+  - $if a * b > 10:
+      result: "product"
+throws: 'Arithmetic operations are not allowed in conditionals: " * "'
+---
+case: division not allowed
+in:
+  - $if total / count > 5:
+      result: "average"
+throws: 'Arithmetic operations are not allowed in conditionals: " / "'
+---
+case: modulo not allowed
+in:
+  - $if value % 2 == 0:
+      result: "even"
+throws: 'Arithmetic operations are not allowed in conditionals: " % "'
+---
+case: multiplication in complex expression
+in:
+  - $if score + bonus * multiplier > 100:
+      result: "high"
+throws: 'Arithmetic operations are not allowed in conditionals: " * "'
+---
+case: division in nested expression
+in:
+  - $if (a + b) / c > 1:
+      result: "ratio"
+throws: 'Arithmetic operations are not allowed in conditionals: " / "'
+---
+case: multiple unsupported operators
+in:
+  - $if a * b / c % d > 0:
+      result: "complex"
+throws: 'Arithmetic operations are not allowed in conditionals: " * "'

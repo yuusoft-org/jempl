@@ -354,6 +354,20 @@ const renderBinaryOperation = (node, options, data, scope) => {
       return left <= right;
     case BinaryOp.IN:
       return Array.isArray(right) ? right.includes(left) : false;
+    case BinaryOp.ADD:
+      if (typeof left !== "number" || typeof right !== "number") {
+        throw new JemplRenderError(
+          `Arithmetic operations require numbers. Got ${typeof left} + ${typeof right}`,
+        );
+      }
+      return left + right;
+    case BinaryOp.SUBTRACT:
+      if (typeof left !== "number" || typeof right !== "number") {
+        throw new JemplRenderError(
+          `Arithmetic operations require numbers. Got ${typeof left} - ${typeof right}`,
+        );
+      }
+      return left - right;
     default:
       throw new Error(`Unknown binary operator: ${node.op}`);
   }
@@ -1062,6 +1076,26 @@ const renderLoop = (node, options, data, scope) => {
     }
   }
 
+  // Fastest possible: check array preservation once and cache result
+  let shouldPreserveArray = false;
+  if (node.body.type === NodeType.ARRAY) {
+    if (node.body.items.length <= 1) {
+      // Single or empty array - no preservation needed
+      shouldPreserveArray = false;
+    } else {
+      // Multiple items - check if preservation needed (cache result)
+      shouldPreserveArray = node.body._shouldPreserveArray ??=
+        node.body.items.some(
+          (item) =>
+            item.type === NodeType.OBJECT &&
+            item.properties.some(
+              (prop) =>
+                prop.key.startsWith("$if ") || prop.key.startsWith("$when "),
+            ),
+        );
+    }
+  }
+
   for (let i = 0; i < iterable.length; i++) {
     // Use spread operator instead of Object.create for better performance
     const newScope = node.indexVar
@@ -1083,8 +1117,12 @@ const renderLoop = (node, options, data, scope) => {
 
     const rendered = renderNode(node.body, options, data, newScope);
 
-    // If the body is an array with a single item, unwrap it
-    if (Array.isArray(rendered) && rendered.length === 1) {
+    // Fast path: avoid array checks when not needed
+    if (
+      Array.isArray(rendered) &&
+      rendered.length === 1 &&
+      !shouldPreserveArray
+    ) {
       results.push(rendered[0]);
     } else {
       results.push(rendered);
@@ -1317,7 +1355,12 @@ const renderObject = (node, options, data, scope) => {
         Object.assign(result, rendered);
       }
     } else if (prop.key.startsWith("$for ")) {
-      // This is a loop inside an object - it should not set any properties directly
+      // This is a direct loop property - handle it specially
+      if (node.properties.length === 1) {
+        // If this object has only the loop property, return the loop result directly
+        return renderNode(prop.value, options, data, scope);
+      }
+      // Multiple properties including a loop - skip the loop property
       // The parent object property should get the loop result
       // Skip this - it will be handled by the parent context
     } else {

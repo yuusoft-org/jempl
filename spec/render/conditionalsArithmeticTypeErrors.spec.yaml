@@ -1,0 +1,110 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [conditionalsArithmeticTypeErrors]
+---
+### Conditionals Arithmetic Type Error Tests
+suite: conditionalsArithmeticTypeErrors
+exportName: default
+---
+case: string plus number
+in:
+  - $if name + 5 > 10:
+      result: "invalid"
+  - {name: "John"}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got string + number"
+---
+case: number plus string
+in:
+  - $if age + " years" > "30":
+      result: "invalid"
+  - {age: 25}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + string"
+---
+case: null in addition
+in:
+  - $if score + null > 0:
+      result: "invalid"
+  - {score: 10}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + object"
+---
+case: undefined in addition
+in:
+  - $if total + missing > 100:
+      result: "invalid"
+  - {total: 50}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + undefined"
+---
+case: boolean in addition
+in:
+  - $if count + true > 5:
+      result: "invalid"
+  - {count: 3}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + boolean"
+---
+case: object in subtraction
+in:
+  - $if value - {} < 10:
+      result: "invalid"
+  - {value: 20}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number - object"
+---
+case: array in subtraction
+in:
+  - $if total - [] < 0:
+      result: "invalid"
+  - {total: 10}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number - object"
+---
+case: string subtraction
+in:
+  - $if "10" - "5" > 0:
+      result: "invalid"
+  - {}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got string - string"
+---
+case: complex expression with type error
+in:
+  - $if a + b - "c" > 0:
+      result: "invalid"
+  - {a: 10, b: 5}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number - string"
+---
+case: type error in nested arithmetic
+in:
+  - $if (a + null) - b > 0:
+      result: "invalid"
+  - {a: 10, b: 5}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + object"
+---
+case: type error without function - basic arithmetic
+in:
+  - $if score + "5" > 10:
+      result: "invalid"
+  - {score: 3}
+throws: "Render Error: Arithmetic operations require numbers. Got number + string"
+---
+case: false in addition
+in:
+  - $if score + false > 0:
+      result: "invalid"
+  - {score: 10}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + boolean"
+---
+case: addition with array element that is not a number
+in:
+  - $if value + items[0] > 10:
+      result: "invalid"
+  - {value: 5, items: ["not a number"]}
+  - functions: {}
+throws: "Render Error: Arithmetic operations require numbers. Got number + string"

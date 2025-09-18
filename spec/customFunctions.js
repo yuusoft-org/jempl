@@ -1,10 +1,11 @@
 import parseAndRender from '../src/parseAndRender.js';
 
-// Example custom functions
+// Comprehensive custom functions for all tests
 const customFunctions = {
   // Math functions
   add: (a, b) => Number(a) + Number(b),
   multiply: (a, b) => Number(a) * Number(b),
+  subtract: (x, y) => x - y,
   round: (num, decimals = 0) => {
     const factor = Math.pow(10, decimals);
     return Math.round(Number(num) * factor) / factor;
@@ -50,6 +51,58 @@ const customFunctions = {
     isEmpty: !Array.isArray(items) || items.length === 0,
     summary: `${Array.isArray(items) ? items.length : 0} items`
   }),
+
+  // === Functions for conditionals integration tests ===
+  
+  // Array/counting functions
+  count: (arr) => Array.isArray(arr) ? arr.length : 0,
+  
+  // Basic arithmetic/value functions
+  getValue: (s) => typeof s === 'string' ? s.charCodeAt(0) : 3,
+  getStringValue: () => "not a number", // For type error testing
+  getBonus: () => 30,
+  getPenalty: () => 5,
+  doubleValue: (n) => n * 2,
+  
+  // Range checking
+  isInRange: (val, min, max) => val >= min && val <= max,
+  
+  // Base/modifier functions
+  getBase: () => 40,
+  getModifier: () => 25,
+  
+  // Status functions
+  isActive: () => true,
+  isEnabled: () => true,
+  
+  // Threshold functions
+  getThreshold: () => 10,
+  
+  // Grade calculation
+  getGrade: (score) => {
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    return 'C';
+  },
+  
+  // Count function for when/condition tests
+  getCount: () => 3,
+  
+  // Validation functions
+  isValid: (item) => item.score > 60,
+  
+  // Calculation functions
+  calculate: (v) => v * 1.5,
+  
+  // Boolean check functions
+  isEven: (n) => n % 2 === 0,
+  isPrime: (n) => {
+    if (n <= 1) return false;
+    for (let i = 2; i * i <= n; i++) {
+      if (n % i === 0) return false;
+    }
+    return true;
+  },
 };
 
 export default (template, data, options = {}) => {

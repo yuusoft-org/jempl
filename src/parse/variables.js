@@ -1,5 +1,9 @@
 import { NodeType } from "./constants.js";
 import { JemplParseError } from "../errors.js";
+import {
+  parseConditionExpression,
+  findOperatorOutsideParens,
+} from "./utils.js";
 
 const VARIABLE_REGEX = /\$\{([^}]*)\}/g;
 const PATH_REFERENCE_REGEX = /#\{([^}]*)\}/g;
@@ -7,16 +11,17 @@ const PATH_REFERENCE_REGEX = /#\{([^}]*)\}/g;
 /**
  * Checks if expression is a function call and returns parsed function node
  * @param {string} expr - The expression without ${ and }
+ * @param {Object} functions - Available functions for validation
  * @returns {Object} Function node with type, name, and args
  */
-const parseFunctionCall = (expr) => {
+const parseFunctionCall = (expr, functions = {}) => {
   const functionMatch = expr.match(/^(\w+)\((.*)\)$/);
   if (!functionMatch) {
     return { isFunction: false };
   }
 
   const [, name, argsStr] = functionMatch;
-  const args = parseArguments(argsStr);
+  const args = parseArguments(argsStr, functions);
 
   return {
     isFunction: true,
@@ -29,13 +34,14 @@ const parseFunctionCall = (expr) => {
 /**
  * Parses function arguments from a string
  * @param {string} argsStr - The arguments string
+ * @param {Object} functions - Available functions for validation
  * @returns {Array} Array of parsed argument nodes
  */
-const parseArguments = (argsStr) => {
+const parseArguments = (argsStr, functions = {}) => {
   if (!argsStr.trim()) return [];
 
   const args = splitArguments(argsStr);
-  return args.map((arg) => parseArgument(arg.trim()));
+  return args.map((arg) => parseArgument(arg.trim(), functions));
 };
 
 /**
@@ -86,9 +92,10 @@ const splitArguments = (argsStr) => {
 /**
  * Parses a single argument
  * @param {string} arg - The argument string
+ * @param {Object} functions - Available functions for validation
  * @returns {Object} Parsed argument node
  */
-const parseArgument = (arg) => {
+const parseArgument = (arg, functions = {}) => {
   // Handle string literals
   if (
     (arg.startsWith('"') && arg.endsWith('"')) ||
@@ -116,7 +123,7 @@ const parseArgument = (arg) => {
   }
 
   // Handle nested function calls
-  const nestedFunction = parseFunctionCall(arg);
+  const nestedFunction = parseFunctionCall(arg, functions);
   if (nestedFunction.isFunction) {
     return {
       type: nestedFunction.type,
@@ -125,8 +132,46 @@ const parseArgument = (arg) => {
     };
   }
 
+  // Check for arithmetic expressions in arguments
+  const trimmed = arg.trim();
+
+  // Check for arithmetic operators with spaces (same as in conditional parsing)
+  const arithmeticOps = [
+    { op: " + ", type: "ADD" },
+    { op: " - ", type: "SUBTRACT" },
+  ];
+
+  // Find rightmost arithmetic operator for left-to-right evaluation
+  let lastArithMatch = -1;
+  let lastArithOp = null;
+
+  for (const { op, type } of arithmeticOps) {
+    let pos = 0;
+    while (pos < trimmed.length) {
+      const match = findOperatorOutsideParens(trimmed.substring(pos), op);
+      if (match === -1) break;
+
+      const actualPos = pos + match;
+      if (actualPos > lastArithMatch) {
+        lastArithMatch = actualPos;
+        lastArithOp = { op, type };
+      }
+      pos = actualPos + op.length;
+    }
+  }
+
+  if (lastArithMatch !== -1) {
+    // Found arithmetic, parse as condition expression
+    try {
+      return parseConditionExpression(trimmed, functions);
+    } catch (error) {
+      // If condition parsing fails, fall back to variable
+      return { type: NodeType.VARIABLE, path: trimmed };
+    }
+  }
+
   // Default to variable reference
-  return { type: NodeType.VARIABLE, path: arg };
+  return { type: NodeType.VARIABLE, path: trimmed };
 };
 
 // Valid function call: word followed by parentheses with any content
@@ -249,7 +294,7 @@ export const parseVariable = (expr, functions = {}) => {
   validateVariableExpression(trimmed);
 
   // Try to parse as function call first
-  const functionNode = parseFunctionCall(trimmed);
+  const functionNode = parseFunctionCall(trimmed, functions);
   if (functionNode.isFunction) {
     return {
       type: functionNode.type,
