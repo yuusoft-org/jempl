@@ -1076,6 +1076,26 @@ const renderLoop = (node, options, data, scope) => {
     }
   }
 
+  // Fastest possible: check array preservation once and cache result
+  let shouldPreserveArray = false;
+  if (node.body.type === NodeType.ARRAY) {
+    if (node.body.items.length <= 1) {
+      // Single or empty array - no preservation needed
+      shouldPreserveArray = false;
+    } else {
+      // Multiple items - check if preservation needed (cache result)
+      shouldPreserveArray = node.body._shouldPreserveArray ??=
+        node.body.items.some(
+          (item) =>
+            item.type === NodeType.OBJECT &&
+            item.properties.some(
+              (prop) =>
+                prop.key.startsWith("$if ") || prop.key.startsWith("$when "),
+            ),
+        );
+    }
+  }
+
   for (let i = 0; i < iterable.length; i++) {
     // Use spread operator instead of Object.create for better performance
     const newScope = node.indexVar
@@ -1097,25 +1117,7 @@ const renderLoop = (node, options, data, scope) => {
 
     const rendered = renderNode(node.body, options, data, newScope);
 
-    // If the body is an array with a single item, unwrap it
-    // BUT preserve arrays when the loop body is an array with multiple separate conditional items
-    // Cache this check since AST structure is static
-    if (node.body._shouldPreserveArray === undefined) {
-      node.body._shouldPreserveArray =
-        node.body.type === NodeType.ARRAY &&
-        node.body.items.length > 1 && // Only preserve if multiple items in array
-        node.body.items.some(
-          (item) =>
-            item.type === NodeType.OBJECT &&
-            item.properties.length > 0 &&
-            item.properties.some(
-              (prop) =>
-                prop.key.startsWith("$if ") || prop.key.startsWith("$when "),
-            ),
-        );
-    }
-    const shouldPreserveArray = node.body._shouldPreserveArray;
-
+    // Fast path: avoid array checks when not needed
     if (
       Array.isArray(rendered) &&
       rendered.length === 1 &&
