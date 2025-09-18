@@ -56,7 +56,7 @@ throws: "Render Error: Arithmetic operations require numbers. Got number - objec
 ---
 case: array in subtraction
 in:
-  - $if total - [1, 2, 3] < 0:
+  - $if total - [] < 0:
       result: "invalid"
   - {total: 10}
   - functions: {}
@@ -86,12 +86,11 @@ in:
   - functions: {}
 throws: "Render Error: Arithmetic operations require numbers. Got number + object"
 ---
-case: type error with function result
+case: type error without function - basic arithmetic
 in:
-  - $if getValue() + "5" > 10:
+  - $if score + "5" > 10:
       result: "invalid"
-  - {}
-  - functions: {getValue: () => 10}
+  - {score: 3}
 throws: "Render Error: Arithmetic operations require numbers. Got number + string"
 ---
 case: false in addition

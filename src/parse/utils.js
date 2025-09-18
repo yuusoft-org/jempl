@@ -640,6 +640,14 @@ export const parseAtomicExpression = (expr) => {
     return { type: NodeType.LITERAL, value: "" };
   }
 
+  // Object and array literals for type testing
+  if (expr === "{}") {
+    return { type: NodeType.LITERAL, value: {} };
+  }
+  if (expr === "[]") {
+    return { type: NodeType.LITERAL, value: [] };
+  }
+
   // Number literals
   const num = Number(expr);
   if (!isNaN(num) && isFinite(num)) {

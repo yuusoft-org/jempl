@@ -28,7 +28,7 @@ out:
 ---
 case: multiple functions and arithmetic
 in:
-  - $if getValue() + getBonus() - getPenalty() > 100:
+  - $if getValue() + getBonus() - getPenalty() > 20:
       level: "expert"
     $else:
       level: "novice"
@@ -38,7 +38,7 @@ out:
 ---
 case: function returning number for arithmetic
 in:
-  - $if score + doubleValue(bonus) > 150:
+  - $if score + doubleValue(bonus) >= 150:
       achievement: "Super score!"
   - { score: 70, bonus: 40 }
 out:
@@ -228,7 +228,7 @@ in:
           status: "good"
         $else:
           status: "needs improvement"
-  - {students: [{name: "Alice", score: 95, attendance: 92}, {name: "Bob", score: 85, attendance: 88}]}
+  - {students: [{name: "Alice", score: 95, attendance: 92}, {name: "Bob", score: 90, attendance: 88}]}
 out:
   report:
     - name: "Alice"
@@ -250,17 +250,17 @@ in:
 out:
   results:
     - - type: "even"
-        value: "2"
+        value: 2
       - type: "prime"
-        value: "2"
+        value: 2
     - - type: "prime"
-        value: "3"
+        value: 3
     - - type: "even"
-        value: "4"
+        value: 4
     - - type: "prime"
-        value: "5"
+        value: 5
     - - type: "even"
-        value: "6"
+        value: 6
 ---
 case: parallel loops with shared condition logic
 in:

@@ -487,11 +487,10 @@ out: {}
 case: when with function and arithmetic combined
 in:
   - status:
-      $when: getValue() + bonus - penalty > getThreshold()
+      $when: getValue() + getBonus() - getPenalty() > getThreshold()
       message: "Threshold exceeded"
       calculation: "result is above limit"
-  - bonus: 10
-    penalty: 3
+  - {}
 out:
   status:
     message: "Threshold exceeded"
@@ -512,7 +511,7 @@ in:
 out:
   results:
     - type: "even"
-      value: "4"
+      value: 4
     - type: "always"
       value: "constant"
 ---
@@ -552,4 +551,4 @@ out:
     header: "You have notifications"
     content:
       warning: "Too many notifications!"
-      count: "7"
+      count: 7

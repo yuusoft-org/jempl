@@ -1098,7 +1098,25 @@ const renderLoop = (node, options, data, scope) => {
     const rendered = renderNode(node.body, options, data, newScope);
 
     // If the body is an array with a single item, unwrap it
-    if (Array.isArray(rendered) && rendered.length === 1) {
+    // BUT preserve arrays when the loop body is an array with multiple separate conditional items
+    const shouldPreserveArray =
+      node.body.type === NodeType.ARRAY &&
+      node.body.items.length > 1 && // Only preserve if multiple items in array
+      node.body.items.some(
+        (item) =>
+          item.type === NodeType.OBJECT &&
+          item.properties.length > 0 &&
+          item.properties.some(
+            (prop) =>
+              prop.key.startsWith("$if ") || prop.key.startsWith("$when "),
+          ),
+      );
+
+    if (
+      Array.isArray(rendered) &&
+      rendered.length === 1 &&
+      !shouldPreserveArray
+    ) {
       results.push(rendered[0]);
     } else {
       results.push(rendered);
@@ -1331,7 +1349,12 @@ const renderObject = (node, options, data, scope) => {
         Object.assign(result, rendered);
       }
     } else if (prop.key.startsWith("$for ")) {
-      // This is a loop inside an object - it should not set any properties directly
+      // This is a direct loop property - handle it specially
+      if (node.properties.length === 1) {
+        // If this object has only the loop property, return the loop result directly
+        return renderNode(prop.value, options, data, scope);
+      }
+      // Multiple properties including a loop - skip the loop property
       // The parent object property should get the loop result
       // Skip this - it will be handled by the parent context
     } else {

@@ -167,8 +167,8 @@ in:
   - "$when": "undefinedFunc()"
     value: "test"
   - {}
-# Parser doesn't validate function names at parse time, evaluates as false
-out: {}
+# Now throws render error for unknown functions
+throws: "Render Error: Unknown function 'undefinedFunc'"
 ---
 case: when with invalid in operator usage (parser doesn't validate)
 in:
