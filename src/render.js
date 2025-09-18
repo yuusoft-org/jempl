@@ -1099,18 +1099,22 @@ const renderLoop = (node, options, data, scope) => {
 
     // If the body is an array with a single item, unwrap it
     // BUT preserve arrays when the loop body is an array with multiple separate conditional items
-    const shouldPreserveArray =
-      node.body.type === NodeType.ARRAY &&
-      node.body.items.length > 1 && // Only preserve if multiple items in array
-      node.body.items.some(
-        (item) =>
-          item.type === NodeType.OBJECT &&
-          item.properties.length > 0 &&
-          item.properties.some(
-            (prop) =>
-              prop.key.startsWith("$if ") || prop.key.startsWith("$when "),
-          ),
-      );
+    // Cache this check since AST structure is static
+    if (node.body._shouldPreserveArray === undefined) {
+      node.body._shouldPreserveArray =
+        node.body.type === NodeType.ARRAY &&
+        node.body.items.length > 1 && // Only preserve if multiple items in array
+        node.body.items.some(
+          (item) =>
+            item.type === NodeType.OBJECT &&
+            item.properties.length > 0 &&
+            item.properties.some(
+              (prop) =>
+                prop.key.startsWith("$if ") || prop.key.startsWith("$when "),
+            ),
+        );
+    }
+    const shouldPreserveArray = node.body._shouldPreserveArray;
 
     if (
       Array.isArray(rendered) &&
