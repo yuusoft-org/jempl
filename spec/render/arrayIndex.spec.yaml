@@ -120,6 +120,168 @@ in:
 out:
   exists: "first"
 ---
+case: bracket notation with double quoted string keys
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: simple
+        value:
+          type: 1
+          path: 'obj["key"]'
+      - key: withDash
+        value:
+          type: 1
+          path: 'data["key-with-dash"]'
+      - key: withDot
+        value:
+          type: 1
+          path: 'config["section.name"]'
+  - obj:
+      key: "value1"
+    data:
+      "key-with-dash": "hyphenated"
+    config:
+      "section.name": "dotted.value"
+  - {}
+out:
+  simple: "value1"
+  withDash: "hyphenated"
+  withDot: "dotted.value"
+---
+case: bracket notation with single quoted string keys
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: simple
+        value:
+          type: 1
+          path: "obj['key']"
+      - key: withSpace
+        value:
+          type: 1
+          path: "labels['hello world']"
+  - obj:
+      key: "value2"
+    labels:
+      "hello world": "greeting message"
+  - {}
+out:
+  simple: "value2"
+  withSpace: "greeting message"
+---
+case: nested bracket notation with string keys
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: nested
+        value:
+          type: 1
+          path: 'obj["level1"]["level2"]'
+      - key: mixed
+        value:
+          type: 1
+          path: 'data.section["subsection"]'
+      - key: complex
+        value:
+          type: 1
+          path: 'i18n.layout.sections["gallery-title"]'
+  - obj:
+      level1:
+        level2: "deep value"
+    data:
+      section:
+        subsection: "nested section"
+    i18n:
+      layout:
+        sections:
+          "gallery-title": "Photo Gallery"
+  - {}
+out:
+  nested: "deep value"
+  mixed: "nested section"
+  complex: "Photo Gallery"
+---
+case: mixed numeric and string bracket notation
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: arrayThenString
+        value:
+          type: 1
+          path: 'items[0]["name"]'
+      - key: stringThenArray
+        value:
+          type: 1
+          path: 'data["users"][1]'
+      - key: complex
+        value:
+          type: 1
+          path: 'config["sections"][0]["title"]'
+  - items:
+      - name: "First Item"
+        value: 100
+    data:
+      users: ["Alice", "Bob", "Charlie"]
+    config:
+      sections:
+        - title: "Introduction"
+          content: "Welcome"
+  - {}
+out:
+  arrayThenString: "First Item"
+  stringThenArray: "Bob"
+  complex: "Introduction"
+---
+case: bracket notation string keys in interpolation
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: message
+        value:
+          type: 2
+          parts:
+            - "The "
+            - {type: 1, path: 'labels["greeting"]'}
+            - " is: "
+            - {type: 1, path: 'messages["welcome"]'}
+  - labels:
+      greeting: "salutation"
+    messages:
+      welcome: "Hello, World!"
+  - {}
+out:
+  message: "The salutation is: Hello, World!"
+---
+case: bracket notation with missing string keys
+in:
+  - type: 8
+    fast: true
+    properties:
+      - key: exists
+        value:
+          type: 1
+          path: 'obj["key"]'
+      - key: missing
+        value:
+          type: 1
+          path: 'obj["nonexistent"]'
+      - key: deepMissing
+        value:
+          type: 1
+          path: 'data["level1"]["missing"]'
+  - obj:
+      key: "found"
+    data:
+      level1: {}
+  - {}
+out:
+  exists: "found"
+---
 case: array index in loop context
 in:
   - type: 8
