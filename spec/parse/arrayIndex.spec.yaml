@@ -108,6 +108,112 @@ out:
         type: 1
         path: "data [ 1 ] . name"
 ---
+case: bracket notation with double quoted string keys
+in:
+  - simple: '${obj["key"]}'
+    withDash: '${data["key-with-dash"]}'
+    withDot: '${config["section.name"]}'
+    withSpace: '${labels["hello world"]}'
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: simple
+      value:
+        type: 1
+        path: 'obj["key"]'
+    - key: withDash
+      value:
+        type: 1
+        path: 'data["key-with-dash"]'
+    - key: withDot
+      value:
+        type: 1
+        path: 'config["section.name"]'
+    - key: withSpace
+      value:
+        type: 1
+        path: 'labels["hello world"]'
+---
+case: bracket notation with single quoted string keys
+in:
+  - simple: "${obj['key']}"
+    withDash: "${data['key-with-dash']}"
+    withDot: "${config['section.name']}"
+    withSpace: "${labels['hello world']}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: simple
+      value:
+        type: 1
+        path: "obj['key']"
+    - key: withDash
+      value:
+        type: 1
+        path: "data['key-with-dash']"
+    - key: withDot
+      value:
+        type: 1
+        path: "config['section.name']"
+    - key: withSpace
+      value:
+        type: 1
+        path: "labels['hello world']"
+---
+case: nested bracket notation with string keys
+in:
+  - nested: '${obj["level1"]["level2"]}'
+    mixed: '${data.section["subsection"]}'
+    deep: '${root["a"]["b"]["c"]}'
+    complex: '${i18n.layout.sections["gallery-title"]}'
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: nested
+      value:
+        type: 1
+        path: 'obj["level1"]["level2"]'
+    - key: mixed
+      value:
+        type: 1
+        path: 'data.section["subsection"]'
+    - key: deep
+      value:
+        type: 1
+        path: 'root["a"]["b"]["c"]'
+    - key: complex
+      value:
+        type: 1
+        path: 'i18n.layout.sections["gallery-title"]'
+---
+case: bracket notation with string keys in interpolation
+in:
+  - message: 'The ${labels["greeting"]} is ${data["value"]}'
+    mixed: 'Item: ${items[0]["name"]} - ${items[0]["price"]}'
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: message
+      value:
+        type: 2
+        parts:
+          - "The "
+          - {type: 1, path: 'labels["greeting"]'}
+          - " is "
+          - {type: 1, path: 'data["value"]'}
+    - key: mixed
+      value:
+        type: 2
+        parts:
+          - "Item: "
+          - {type: 1, path: 'items[0]["name"]'}
+          - " - "
+          - {type: 1, path: 'items[0]["price"]'}
+---
 case: invalid array index syntax
 in:
   - empty: "${items[]}"

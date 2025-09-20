@@ -1,0 +1,194 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [bracketStringKeys]
+---
+### Bracket Notation with String Keys
+suite: bracketStringKeys
+exportName: default
+---
+case: simple bracket notation with double quotes
+in:
+  - value: '${obj["key"]}'
+  - obj:
+      key: "success"
+  - functions: {}
+out:
+  value: "success"
+---
+case: simple bracket notation with single quotes
+in:
+  - value: "${obj['key']}"
+  - obj:
+      key: "success"
+  - functions: {}
+out:
+  value: "success"
+---
+case: bracket notation with special characters
+in:
+  - dash: '${data["key-with-dash"]}'
+    dot: '${config["section.name"]}'
+    space: '${labels["hello world"]}'
+    number: '${codes["404"]}'
+  - data:
+      "key-with-dash": "hyphenated-value"
+    config:
+      "section.name": "dotted.section"
+    labels:
+      "hello world": "greeting"
+    codes:
+      "404": "Not Found"
+  - functions: {}
+out:
+  dash: "hyphenated-value"
+  dot: "dotted.section"
+  space: "greeting"
+  number: "Not Found"
+---
+case: nested bracket notation
+in:
+  - nested: '${obj["level1"]["level2"]}'
+    deep: '${root["a"]["b"]["c"]}'
+  - obj:
+      level1:
+        level2: "nested-value"
+    root:
+      a:
+        b:
+          c: "deep-value"
+  - functions: {}
+out:
+  nested: "nested-value"
+  deep: "deep-value"
+---
+case: mixed dot and bracket notation
+in:
+  - mixed1: '${data.section["subsection"]}'
+    mixed2: '${config["app"].name}'
+    complex: '${i18n.layout.sections["gallery-title"]}'
+  - data:
+      section:
+        subsection: "sub-value"
+    config:
+      app:
+        name: "MyApp"
+    i18n:
+      layout:
+        sections:
+          "gallery-title": "Photo Gallery"
+  - functions: {}
+out:
+  mixed1: "sub-value"
+  mixed2: "MyApp"
+  complex: "Photo Gallery"
+---
+case: mixed numeric and string brackets
+in:
+  - arrayThenString: '${items[0]["name"]}'
+    stringThenArray: '${data["users"][1]}'
+    stringThenNumeric: '${config["lists"]["items"][0]}'
+  - items:
+      - name: "First Item"
+        value: 100
+      - name: "Second Item"
+        value: 200
+    data:
+      users: ["Alice", "Bob", "Charlie"]
+    config:
+      lists:
+        items: ["item1", "item2", "item3"]
+  - functions: {}
+out:
+  arrayThenString: "First Item"
+  stringThenArray: "Bob"
+  stringThenNumeric: "item1"
+---
+case: bracket notation in conditionals
+in:
+  - $if data["isEnabled"]:
+      status: '${messages["enabled"]}'
+    $else:
+      status: '${messages["disabled"]}'
+  - data:
+      isEnabled: true
+    messages:
+      enabled: "System is active"
+      disabled: "System is inactive"
+  - functions: {}
+out:
+  status: "System is active"
+---
+case: bracket notation in loops
+in:
+  - results:
+      $for item in items:
+        - name: '${item["name"]}'
+          type: '${item["type"]}'
+          description: '${item["meta"]["description"]}'
+  - items:
+      - name: "Item 1"
+        type: "typeA"
+        meta:
+          description: "First item description"
+      - name: "Item 2"
+        type: "typeB"
+        meta:
+          description: "Second item description"
+  - functions: {}
+out:
+  results:
+    - name: "Item 1"
+      type: "typeA"
+      description: "First item description"
+    - name: "Item 2"
+      type: "typeB"
+      description: "Second item description"
+---
+case: bracket notation with empty string key
+in:
+  - empty: '${obj[""]}'
+  - obj:
+      "": "empty-key-value"
+      regular: "normal-value"
+  - functions: {}
+out:
+  empty: "empty-key-value"
+---
+case: bracket notation in interpolation
+in:
+  - message: 'Welcome ${user["firstName"]} ${user["lastName"]}!'
+    template: 'The ${labels["item"]} costs ${prices["USD"]}'
+  - user:
+      firstName: "John"
+      lastName: "Doe"
+    labels:
+      item: "product"
+    prices:
+      USD: "$99.99"
+  - functions: {}
+out:
+  message: "Welcome John Doe!"
+  template: "The product costs $99.99"
+---
+case: real world i18n example
+in:
+  - title: '${i18n.layout.dafkjkl3["gallery-title"]}'
+    description: '${i18n.components["gallery"]["description"]}'
+    button: '${i18n.ui.buttons["submit-form"]}'
+  - i18n:
+      layout:
+        dafkjkl3:
+          "gallery-title": "Photo Gallery"
+          "gallery-subtitle": "Browse our collection"
+      components:
+        gallery:
+          description: "A collection of beautiful images"
+      ui:
+        buttons:
+          "submit-form": "Submit"
+          "cancel-form": "Cancel"
+  - functions: {}
+out:
+  title: "Photo Gallery"
+  description: "A collection of beautiful images"
+  button: "Submit"

@@ -150,13 +150,21 @@ const parsePathSegment = (segment) => {
       inBracket = true;
     } else if (char === "]") {
       if (inBracket && current) {
-        // Parse the index - only support numeric indices
+        // Parse the index
         const trimmed = current.trim();
         if (/^\d+$/.test(trimmed)) {
+          // Numeric index
           accessors.push({ type: "index", value: parseInt(trimmed, 10) });
+        } else if (
+          (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+          (trimmed.startsWith("'") && trimmed.endsWith("'"))
+        ) {
+          // Quoted string key - extract the string content
+          const key = trimmed.slice(1, -1);
+          accessors.push({ type: "property", value: key });
         } else {
-          // For non-numeric indices, treat as property name
-          accessors.push({ type: "property", value: `[${current}]` });
+          // Unquoted string (backward compatibility for cases like items[abc])
+          accessors.push({ type: "property", value: trimmed });
         }
         current = "";
       }
