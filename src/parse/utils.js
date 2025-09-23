@@ -251,10 +251,10 @@ export const parseObject = (obj, functions) => {
       // Check if this is a loop structure
     } else if (/^\$for(?::\w+)?\s/.test(key)) {
       // $for loops are not allowed as object properties
-      const modifier = key.match(/^\$for(?::(\w+))?\s/)?.[1] || '';
-      const modifierPart = modifier ? `:${modifier}` : '';
+      const modifier = key.match(/^\$for(?::(\w+))?\s/)?.[1] || "";
+      const modifierPart = modifier ? `:${modifier}` : "";
       throw new JemplParseError(
-        `$for loops must be inside arrays - use '- $for${modifierPart} item in items:' instead of '$for${modifierPart} item in items:'`
+        `$for loops must be inside arrays - use '- $for${modifierPart} item in items:' instead of '$for${modifierPart} item in items:'`,
       );
     } else if (key.startsWith("$elif ") || key.startsWith("$else")) {
       // Check for orphaned $elif or $else
