@@ -1,6 +1,6 @@
 {
   "name": "jempl",
-  "version": "0.3.2-rc2",
+  "version": "0.3.2",
   "description": "A JSON templating engine with conditionals, loops, and custom functions",
   "main": "src/index.js",
   "types": "types/index.d.ts",
