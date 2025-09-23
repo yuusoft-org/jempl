@@ -212,7 +212,7 @@ Functions and arithmetic in conditionals work seamlessly within loops:
 
 ```yaml
 items:
-  $for item, i in items:
+  - $for item, i in items:
     - name: "${item.name}"
       $if i == 0:
         position: "first"
@@ -567,7 +567,7 @@ data:
 
 template:
   people:
-    $for p, i in people:
+    - $for p, i in people:
       - name: "${p.name}"
         age: "${p.age}"
         index: "${i}"
@@ -593,19 +593,19 @@ You can use functions to transform arrays before iteration:
 template:
   # Sort posts by date
   recentPosts:
-    $for post in sortDate(posts):
+    - $for post in sortDate(posts):
       - title: "${post.title}"
         date: "${post.date}"
   
   # Filter products by a property
   inStockItems:
-    $for item in filterBy(products, 'inStock', true):
+    - $for item in filterBy(products, 'inStock', true):
       - name: "${item.name}"
         price: "${item.price}"
   
   # Combine multiple functions
   topPosts:
-    $for post in take(sortBy(posts, 'views'), 5):
+    - $for post in take(sortBy(posts, 'views'), 5):
       - title: "${post.title}"
         views: "${post.views}"
 ```
@@ -661,31 +661,124 @@ const result = parseAndRender(template, data, { functions: customFunctions });
 ```yaml
 # Filter active users
 activeUsers:
-  $for user in filterActive(users):
+  - $for user in filterActive(users):
     - name: "${user.name}"
       status: "online"
 
 # Sort and limit results  
 topScores:
-  $for score, rank in take(sortBy(scores, 'points'), 10):
+  - $for score, rank in take(sortBy(scores, 'points'), 10):
     - rank: "${rank + 1}"
       player: "${score.player}"
       points: "${score.points}"
 
 # Transform items during iteration
 formattedDates:
-  $for item in transformDates(events):
+  - $for item in transformDates(events):
     - event: "${item.name}"
       when: "${item.formattedDate}"
 
 # Nested function calls
 filteredAndSorted:
-  $for item in sortBy(filterBy(items, 'active', true), 'priority'):
+  - $for item in sortBy(filterBy(items, 'active', true), 'priority'):
     - id: "${item.id}"
       name: "${item.name}"
 ```
 
 **Note**: Functions used in loops must return arrays. If a function returns a non-array value, a clear error message will be displayed.
+
+### Nested vs Non-Nested Loops
+
+Loops can be either nested (flattened into the parent array) or non-nested (creating a new array structure).
+
+#### Non-Nested Loops (Default)
+
+By default, loops create a new array structure:
+
+```yaml
+template:
+  items:
+    - $for item in items:
+      - name: "${item.name}"
+        value: "${item.value}"
+
+data:
+  items:
+    - { name: "First", value: 1 }
+    - { name: "Second", value: 2 }
+
+output:
+  items:
+    - name: "First"
+      value: 1
+    - name: "Second"
+      value: 2
+```
+
+#### Nested Loops (Flattened)
+
+When the loop body is an array and should be flattened into the parent, the loop is automatically detected as nested:
+
+```yaml
+template:
+  - $for category in categories:
+    - name: "${category.name}"
+    - $for item in category.items:
+      - name: "${item.name}"
+        category: "${category.name}"
+
+data:
+  categories:
+    - name: "Fruits"
+      items:
+        - { name: "Apple" }
+        - { name: "Banana" }
+    - name: "Vegetables"
+      items:
+        - { name: "Carrot" }
+
+output:
+  - name: "Fruits"
+  - name: "Apple"
+    category: "Fruits"
+  - name: "Banana"
+    category: "Fruits"
+  - name: "Vegetables"
+  - name: "Carrot"
+    category: "Vegetables"
+```
+
+The key difference is whether the loop results are wrapped in a new array structure or flattened into the parent array. This is determined automatically based on the loop's position and body structure.
+
+#### Explicit Nested Loops
+
+You can explicitly specify nested behavior using the `$for:nested` syntax:
+
+```yaml
+template:
+  children:
+    - id: "static-1"
+    - $for:nested item in items:
+      - name: "${item.name}"
+        value: "${item.value}"
+    - id: "static-2"
+
+data:
+  items:
+    - { name: "First", value: 1 }
+    - { name: "Second", value: 2 }
+
+output:
+  children:
+    - id: "static-1"
+    - [                    # Nested array
+        { name: "First", value: 1 },
+        { name: "Second", value: 2 }
+      ]
+    - id: "static-2"
+```
+
+The `$for:nested` syntax explicitly marks the loop as nested, ensuring the results are kept as a nested array rather than being flattened into the parent array.
 
 
 ## Path References
@@ -699,7 +792,7 @@ Path references use `#{variableName}` syntax and are only valid within loops:
 ```yaml
 template:
   items:
-    $for item in items:
+    - $for item in items:
       - path: "#{item}"
         value: "${item}"
 
@@ -723,7 +816,7 @@ You can reference properties of loop variables:
 ```yaml
 template:
   products:
-    $for product in products:
+    - $for product in products:
       - binding: "#{product.price}"
         name: "${product.name}"
         price: "${product.price}"
@@ -749,10 +842,10 @@ Path references work correctly in nested loops, maintaining the full path from r
 
 ```yaml
 template:
-  $for category in categories:
+  - $for category in categories:
     - name: "${category.name}"
       products:
-        $for product in category.products:
+        - $for product in category.products:
           - path: "#{product}"
             name: "${product.name}"
 
@@ -907,7 +1000,7 @@ Combine partials with `$for` loops for dynamic content generation:
 ```yaml
 template:
   items:
-    $for item, i in items:
+    - $for item, i in items:
       - $partial: "itemCard"
 
 data:
@@ -1143,7 +1236,7 @@ template:
   
   # Path reference escaping (within loops)
   items:
-    $for item in items:
+    - $for item in items:
       - pathLiteral: "Use \\#{item} for path references"
         pathActual: "Path is #{item}"
         pathDouble: "Backslash and path: \\\\#{item}"

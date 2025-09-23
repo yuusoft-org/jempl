@@ -260,8 +260,8 @@ out:
 case: partials in loop with custom functions
 in:
   - items:
-      $for item in items:
-        - $partial: "processedItem"
+      - $for item in items:
+          $partial: "processedItem"
   - items:
       - name: "apple"
         price: 1.50

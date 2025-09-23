@@ -100,9 +100,9 @@ out:
 case: simple loop
 in:
   - users:
-      $for user in users:
-        name: "${user.name}"
-        role: "${user.role}"
+      - $for user in users:
+          name: "${user.name}"
+          role: "${user.role}"
   - users:
       - name: "Alice"
         role: "admin"
@@ -123,10 +123,10 @@ out:
 case: loop with index
 in:
   - items:
-      $for item, index in items:
-        id: "${index}"
-        value: "${item}"
-        position: "Item #${index}"
+      - $for item, index in items:
+          id: "${index}"
+          value: "${item}"
+          position: "Item #${index}"
   - items: ["apple", "banana", "cherry"]
   - functions: {}
 out:
@@ -145,9 +145,9 @@ case: nested conditionals and loops
 in:
   - report:
       activeUsers:
-        $for user in activeUsers:
-          name: "${user.name}"
-          lastLogin: "${user.lastLogin}"
+        - $for user in activeUsers:
+            name: "${user.name}"
+            lastLogin: "${user.lastLogin}"
       stats:
         total: "${totalUsers}"
   - activeUsers:
@@ -261,14 +261,14 @@ case: nested objects with loops and conditionals
 in:
   - dashboard:
       users:
-        $for user in users:
-          name: "${user.name}"
-          $if user.premium:
-            badge: "Premium"
-            features: ["advanced", "priority"]
-          $else:
-            badge: "Standard" 
-            features: ["basic"]
+        - $for user in users:
+            name: "${user.name}"
+            $if user.premium:
+              badge: "Premium"
+              features: ["advanced", "priority"]
+            $else:
+              badge: "Standard" 
+              features: ["basic"]
       stats:
         total: "${users.length}"
         premium: "${premiumCount}"
@@ -300,7 +300,7 @@ out:
 case: loop inside array syntax
 in:
   - rtgl-view#projects:
-      - $for p, i in projects:
+      - $for:nested p, i in projects:
           - rtgl-view:
             - rtgl-text: "${p.title}"
             - rtgl-text: "${p.description}"
@@ -401,7 +401,7 @@ in:
               - rtgl-view w=f ah=e:
                   - rtgl-text s=sm: "Total: ${totalDuration}"
           - $if selectedProperties.length > 0:
-              - $for property in selectedProperties:
+              - $for:nested property in selectedProperties:
                   - rtgl-view d=h w=f av=c:
                       - rtgl-view w=48 av=c d=h:
                           - rtgl-text s=xs: ${property.name}
@@ -411,7 +411,7 @@ in:
                           - rtgl-text s=xs: ${property.initialValue}
                       - rtgl-view d=h w=f h=24 bgc=mu br=sm g=xs:
                           - $if property.keyframes:
-                              - $for keyframe, j in property.keyframes:
+                              - $for:nested keyframe, j in property.keyframes:
                                   - rtgl-view#keyframe-${property.name}-${j} d=h p=xs h=f bgc=ac flex=1 br=sm ah=e av=e mr=xs:
                                       - rtgl-text s=xs: ${keyframe.duration}ms
   - totalDuration: "5000ms"
@@ -479,7 +479,7 @@ in:
               - rtgl-view w=f ah=e:
                   - rtgl-text s=sm: "Total: ${totalDuration}"
           - $if selectedProperties.length > 0:
-              - $for property in selectedProperties:
+              - $for:nested property in selectedProperties:
                   - rtgl-view d=h w=f av=c:
                       - rtgl-view w=48 av=c d=h:
                           - rtgl-text s=xs: ${property.name}
@@ -501,7 +501,7 @@ in:
               - rtgl-view w=f ah=e:
                   - rtgl-text s=sm: "Total: ${totalDuration}"
           - $if selectedProperties.length > 0:
-              - $for property in selectedProperties:
+              - $for:nested property in selectedProperties:
                   - rtgl-view d=h w=f av=c:
                       - rtgl-view w=48 av=c d=h:
                           - rtgl-text s=xs: ${property.name}
@@ -537,7 +537,7 @@ out:
 case: verify property.name interpolation in button IDs
 in:
   - template:
-      - $for property in properties:
+      - $for:nested property in properties:
           - rtgl-button#add-keyframe-${property.name}: "Add ${property.name}"
   - properties:
       - name: "width"
@@ -558,7 +558,7 @@ in:
               - rtgl-view w=f ah=e:
                   - rtgl-text s=sm: "Total: ${totalDuration}"
           - $if selectedProperties.length > 0:
-              - $for property in selectedProperties:
+              - $for:nested property in selectedProperties:
                   - rtgl-view d=h w=f av=c:
                       - rtgl-view w=48 av=c d=h:
                           - rtgl-text s=xs: ${property.name}
@@ -568,7 +568,7 @@ in:
                           - rtgl-text s=xs: ${property.initialValue}
                       - rtgl-view d=h w=f h=24 bgc=mu br=sm g=xs:
                           - $if property.keyframes:
-                              - $for keyframe, j in property.keyframes:
+                              - $for:nested keyframe, j in property.keyframes:
                                   - rtgl-view#keyframe-${property.name}-${j} d=h p=xs h=f bgc=ac flex=1 br=sm ah=e av=e mr=xs:
                                       - rtgl-text s=xs: ${keyframe.duration}ms
   - totalDuration: "1000ms"
@@ -661,10 +661,10 @@ out:
 case: array index selectors - with loops
 in:
   - results:
-      $for user in users:
-        name: "${user.name}"
-        firstTag: "${user.tags[0]}"
-        secondTag: "${user.tags[1]}"
+      - $for user in users:
+          name: "${user.name}"
+          firstTag: "${user.tags[0]}"
+          secondTag: "${user.tags[1]}"
   - users:
       - name: "Alice"
         tags: ["admin", "developer", "reviewer"]
@@ -716,10 +716,10 @@ out:
 case: array index selectors - complex nesting
 in:
   - result:
-      $for group in groups:
-        name: "${group.name}"
-        firstMember: "${group.members[0].name}"
-        lastTask: "${group.members[0].tasks[1]}"
+      - $for group in groups:
+          name: "${group.name}"
+          firstMember: "${group.members[0].name}"
+          lastTask: "${group.members[0].tasks[1]}"
   - groups:
       - name: "Team A"
         members:

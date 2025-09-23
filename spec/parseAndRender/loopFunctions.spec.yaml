@@ -9,7 +9,7 @@ exportName: default
 case: for loop with sortDate function
 in:
   - posts:
-      $for post in sortDate(blogPosts):
+      - $for post in sortDate(blogPosts):
         - title: "${post.title}"
           date: "${post.date}"
   - blogPosts:
@@ -31,7 +31,7 @@ out:
 case: for loop with filterBy function
 in:
   - activeItems:
-      $for item, idx in filterBy(products, 'inStock', true):
+      - $for item, idx in filterBy(products, 'inStock', true):
         - index: "${idx}"
           name: "${item.name}"
           price: "$${item.price}"
@@ -57,7 +57,7 @@ out:
 case: for loop with nested functions - take and sortBy
 in:
   - topPosts:
-      $for post in take(sortBy(posts, 'views'), 3):
+      - $for post in take(sortBy(posts, 'views'), 3):
         - title: "${post.title}"
           views: "${post.views}"
   - posts:
@@ -83,7 +83,7 @@ out:
 case: for loop with function returning empty array
 in:
   - results:
-      $for item in getItems():
+      - $for item in getItems():
         - name: "${item}"
 out:
   results: []
@@ -91,7 +91,7 @@ out:
 case: for loop with function using complex data path
 in:
   - sorted:
-      $for user in sortByAge(data.users.active):
+      - $for user in sortByAge(data.users.active):
         - name: "${user.name}"
           age: "${user.age}"
   - data:
@@ -115,7 +115,7 @@ out:
 case: for loop with function and conditionals in body
 in:
   - users:
-      $for user in getActiveUsers(allUsers):
+      - $for user in getActiveUsers(allUsers):
         - name: "${user.name}"
           $if user.role == 'admin':
             permissions: ["read", "write", "delete"]
@@ -141,10 +141,10 @@ out:
 case: nested for loops with functions
 in:
   - categories:
-      $for cat in getCategories():
+      - $for cat in getCategories():
         - name: "${cat.name}"
           items:
-            $for item in filterByCategory(products, cat.id):
+            - $for item in filterByCategory(products, cat.id):
               - name: "${item.name}"
                 price: "${item.price}"
   - products:
@@ -178,7 +178,7 @@ out:
 case: for loop with function that transforms items
 in:
   - formattedUsers:
-      $for user in transformUsers(rawUsers):
+      - $for user in transformUsers(rawUsers):
         - displayName: "${user.displayName}"
           joinDate: "${user.joinDate}"
   - rawUsers:
@@ -198,7 +198,7 @@ out:
 case: for loop with built-in function (when implemented)
 in:
   - timestamps:
-      $for i in range(3):
+      - $for i in range(3):
         - index: "${i}"
           time: "${now()}"
 out:
@@ -213,6 +213,6 @@ out:
 case: error - function returns non-array
 in:
   - items:
-      $for item in getString():
+      - $for item in getString():
         - name: "${item}"
 throws: "Render Error: Cannot iterate over non-array value in loop 'item in getString()' - got string instead"

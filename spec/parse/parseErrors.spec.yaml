@@ -45,7 +45,7 @@ throws: "Parse Error: '$elif' without matching '$if'"
 case: invalid loop syntax - missing in
 in:
   - template:
-      "$for user": ["item"]
+      - "$for user": "item"
     data: {}
     functions: {}
 throws: "Parse Error: Invalid loop syntax - missing 'in' keyword (got: '$for user')"
@@ -54,7 +54,7 @@ throws: "Parse Error: Invalid loop syntax - missing 'in' keyword (got: '$for use
 case: missing iterable expression
 in:
   - template:
-      "$for user in": ["item"]
+      - "$for user in": "item"
     data: {}
     functions: {}
 throws: "Parse Error: Missing iterable expression after 'in' (got: '$for user in')"
@@ -63,7 +63,7 @@ throws: "Parse Error: Missing iterable expression after 'in' (got: '$for user in
 case: empty loop variable name
 in:
   - template:
-      "$for , index in people": ["item"]
+      - "$for , index in people": "item"
     data: {}
     functions: {}
 throws: "Parse Error: Invalid loop variable - variable name cannot be empty (got: '$for , index in people')"
@@ -159,5 +159,37 @@ in:
     data: {}
     functions: {}
 throws: "Parse Error: Complex expressions not supported in variable replacements - consider calculating the value in your data instead. Offending expression: \"(age + 5) > 18 ? 'adult' : 'minor'\""
+
+---
+case: for loop not in array - object property
+in:
+  - template:
+      items:
+        $for item in items:
+          name: "${item}"
+    data: {}
+    functions: {}
+throws: "Parse Error: $for loops must be inside arrays - use '- $for item in items:' instead of '$for item in items:'"
+
+---
+case: for loop not in array - top level
+in:
+  - template:
+      $for item in items:
+        value: "${item}"
+    data: {}
+    functions: {}
+throws: "Parse Error: $for loops must be inside arrays - use '- $for item in items:' instead of '$for item in items:'"
+
+---
+case: nested for loop not in array
+in:
+  - template:
+      $for:nested item in items:
+        value: "${item}"
+    data: {}
+    functions: {}
+throws: "Parse Error: $for loops must be inside arrays - use '- $for:nested item in items:' instead of '$for:nested item in items:'"
+
 
 

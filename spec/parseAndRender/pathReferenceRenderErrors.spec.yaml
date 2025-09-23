@@ -16,7 +16,7 @@ throws: "Render Error: Path reference '#{item}' refers to 'item' which is not a 
 case: path reference to non-existent variable
 in:
   - items:
-      $for item in items:
+      - $for item in items:
         - path: "#{product}"
   - items: ["test"]
   - functions: {}
@@ -25,7 +25,7 @@ throws: "Render Error: Path reference '#{product}' refers to 'product' which is 
 case: property access on index variable
 in:
   - items:
-      $for item, i in items:
+      - $for item, i in items:
         - path: "#{i.invalid}"
   - items: ["test"]
   - functions: {}

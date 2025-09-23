@@ -9,8 +9,8 @@ exportName: default
 case: simple for loop with item variable only
 in:
   - people:
-      $for p in people:
-        - name: "${p.name}"
+      - $for p in people:
+          name: "${p.name}"
           age: "${p.age}"
 out:
   type: 8
@@ -18,38 +18,34 @@ out:
   properties:
     - key: people
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for p in people"
-            value:
-              type: 7
-              itemVar: "p"
-              indexVar: null
-              iterable:
-                type: 1
-                path: "people"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "p.name"
-                      - key: age
-                        value:
-                          type: 1
-                          path: "p.age"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "p"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "people"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "p.name"
+                - key: age
+                  value:
+                    type: 1
+                    path: "p.age"
 ---
 case: for loop with item and index variables
 in:
   - people:
-      $for p, i in people:
-        - name: "${p.name}"
+      - $for p, i in people:
+          name: "${p.name}"
           age: "${p.age}"
           index: "${i}"
 out:
@@ -58,116 +54,107 @@ out:
   properties:
     - key: people
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for p, i in people"
-            value:
-              type: 7
-              itemVar: "p"
-              indexVar: "i"
-              iterable:
-                type: 1
-                path: "people"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "p.name"
-                      - key: age
-                        value:
-                          type: 1
-                          path: "p.age"
-                      - key: index
-                        value:
-                          type: 1
-                          path: "i"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "p"
+            indexVar: "i"
+            iterable:
+              type: 1
+              path: "people"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "p.name"
+                - key: age
+                  value:
+                    type: 1
+                    path: "p.age"
+                - key: index
+                  value:
+                    type: 1
+                    path: "i"
 ---
 case: for loop with string interpolation
 in:
   - items:
-      $for item, idx in items:
-        - description: "Item ${idx}: ${item.name} (${item.type})"
+      - $for item, idx in items:
+          description: "Item ${idx}: ${item.name} (${item.type})"
 out:
   type: 8
   fast: false
   properties:
     - key: items
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for item, idx in items"
-            value:
-              type: 7
-              itemVar: "item"
-              indexVar: "idx"
-              iterable:
-                type: 1
-                path: "items"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: description
-                        value:
-                          type: 2
-                          parts:
-                            - "Item "
-                            - {type: 1, path: "idx"}
-                            - ": "
-                            - {type: 1, path: "item.name"}
-                            - " ("
-                            - {type: 1, path: "item.type"}
-                            - ")"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: "idx"
+            iterable:
+              type: 1
+              path: "items"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: description
+                  value:
+                    type: 2
+                    parts:
+                      - "Item "
+                      - {type: 1, path: "idx"}
+                      - ": "
+                      - {type: 1, path: "item.name"}
+                      - " ("
+                      - {type: 1, path: "item.type"}
+                      - ")"
 ---
 case: for loop with object body (not array)
 in:
-  - $for user in users:
-      name: "${user.name}"
-      status: "active"
+  - - $for user in users:
+        name: "${user.name}"
+        status: "active"
 out:
-  type: 8
+  type: 9
   fast: false
-  properties:
-    - key: "$for user in users"
-      value:
-        type: 7
-        itemVar: "user"
-        indexVar: null
-        iterable:
-          type: 1
-          path: "users"
-        body:
-          type: 8
-          fast: true
-          properties:
-            - key: name
-              value:
-                type: 1
-                path: "user.name"
-            - key: status
-              value:
-                type: 0
-                value: "active"
+  items:
+    - type: 7
+      flatten: true
+      itemVar: "user"
+      indexVar: null
+      iterable:
+        type: 1
+        path: "users"
+      body:
+        type: 8
+        fast: true
+        properties:
+          - key: name
+            value:
+              type: 1
+              path: "user.name"
+          - key: status
+            value:
+              type: 0
+              value: "active"
 ---
 case: for loop with nested object structure
 in:
   - groups:
-      $for group, gIdx in groups:
-        - name: "${group.name}"
+      - $for group, gIdx in groups:
+          name: "${group.name}"
           members:
-            $for member, mIdx in group.members:
-              - name: "${member.name}"
+            - $for member, mIdx in group.members:
+                name: "${member.name}"
                 position: "${mIdx}"
 out:
   type: 8
@@ -175,62 +162,54 @@ out:
   properties:
     - key: groups
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for group, gIdx in groups"
-            value:
-              type: 7
-              itemVar: "group"
-              indexVar: "gIdx"
-              iterable:
-                type: 1
-                path: "groups"
-              body:
-                type: 9
-                fast: false
-                items:
-                  - type: 8
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "group"
+            indexVar: "gIdx"
+            iterable:
+              type: 1
+              path: "groups"
+            body:
+              type: 8
+              fast: false
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "group.name"
+                - key: members
+                  value:
+                    type: 9
                     fast: false
-                    properties:
-                      - key: name
-                        value:
+                    items:
+                      - type: 7
+                        flatten: true
+                        itemVar: "member"
+                        indexVar: "mIdx"
+                        iterable:
                           type: 1
-                          path: "group.name"
-                      - key: members
-                        value:
+                          path: "group.members"
+                        body:
                           type: 8
-                          fast: false
+                          fast: true
                           properties:
-                            - key: "$for member, mIdx in group.members"
+                            - key: name
                               value:
-                                type: 7
-                                itemVar: "member"
-                                indexVar: "mIdx"
-                                iterable:
-                                  type: 1
-                                  path: "group.members"
-                                body:
-                                  type: 9
-                                  fast: true
-                                  items:
-                                    - type: 8
-                                      fast: true
-                                      properties:
-                                        - key: name
-                                          value:
-                                            type: 1
-                                            path: "member.name"
-                                        - key: position
-                                          value:
-                                            type: 1
-                                            path: "mIdx"
+                                type: 1
+                                path: "member.name"
+                            - key: position
+                              value:
+                                type: 1
+                                path: "mIdx"
 ---
 case: for loop with conditionals inside
 in:
   - users:
-      $for user in users:
-        - name: "${user.name}"
+      - $for user in users:
+          name: "${user.name}"
           $if user.isActive:
             status: "active"
           $else:
@@ -241,57 +220,53 @@ out:
   properties:
     - key: users
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for user in users"
-            value:
-              type: 7
-              itemVar: "user"
-              indexVar: null
-              iterable:
-                type: 1
-                path: "users"
-              body:
-                type: 9
-                fast: false
-                items:
-                  - type: 8
-                    fast: false
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "user.name"
-                      - key: "$if user.isActive"
-                        value:
-                          type: 6
-                          conditions:
-                            - type: 1
-                              path: "user.isActive"
-                            - null
-                          bodies:
-                            - type: 8
-                              fast: true
-                              properties:
-                                - key: status
-                                  value:
-                                    type: 0
-                                    value: "active"
-                            - type: 8
-                              fast: true
-                              properties:
-                                - key: status
-                                  value:
-                                    type: 0
-                                    value: "inactive"
-                          id: null
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "user"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "users"
+            body:
+              type: 8
+              fast: false
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "user.name"
+                - key: "$if user.isActive"
+                  value:
+                    type: 6
+                    conditions:
+                      - type: 1
+                        path: "user.isActive"
+                      - null
+                    bodies:
+                      - type: 8
+                        fast: true
+                        properties:
+                          - key: status
+                            value:
+                              type: 0
+                              value: "active"
+                      - type: 8
+                        fast: true
+                        properties:
+                          - key: status
+                            value:
+                              type: 0
+                              value: "inactive"
+                    id: null
 ---
 case: for loop with literal values
 in:
   - items:
-      $for item in items:
-        - value: "${item}"
+      - $for item in items:
+          value: "${item}"
           static: "literal"
           number: 42
           boolean: true
@@ -301,46 +276,42 @@ out:
   properties:
     - key: items
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for item in items"
-            value:
-              type: 7
-              itemVar: "item"
-              indexVar: null
-              iterable:
-                type: 1
-                path: "items"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: value
-                        value:
-                          type: 1
-                          path: "item"
-                      - key: static
-                        value:
-                          type: 0
-                          value: "literal"
-                      - key: number
-                        value:
-                          type: 0
-                          value: 42
-                      - key: boolean
-                        value:
-                          type: 0
-                          value: true
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "items"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: value
+                  value:
+                    type: 1
+                    path: "item"
+                - key: static
+                  value:
+                    type: 0
+                    value: "literal"
+                - key: number
+                  value:
+                    type: 0
+                    value: 42
+                - key: boolean
+                  value:
+                    type: 0
+                    value: true
 ---
 case: for loop iterating over complex variable path
 in:
   - results:
-      $for entry, idx in data.items.filtered:
-        - index: "${idx}"
+      - $for entry, idx in data.items.filtered:
+          index: "${idx}"
           name: "${entry.name}"
 out:
   type: 8
@@ -348,94 +319,88 @@ out:
   properties:
     - key: results
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for entry, idx in data.items.filtered"
-            value:
-              type: 7
-              itemVar: "entry"
-              indexVar: "idx"
-              iterable:
-                type: 1
-                path: "data.items.filtered"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: index
-                        value:
-                          type: 1
-                          path: "idx"
-                      - key: name
-                        value:
-                          type: 1
-                          path: "entry.name"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "entry"
+            indexVar: "idx"
+            iterable:
+              type: 1
+              path: "data.items.filtered"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: index
+                  value:
+                    type: 1
+                    path: "idx"
+                - key: name
+                  value:
+                    type: 1
+                    path: "entry.name"
 ---
 case: for loop with empty body array
 in:
   - container:
-      $for item in items: []
+      - $for item in items: []
 out:
   type: 8
   fast: false
   properties:
     - key: container
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for item in items"
-            value:
-              type: 7
-              itemVar: "item"
-              indexVar: null
-              iterable:
-                type: 1
-                path: "items"
-              body:
-                type: 9
-                fast: true
-                items: []
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "items"
+            body:
+              type: 9
+              fast: true
+              items: []
 ---
 case: for loop with single item not in array
 in:
-  - $for item in items:
-      name: "${item.name}"
-      single: true
+  - - $for item in items:
+        name: "${item.name}"
+        single: true
 out:
-  type: 8
+  type: 9
   fast: false
-  properties:
-    - key: "$for item in items"
-      value:
-        type: 7
-        itemVar: "item"
-        indexVar: null
-        iterable:
-          type: 1
-          path: "items"
-        body:
-          type: 8
-          fast: true
-          properties:
-            - key: name
-              value:
-                type: 1
-                path: "item.name"
-            - key: single
-              value:
-                type: 0
-                value: true
+  items:
+    - type: 7
+      flatten: true
+      itemVar: "item"
+      indexVar: null
+      iterable:
+        type: 1
+        path: "items"
+      body:
+        type: 8
+        fast: true
+        properties:
+          - key: name
+            value:
+              type: 1
+              path: "item.name"
+          - key: single
+            value:
+              type: 0
+              value: true
 ---
 case: for loop with whitespace in variable names
 in:
   - items:
-      $for  currentItem ,  index  in  itemList :
-        - item: "${currentItem}"
+      - $for  currentItem ,  index  in  itemList :
+          item: "${currentItem}"
           pos: "${index}"
 out:
   type: 8
@@ -443,42 +408,38 @@ out:
   properties:
     - key: items
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for  currentItem ,  index  in  itemList"
-            value:
-              type: 7
-              itemVar: "currentItem"
-              indexVar: "index"
-              iterable:
-                type: 1
-                path: "itemList"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: item
-                        value:
-                          type: 1
-                          path: "currentItem"
-                      - key: pos
-                        value:
-                          type: 1
-                          path: "index"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "currentItem"
+            indexVar: "index"
+            iterable:
+              type: 1
+              path: "itemList"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: item
+                  value:
+                    type: 1
+                    path: "currentItem"
+                - key: pos
+                  value:
+                    type: 1
+                    path: "index"
 ---
 case: multiple for loops in same object
 in:
   - users:
-      $for user in activeUsers:
-        - name: "${user.name}"
+      - $for user in activeUsers:
+          name: "${user.name}"
           status: "active"
     admins:
-      $for admin in adminUsers:
-        - name: "${admin.name}"
+      - $for admin in adminUsers:
+          name: "${admin.name}"
           role: "admin"
 out:
   type: 8
@@ -486,66 +447,58 @@ out:
   properties:
     - key: users
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for user in activeUsers"
-            value:
-              type: 7
-              itemVar: "user"
-              indexVar: null
-              iterable:
-                type: 1
-                path: "activeUsers"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "user.name"
-                      - key: status
-                        value:
-                          type: 0
-                          value: "active"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "user"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "activeUsers"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "user.name"
+                - key: status
+                  value:
+                    type: 0
+                    value: "active"
     - key: admins
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for admin in adminUsers"
-            value:
-              type: 7
-              itemVar: "admin"
-              indexVar: null
-              iterable:
-                type: 1
-                path: "adminUsers"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "admin.name"
-                      - key: role
-                        value:
-                          type: 0
-                          value: "admin"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "admin"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "adminUsers"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "admin.name"
+                - key: role
+                  value:
+                    type: 0
+                    value: "admin"
 ---
 case: for loop with function call - no arguments
 in:
   - items:
-      $for item in getItems():
-        - name: "${item.name}"
+      - $for item in getItems():
+          name: "${item.name}"
           value: "${item.value}"
 out:
   type: 8
@@ -553,39 +506,35 @@ out:
   properties:
     - key: items
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for item in getItems()"
-            value:
-              type: 7
-              itemVar: "item"
-              indexVar: null
-              iterable:
-                type: 3
-                name: "getItems"
-                args: []
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: name
-                        value:
-                          type: 1
-                          path: "item.name"
-                      - key: value
-                        value:
-                          type: 1
-                          path: "item.value"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 3
+              name: "getItems"
+              args: []
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "item.name"
+                - key: value
+                  value:
+                    type: 1
+                    path: "item.value"
 ---
 case: for loop with function call - single argument
 in:
   - posts:
-      $for post in sortDate(blogPosts):
-        - title: "${post.title}"
+      - $for post in sortDate(blogPosts):
+          title: "${post.title}"
           date: "${post.date}"
 out:
   type: 8
@@ -593,41 +542,37 @@ out:
   properties:
     - key: posts
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for post in sortDate(blogPosts)"
-            value:
-              type: 7
-              itemVar: "post"
-              indexVar: null
-              iterable:
-                type: 3
-                name: "sortDate"
-                args:
-                  - type: 1
-                    path: "blogPosts"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: title
-                        value:
-                          type: 1
-                          path: "post.title"
-                      - key: date
-                        value:
-                          type: 1
-                          path: "post.date"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "post"
+            indexVar: null
+            iterable:
+              type: 3
+              name: "sortDate"
+              args:
+                - type: 1
+                  path: "blogPosts"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: title
+                  value:
+                    type: 1
+                    path: "post.title"
+                - key: date
+                  value:
+                    type: 1
+                    path: "post.date"
 ---
 case: for loop with function call - multiple arguments
 in:
   - filtered:
-      $for item, idx in filterBy(products, 'category', 'electronics'):
-        - index: "${idx}"
+      - $for item, idx in filterBy(products, 'category', 'electronics'):
+          index: "${idx}"
           name: "${item.name}"
           price: "${item.price}"
 out:
@@ -636,49 +581,45 @@ out:
   properties:
     - key: filtered
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for item, idx in filterBy(products, 'category', 'electronics')"
-            value:
-              type: 7
-              itemVar: "item"
-              indexVar: "idx"
-              iterable:
-                type: 3
-                name: "filterBy"
-                args:
-                  - type: 1
-                    path: "products"
-                  - type: 0
-                    value: "category"
-                  - type: 0
-                    value: "electronics"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: index
-                        value:
-                          type: 1
-                          path: "idx"
-                      - key: name
-                        value:
-                          type: 1
-                          path: "item.name"
-                      - key: price
-                        value:
-                          type: 1
-                          path: "item.price"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: "idx"
+            iterable:
+              type: 3
+              name: "filterBy"
+              args:
+                - type: 1
+                  path: "products"
+                - type: 0
+                  value: "category"
+                - type: 0
+                  value: "electronics"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: index
+                  value:
+                    type: 1
+                    path: "idx"
+                - key: name
+                  value:
+                    type: 1
+                    path: "item.name"
+                - key: price
+                  value:
+                    type: 1
+                    path: "item.price"
 ---
 case: for loop with nested function calls
 in:
   - recent:
-      $for post in take(sortDate(posts), 5):
-        - title: "${post.title}"
+      - $for post in take(sortDate(posts), 5):
+          title: "${post.title}"
           preview: "${post.preview}"
 out:
   type: 8
@@ -686,46 +627,42 @@ out:
   properties:
     - key: recent
       value:
-        type: 8
+        type: 9
         fast: false
-        properties:
-          - key: "$for post in take(sortDate(posts), 5)"
-            value:
-              type: 7
-              itemVar: "post"
-              indexVar: null
-              iterable:
-                type: 3
-                name: "take"
-                args:
-                  - type: 3
-                    name: "sortDate"
-                    args:
-                      - type: 1
-                        path: "posts"
-                  - type: 0
-                    value: 5
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: title
-                        value:
-                          type: 1
-                          path: "post.title"
-                      - key: preview
-                        value:
-                          type: 1
-                          path: "post.preview"
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "post"
+            indexVar: null
+            iterable:
+              type: 3
+              name: "take"
+              args:
+                - type: 3
+                  name: "sortDate"
+                  args:
+                    - type: 1
+                      path: "posts"
+                - type: 0
+                  value: 5
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: title
+                  value:
+                    type: 1
+                    path: "post.title"
+                - key: preview
+                  value:
+                    type: 1
+                    path: "post.preview"
 ---
 case: for loop with function using dot notation path
 in:
   - sorted:
-      $for item in sortBy(data.items.active, 'priority'):
-        - id: "${item.id}"
+      - $for item in sortBy(data.items.active, 'priority'):
+          id: "${item.id}"
           name: "${item.name}"
 out:
   type: 8
@@ -733,34 +670,129 @@ out:
   properties:
     - key: sorted
       value:
-        type: 8
+        type: 9
         fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 3
+              name: "sortBy"
+              args:
+                - type: 1
+                  path: "data.items.active"
+                - type: 0
+                  value: "priority"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: id
+                  value:
+                    type: 1
+                    path: "item.id"
+                - key: name
+                  value:
+                    type: 1
+                    path: "item.name"
+---
+case: for loop with nested modifier - simple
+in:
+  - groups:
+      - $for:nested group in groups:
+          name: "${group.name}"
+          count: "${group.count}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: groups
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: false
+            itemVar: "group"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "groups"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "group.name"
+                - key: count
+                  value:
+                    type: 1
+                    path: "group.count"
+---
+case: for loop with nested modifier - with index
+in:
+  - items:
+      - $for:nested item, i in items:
+          id: "${item.id}"
+          index: "${i}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: false
+            itemVar: "item"
+            indexVar: "i"
+            iterable:
+              type: 1
+              path: "items"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: id
+                  value:
+                    type: 1
+                    path: "item.id"
+                - key: index
+                  value:
+                    type: 1
+                    path: "i"
+---
+case: for loop with nested modifier - object body
+in:
+  - - $for:nested user in users:
+        name: "${user.name}"
+        role: "member"
+out:
+  type: 9
+  fast: false
+  items:
+    - type: 7
+      flatten: false
+      itemVar: "user"
+      indexVar: null
+      iterable:
+        type: 1
+        path: "users"
+      body:
+        type: 8
+        fast: true
         properties:
-          - key: "$for item in sortBy(data.items.active, 'priority')"
+          - key: name
             value:
-              type: 7
-              itemVar: "item"
-              indexVar: null
-              iterable:
-                type: 3
-                name: "sortBy"
-                args:
-                  - type: 1
-                    path: "data.items.active"
-                  - type: 0
-                    value: "priority"
-              body:
-                type: 9
-                fast: true
-                items:
-                  - type: 8
-                    fast: true
-                    properties:
-                      - key: id
-                        value:
-                          type: 1
-                          path: "item.id"
-                      - key: name
-                        value:
-                          type: 1
-                          path: "item.name"
+              type: 1
+              path: "user.name"
+          - key: role
+            value:
+              type: 0
+              value: "member"
