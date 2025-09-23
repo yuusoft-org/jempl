@@ -46,7 +46,7 @@ export const parseArray = (arr, functions) => {
     // Check if this is a loop in array syntax
     if (typeof item === "object" && item !== null && !Array.isArray(item)) {
       const keys = Object.keys(item);
-      if (keys.length === 1 && keys[0].startsWith("$for ")) {
+      if (keys.length === 1 && /^\$for(?::\w+)?\s/.test(keys[0])) {
         const loop = parseLoop(keys[0], item[keys[0]], functions);
         items.push(loop);
         hasDynamicContent = true;
@@ -250,7 +250,7 @@ export const parseObject = (obj, functions) => {
       hasDynamicContent = true;
       i = conditional.nextIndex;
       // Check if this is a loop structure
-    } else if (key.startsWith("$for ")) {
+    } else if (/^\$for(?::\w+)?\s/.test(key)) {
       const loop = parseLoop(key, value, functions);
       properties.push({
         key,
@@ -713,8 +713,16 @@ export const parseIterableExpression = (expr, functions) => {
  * @returns {Object} Loop AST node
  */
 export const parseLoop = (key, value, functions) => {
-  // Parse the loop syntax: "$for p, i in people" or "$for p in people"
-  const loopExpr = key.substring(5).trim(); // Remove '$for '
+  // Parse the loop syntax: "$for p, i in people" or "$for:nested p in people"
+  // Extract modifier if present
+  const forPattern = /^\$for(?::(\w+))?\s+(.+)$/;
+  const match = key.match(forPattern);
+  if (!match) {
+    throw new JemplParseError(`Invalid loop syntax (got: '${key}')`);
+  }
+
+  const modifier = match[1]; // 'nested' or undefined
+  const loopExpr = match[2].trim();
 
   // Validate loop syntax
   validateLoopSyntax(loopExpr);
@@ -758,5 +766,6 @@ export const parseLoop = (key, value, functions) => {
     indexVar,
     iterable,
     body,
+    flatten: modifier !== "nested", // default true, false if :nested
   };
 };

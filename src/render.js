@@ -1424,9 +1424,15 @@ const renderArray = (node, options, data, scope) => {
 
   for (const item of node.items) {
     if (item.type === NodeType.LOOP) {
-      // Keep loop results as a single array item
+      // Check if loop should be flattened (default) or nested
       const loopResults = renderNode(item, options, data, scope);
-      results.push(loopResults);
+      if (Array.isArray(loopResults) && item.flatten !== false) {
+        // Flatten loop results into parent array (default behavior)
+        results.push(...loopResults);
+      } else {
+        // Keep as nested array (when using $for:nested)
+        results.push(loopResults);
+      }
     } else {
       const rendered = renderNode(item, options, data, scope);
       // Skip empty objects that come from failed conditionals with no else branch

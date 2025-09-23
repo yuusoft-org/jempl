@@ -23,6 +23,7 @@ out:
           - key: "$for item in items"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: null
               iterable:
@@ -30,6 +31,7 @@ out:
                 path: "items"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -57,6 +59,7 @@ out:
           - key: "$for product in products"
             value:
               type: 7
+              flatten: true
               itemVar: "product"
               indexVar: null
               iterable:
@@ -64,6 +67,7 @@ out:
                 path: "products"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -92,6 +96,7 @@ out:
           - key: "$for item, idx in items"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: "idx"
               iterable:
@@ -99,6 +104,7 @@ out:
                 path: "items"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -130,6 +136,7 @@ out:
           - key: "$for msg in messages"
             value:
               type: 7
+              flatten: true
               itemVar: "msg"
               indexVar: null
               iterable:
@@ -137,6 +144,7 @@ out:
                 path: "messages"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -172,6 +180,7 @@ out:
           - key: "$for category in categories"
             value:
               type: 7
+              flatten: true
               itemVar: "category"
               indexVar: null
               iterable:
@@ -179,6 +188,7 @@ out:
                 path: "categories"
               body:
                 type: 9
+
                 fast: false
                 items:
                   - type: 8
@@ -196,6 +206,7 @@ out:
                             - key: "$for product in category.products"
                               value:
                                 type: 7
+                                flatten: true
                                 itemVar: "product"
                                 indexVar: null
                                 iterable:
@@ -203,6 +214,7 @@ out:
                                   path: "category.products"
                                 body:
                                   type: 9
+
                                   fast: true
                                   items:
                                     - type: 8
@@ -242,3 +254,44 @@ out:
         parts:
           - "Literal backslash: \\"
           - {type: 11, path: "item"}
+---
+case: nested loop with path references
+in:
+  - categories:
+      $for:nested category in categories:
+        - name: "${category.name}"
+          productPath: "#{category.products}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: categories
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for:nested category in categories"
+            value:
+              type: 7
+              flatten: false
+              itemVar: "category"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "categories"
+              body:
+                type: 9
+
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "category.name"
+                      - key: productPath
+                        value:
+                          type: 11
+                          path: "category.products"

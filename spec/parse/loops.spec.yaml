@@ -24,6 +24,7 @@ out:
           - key: "$for p in people"
             value:
               type: 7
+              flatten: true
               itemVar: "p"
               indexVar: null
               iterable:
@@ -31,6 +32,7 @@ out:
                 path: "people"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -64,6 +66,7 @@ out:
           - key: "$for p, i in people"
             value:
               type: 7
+              flatten: true
               itemVar: "p"
               indexVar: "i"
               iterable:
@@ -71,6 +74,7 @@ out:
                 path: "people"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -106,6 +110,7 @@ out:
           - key: "$for item, idx in items"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: "idx"
               iterable:
@@ -113,6 +118,7 @@ out:
                 path: "items"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -142,6 +148,7 @@ out:
     - key: "$for user in users"
       value:
         type: 7
+        flatten: true
         itemVar: "user"
         indexVar: null
         iterable:
@@ -181,6 +188,7 @@ out:
           - key: "$for group, gIdx in groups"
             value:
               type: 7
+              flatten: true
               itemVar: "group"
               indexVar: "gIdx"
               iterable:
@@ -188,6 +196,7 @@ out:
                 path: "groups"
               body:
                 type: 9
+
                 fast: false
                 items:
                   - type: 8
@@ -205,6 +214,7 @@ out:
                             - key: "$for member, mIdx in group.members"
                               value:
                                 type: 7
+                                flatten: true
                                 itemVar: "member"
                                 indexVar: "mIdx"
                                 iterable:
@@ -212,6 +222,7 @@ out:
                                   path: "group.members"
                                 body:
                                   type: 9
+
                                   fast: true
                                   items:
                                     - type: 8
@@ -247,6 +258,7 @@ out:
           - key: "$for user in users"
             value:
               type: 7
+              flatten: true
               itemVar: "user"
               indexVar: null
               iterable:
@@ -254,6 +266,7 @@ out:
                 path: "users"
               body:
                 type: 9
+
                 fast: false
                 items:
                   - type: 8
@@ -307,6 +320,7 @@ out:
           - key: "$for item in items"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: null
               iterable:
@@ -314,6 +328,7 @@ out:
                 path: "items"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -354,6 +369,7 @@ out:
           - key: "$for entry, idx in data.items.filtered"
             value:
               type: 7
+              flatten: true
               itemVar: "entry"
               indexVar: "idx"
               iterable:
@@ -361,6 +377,7 @@ out:
                 path: "data.items.filtered"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -391,6 +408,7 @@ out:
           - key: "$for item in items"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: null
               iterable:
@@ -398,6 +416,7 @@ out:
                 path: "items"
               body:
                 type: 9
+
                 fast: true
                 items: []
 ---
@@ -413,6 +432,7 @@ out:
     - key: "$for item in items"
       value:
         type: 7
+        flatten: true
         itemVar: "item"
         indexVar: null
         iterable:
@@ -449,6 +469,7 @@ out:
           - key: "$for  currentItem ,  index  in  itemList"
             value:
               type: 7
+              flatten: true
               itemVar: "currentItem"
               indexVar: "index"
               iterable:
@@ -456,6 +477,7 @@ out:
                 path: "itemList"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -492,6 +514,7 @@ out:
           - key: "$for user in activeUsers"
             value:
               type: 7
+              flatten: true
               itemVar: "user"
               indexVar: null
               iterable:
@@ -499,6 +522,7 @@ out:
                 path: "activeUsers"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -520,6 +544,7 @@ out:
           - key: "$for admin in adminUsers"
             value:
               type: 7
+              flatten: true
               itemVar: "admin"
               indexVar: null
               iterable:
@@ -527,6 +552,7 @@ out:
                 path: "adminUsers"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -559,6 +585,7 @@ out:
           - key: "$for item in getItems()"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: null
               iterable:
@@ -567,6 +594,7 @@ out:
                 args: []
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -599,6 +627,7 @@ out:
           - key: "$for post in sortDate(blogPosts)"
             value:
               type: 7
+              flatten: true
               itemVar: "post"
               indexVar: null
               iterable:
@@ -609,6 +638,7 @@ out:
                     path: "blogPosts"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -642,6 +672,7 @@ out:
           - key: "$for item, idx in filterBy(products, 'category', 'electronics')"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: "idx"
               iterable:
@@ -656,6 +687,7 @@ out:
                     value: "electronics"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -692,6 +724,7 @@ out:
           - key: "$for post in take(sortDate(posts), 5)"
             value:
               type: 7
+              flatten: true
               itemVar: "post"
               indexVar: null
               iterable:
@@ -707,6 +740,7 @@ out:
                     value: 5
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -739,6 +773,7 @@ out:
           - key: "$for item in sortBy(data.items.active, 'priority')"
             value:
               type: 7
+              flatten: true
               itemVar: "item"
               indexVar: null
               iterable:
@@ -751,6 +786,7 @@ out:
                     value: "priority"
               body:
                 type: 9
+
                 fast: true
                 items:
                   - type: 8
@@ -764,3 +800,116 @@ out:
                         value:
                           type: 1
                           path: "item.name"
+---
+case: for loop with nested modifier - simple
+in:
+  - groups:
+      $for:nested group in groups:
+        - name: "${group.name}"
+          count: "${group.count}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: groups
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for:nested group in groups"
+            value:
+              type: 7
+              flatten: false
+              itemVar: "group"
+              indexVar: null
+              iterable:
+                type: 1
+                path: "groups"
+              body:
+                type: 9
+
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: name
+                        value:
+                          type: 1
+                          path: "group.name"
+                      - key: count
+                        value:
+                          type: 1
+                          path: "group.count"
+---
+case: for loop with nested modifier - with index
+in:
+  - items:
+      $for:nested item, i in items:
+        - id: "${item.id}"
+          index: "${i}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 8
+        fast: false
+        properties:
+          - key: "$for:nested item, i in items"
+            value:
+              type: 7
+              flatten: false
+              itemVar: "item"
+              indexVar: "i"
+              iterable:
+                type: 1
+                path: "items"
+              body:
+                type: 9
+
+                fast: true
+                items:
+                  - type: 8
+                    fast: true
+                    properties:
+                      - key: id
+                        value:
+                          type: 1
+                          path: "item.id"
+                      - key: index
+                        value:
+                          type: 1
+                          path: "i"
+---
+case: for loop with nested modifier - object body
+in:
+  - $for:nested user in users:
+      name: "${user.name}"
+      role: "member"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: "$for:nested user in users"
+      value:
+        type: 7
+        flatten: false
+        itemVar: "user"
+        indexVar: null
+        iterable:
+          type: 1
+          path: "users"
+        body:
+          type: 8
+          fast: true
+          properties:
+            - key: name
+              value:
+                type: 1
+                path: "user.name"
+            - key: role
+              value:
+                type: 0
+                value: "member"

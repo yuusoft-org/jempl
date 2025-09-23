@@ -134,6 +134,7 @@ itemVar: string # "p" in "$for p, i in people"
 indexVar: string | null # "i" or null if not provided
 iterable: Node # Variable or function that evaluates to array
 body: Node # Template for each iteration
+flatten: boolean # true if loop body should be flattened into parent array
 ```
 
 The `iterable` field can be:
@@ -144,6 +145,13 @@ Functions in loop iterables enable data transformation during iteration:
 - `$for post in sortDate(posts):` - Sort array before iteration
 - `$for item in filterBy(items, 'active', true):` - Filter array
 - `$for item in take(sortBy(items, 'score'), 5):` - Nested functions
+
+Functions must return arrays when used as loop iterables. The parser validates this during the parse phase and provides clear error messages if a function returns a non-array value.
+
+**Nested vs Non-Nested Loops:**
+The `flatten` property determines whether the loop results should be flattened into the parent array (nested) or create a new array structure (non-nested). This is automatically determined during parsing based on the loop's position and body structure:
+- `flatten: false` - Non-nested loops that create new array structures (default behavior)
+- `flatten: true` - Nested loops that flatten results into the parent array
 
 ### 9. Object Node
 

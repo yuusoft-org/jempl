@@ -1,0 +1,194 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [flattenedArrays]
+---
+### Flattened Arrays with Loops
+suite: flattenedArrays
+exportName: default
+---
+case: default flattening - loops flatten into parent array by default
+in:
+  - items:
+      - id: 'static-1'
+        type: 'static'
+      - $for item in data:
+          id: '${item.id}'
+          type: 'dynamic'
+      - id: 'static-2'
+        type: 'static'
+  - data:
+      - id: 'item-1'
+      - id: 'item-2'
+  - functions: {}
+out:
+  items:
+    - id: 'static-1'
+      type: 'static'
+    - id: 'item-1'
+      type: 'dynamic'
+    - id: 'item-2'
+      type: 'dynamic'
+    - id: 'static-2'
+      type: 'static'
+---
+case: default flattening - nested loops with indexes
+in:
+  - children:
+      - id: 'header'
+      - $for line, i in lines:
+          id: 'line-${i}'
+          content: '${line}'
+          index: '${i}'
+      - id: 'footer'
+  - lines: ['First', 'Second', 'Third']
+  - functions: {}
+out:
+  children:
+    - id: 'header'
+    - id: 'line-0'
+      content: 'First'
+      index: 0
+    - id: 'line-1'
+      content: 'Second'
+      index: 1
+    - id: 'line-2'
+      content: 'Third'
+      index: 2
+    - id: 'footer'
+---
+case: default flattening - multiple loops in same array
+in:
+  - content:
+      - $for user in users:
+          type: 'user'
+          name: '${user.name}'
+      - $for admin in admins:
+          type: 'admin'
+          name: '${admin.name}'
+  - users:
+      - name: 'Alice'
+      - name: 'Bob'
+    admins:
+      - name: 'Carol'
+  - functions: {}
+out:
+  content:
+    - type: 'user'
+      name: 'Alice'
+    - type: 'user'
+      name: 'Bob'
+    - type: 'admin'
+      name: 'Carol'
+---
+case: nested behavior - preserve nested arrays with $for:nested
+in:
+  - groups:
+      - title: 'Header'
+      - $for:nested group in groups:
+          name: '${group.name}'
+          count: '${group.items.length}'
+      - title: 'Footer'
+  - groups:
+      - name: 'Group A'
+        items: [1, 2]
+      - name: 'Group B'
+        items: [3, 4, 5]
+  - functions: {}
+out:
+  groups:
+    - title: 'Header'
+    - - name: 'Group A'
+        count: 2
+      - name: 'Group B'
+        count: 3
+    - title: 'Footer'
+---
+case: mixed scenarios - conditionals inside flattened loops
+in:
+  - items:
+      - type: 'header'
+      - $for user in users:
+          name: '${user.name}'
+          $if user.active:
+            status: 'active'
+          $else:
+            status: 'inactive'
+  - users:
+      - name: 'Alice'
+        active: true
+      - name: 'Bob'
+        active: false
+  - functions: {}
+out:
+  items:
+    - type: 'header'
+    - name: 'Alice'
+      status: 'active'
+    - name: 'Bob'
+      status: 'inactive'
+---
+case: mixed scenarios - empty arrays gracefully
+in:
+  - content:
+      - id: 'start'
+      - $for item in items:
+          id: '${item.id}'
+      - id: 'end'
+  - items: []
+  - functions: {}
+out:
+  content:
+    - id: 'start'
+    - id: 'end'
+---
+case: mixed scenarios - deeply nested flattened arrays
+in:
+  - page:
+      sections:
+        - title: 'Introduction'
+        - $for section in sections:
+            name: '${section.name}'
+            items:
+              - $for item in section.items:
+                  text: '${item}'
+  - sections:
+      - name: 'Section 1'
+        items: ['Item 1', 'Item 2']
+      - name: 'Section 2'
+        items: ['Item 3']
+  - functions: {}
+out:
+  page:
+    sections:
+      - title: 'Introduction'
+      - name: 'Section 1'
+        items:
+          - text: 'Item 1'
+          - text: 'Item 2'
+      - name: 'Section 2'
+        items:
+          - text: 'Item 3'
+---
+case: migration comparison - old nested vs new flattened behavior
+in:
+  - oldStyle:
+      - id: 'static'
+      - $for:nested item in items:
+          id: '${item.id}'
+    newStyle:
+      - id: 'static'
+      - $for item in items:
+          id: '${item.id}'
+  - items:
+      - id: 'a'
+      - id: 'b'
+  - functions: {}
+out:
+  oldStyle:
+    - id: 'static'
+    - - id: 'a'
+      - id: 'b'
+  newStyle:
+    - id: 'static'
+    - id: 'a'
+    - id: 'b'
