@@ -43,13 +43,15 @@ describe('Performance Tests', () => {
 
     it('should render loops efficiently', () => {
       const template = {
-        todos: {
-          '$for todo in todos': {
-            id: '${todo.id}',
-            title: '${todo.title}',
-            completed: '${todo.completed}'
+        todos: [
+          {
+            '$for todo in todos': {
+              id: '${todo.id}',
+              title: '${todo.title}',
+              completed: '${todo.completed}'
+            }
           }
-        }
+        ]
       };
       
       const ast = parse(template);
@@ -90,17 +92,21 @@ describe('Performance Tests', () => {
 
     it('should handle nested loops', () => {
       const template = {
-        groups: {
-          '$for group in groups': {
-            name: '${group.name}',
-            items: {
-              '$for item in group.items': {
-                id: '${item.id}',
-                name: '${item.name}'
-              }
+        groups: [
+          {
+            '$for group in groups': {
+              name: '${group.name}',
+              items: [
+                {
+                  '$for item in group.items': {
+                    id: '${item.id}',
+                    name: '${item.name}'
+                  }
+                }
+              ]
             }
           }
-        }
+        ]
       };
       
       const ast = parse(template);
@@ -143,9 +149,11 @@ describe('Performance Tests', () => {
 
     it('should handle complex interpolations', () => {
       const template = {
-        messages: {
-          '$for msg in messages': 'User ${msg.user.firstName} ${msg.user.lastName} said: ${msg.text} at ${msg.timestamp}'
-        }
+        messages: [
+          {
+            '$for msg in messages': 'User ${msg.user.firstName} ${msg.user.lastName} said: ${msg.text} at ${msg.timestamp}'
+          }
+        ]
       };
       
       const ast = parse(template);
@@ -184,21 +192,23 @@ describe('Performance Tests', () => {
 
     it('should handle conditionals efficiently', () => {
       const template = {
-        items: {
-          '$for item in items': {
-            '$if item.visible': {
-              id: '${item.id}',
-              '$if item.highlighted': {
-                highlight: true,
-                message: 'This item is highlighted: ${item.name}'
-              },
-              '$else': {
-                highlight: false,
-                message: '${item.name}'
+        items: [
+          {
+            '$for item in items': {
+              '$if item.visible': {
+                id: '${item.id}',
+                '$if item.highlighted': {
+                  highlight: true,
+                  message: 'This item is highlighted: ${item.name}'
+                },
+                '$else': {
+                  highlight: false,
+                  message: '${item.name}'
+                }
               }
             }
           }
-        }
+        ]
       };
       
       const ast = parse(template);
@@ -284,10 +294,14 @@ describe('Performance Tests', () => {
   describe('parseAndRender performance', () => {
     it('should show overhead of parsing + rendering', () => {
       const template = {
-        '$for i in items': {
-          id: '${i.id}',
-          name: '${i.name}'
-        }
+        items: [
+          {
+            '$for i in items': {
+              id: '${i.id}',
+              name: '${i.name}'
+            }
+          }
+        ]
       };
       
       const data = {
@@ -346,23 +360,25 @@ describe('Performance Tests', () => {
                 }
               },
               'rtgl-view#main': {
-                'rtgl-view#todo-list': {
-                  '$for todo, i in filteredTodos': {
-                    'rtgl-view#todo': {
-                      '$if todo.completed': {
-                        'rtgl-svg#todo-${todo.id}': 'tick',
-                        'rtgl-text': {
-                          del: '${todo.title}'
-                        }
-                      },
-                      '$else': {
-                        'rtgl-view#todo-${todo.id}': true,
-                        'rtgl-text': '${todo.title}'
-                      },
-                      'rtgl-svg#delete-${todo.id}': 'cross'
+                'rtgl-view#todo-list': [
+                  {
+                    '$for todo, i in filteredTodos': {
+                      'rtgl-view#todo': {
+                        '$if todo.completed': {
+                          'rtgl-svg#todo-${todo.id}': 'tick',
+                          'rtgl-text': {
+                            del: '${todo.title}'
+                          }
+                        },
+                        '$else': {
+                          'rtgl-view#todo-${todo.id}': true,
+                          'rtgl-text': '${todo.title}'
+                        },
+                        'rtgl-svg#delete-${todo.id}': 'cross'
+                      }
                     }
                   }
-                }
+                ]
               },
               'rtgl-view#footer': {
                 'rtgl-text': '${activeCount} ${itemText} left',

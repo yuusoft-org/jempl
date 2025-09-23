@@ -36,7 +36,7 @@ out:
 case: partial in loop
 in:
   - items:
-      $for item, i in items:
+      - $for item, i in items:
         - $partial: "itemCard"
   - items:
       - id: 1

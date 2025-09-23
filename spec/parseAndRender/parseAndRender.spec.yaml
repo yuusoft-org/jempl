@@ -100,9 +100,9 @@ out:
 case: simple loop
 in:
   - users:
-      $for user in users:
-        name: "${user.name}"
-        role: "${user.role}"
+      - $for user in users:
+          name: "${user.name}"
+          role: "${user.role}"
   - users:
       - name: "Alice"
         role: "admin"
@@ -123,10 +123,10 @@ out:
 case: loop with index
 in:
   - items:
-      $for item, index in items:
-        id: "${index}"
-        value: "${item}"
-        position: "Item #${index}"
+      - $for item, index in items:
+          id: "${index}"
+          value: "${item}"
+          position: "Item #${index}"
   - items: ["apple", "banana", "cherry"]
   - functions: {}
 out:
@@ -145,9 +145,9 @@ case: nested conditionals and loops
 in:
   - report:
       activeUsers:
-        $for user in activeUsers:
-          name: "${user.name}"
-          lastLogin: "${user.lastLogin}"
+        - $for user in activeUsers:
+            name: "${user.name}"
+            lastLogin: "${user.lastLogin}"
       stats:
         total: "${totalUsers}"
   - activeUsers:
@@ -261,14 +261,14 @@ case: nested objects with loops and conditionals
 in:
   - dashboard:
       users:
-        $for user in users:
-          name: "${user.name}"
-          $if user.premium:
-            badge: "Premium"
-            features: ["advanced", "priority"]
-          $else:
-            badge: "Standard" 
-            features: ["basic"]
+        - $for user in users:
+            name: "${user.name}"
+            $if user.premium:
+              badge: "Premium"
+              features: ["advanced", "priority"]
+            $else:
+              badge: "Standard" 
+              features: ["basic"]
       stats:
         total: "${users.length}"
         premium: "${premiumCount}"
@@ -661,10 +661,10 @@ out:
 case: array index selectors - with loops
 in:
   - results:
-      $for user in users:
-        name: "${user.name}"
-        firstTag: "${user.tags[0]}"
-        secondTag: "${user.tags[1]}"
+      - $for user in users:
+          name: "${user.name}"
+          firstTag: "${user.tags[0]}"
+          secondTag: "${user.tags[1]}"
   - users:
       - name: "Alice"
         tags: ["admin", "developer", "reviewer"]
@@ -716,10 +716,10 @@ out:
 case: array index selectors - complex nesting
 in:
   - result:
-      $for group in groups:
-        name: "${group.name}"
-        firstMember: "${group.members[0].name}"
-        lastTask: "${group.members[0].tasks[1]}"
+      - $for group in groups:
+          name: "${group.name}"
+          firstMember: "${group.members[0].name}"
+          lastTask: "${group.members[0].tasks[1]}"
   - groups:
       - name: "Team A"
         members:

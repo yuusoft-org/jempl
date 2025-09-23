@@ -4,16 +4,17 @@ import { parse, render } from '../src/index.js';
 describe('Path Reference Performance', () => {
   it('should handle path references efficiently', () => {
     const template = {
-      products: {
-        '$for product in products': [
-          {
-            id: '${product.id}',
-            name: '${product.name}',
-            path: '#{product}',
-            pricePath: '#{product.price}'
-          }
-        ]
-      }
+      products: [
+        { '$for product in products': [
+            {
+              id: '${product.id}',
+              name: '${product.name}',
+              path: '#{product}',
+              pricePath: '#{product.price}'
+            }
+          ]
+        }
+      ]
     };
 
     const data = {
@@ -50,19 +51,25 @@ describe('Path Reference Performance', () => {
 
   it('should handle nested loops with path references', () => {
     const template = {
-      '$for category in categories': [
+      categories: [
         {
-          name: '${category.name}',
-          categoryPath: '#{category}',
-          products: {
-            '$for product in category.products': [
-              {
-                name: '${product.name}',
-                path: '#{product}',
-                categoryPath: '#{category}'
-              }
-            ]
-          }
+          '$for category in categories': [
+            {
+              name: '${category.name}',
+              categoryPath: '#{category}',
+              products: [
+                {
+                  '$for product in category.products': [
+                    {
+                      name: '${product.name}',
+                      path: '#{product}',
+                      categoryPath: '#{category}'
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     };

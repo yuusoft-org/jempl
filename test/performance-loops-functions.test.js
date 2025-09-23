@@ -27,22 +27,26 @@ describe('Performance Tests - Loops with Functions', () => {
   it('should compare regular loop vs loop with function', () => {
     // Regular loop template
     const regularTemplate = {
-      posts: {
-        '$for post in posts': {
-          title: '${post.title}',
-          date: '${post.date}'
+      posts: [
+        {
+          '$for post in posts': {
+            title: '${post.title}',
+            date: '${post.date}'
+          }
         }
-      }
+      ]
     };
 
     // Loop with simple function template (minimal overhead)
     const functionTemplate = {
-      posts: {
-        '$for post in take(posts, 50)': {
-          title: '${post.title}',
-          date: '${post.date}'
+      posts: [
+        {
+          '$for post in take(posts, 50)': {
+            title: '${post.title}',
+            date: '${post.date}'
+          }
         }
-      }
+      ]
     };
 
     const data = { posts: generatePosts(100) };
@@ -91,11 +95,13 @@ describe('Performance Tests - Loops with Functions', () => {
 
     // Test 1: Identity function (no-op)
     const identityTemplate = {
-      posts: {
-        '$for post in identity(posts)': {
-          title: '${post.title}'
+      posts: [
+        {
+          '$for post in identity(posts)': {
+            title: '${post.title}'
+          }
         }
-      }
+      ]
     };
     const identityAst = parse(identityTemplate, { functions: customFunctions });
     
@@ -107,11 +113,13 @@ describe('Performance Tests - Loops with Functions', () => {
     
     // Test 2: Simple slice operation
     const takeTemplate = {
-      posts: {
-        '$for post in take(posts, 50)': {
-          title: '${post.title}'
+      posts: [
+        {
+          '$for post in take(posts, 50)': {
+            title: '${post.title}'
+          }
         }
-      }
+      ]
     };
     const takeAst = parse(takeTemplate, { functions: customFunctions });
     
@@ -123,12 +131,14 @@ describe('Performance Tests - Loops with Functions', () => {
     
     // Test 3: Complex sorting operation
     const sortTemplate = {
-      posts: {
-        '$for post in sortDate(posts)': {
-          title: '${post.title}',
-          date: '${post.date}'
+      posts: [
+        {
+          '$for post in sortDate(posts)': {
+            title: '${post.title}',
+            date: '${post.date}'
+          }
         }
-      }
+      ]
     };
 
     const sortAst = parse(sortTemplate, { functions: customFunctions });
@@ -153,21 +163,27 @@ describe('Performance Tests - Loops with Functions', () => {
 
   it('should test parse performance with functions', () => {
     const template = {
-      sorted: {
-        '$for item in sortDate(items)': {
-          name: '${item.name}'
+      sorted: [
+        {
+          '$for item in sortDate(items)': {
+            name: '${item.name}'
+          }
         }
-      },
-      sliced: {
-        '$for item in take(items, 10)': {
-          name: '${item.name}'
+      ],
+      sliced: [
+        {
+          '$for item in take(items, 10)': {
+            name: '${item.name}'
+          }
         }
-      },
-      skipped: {
-        '$for item in skip(items, 5)': {
-          name: '${item.name}'
+      ],
+      skipped: [
+        {
+          '$for item in skip(items, 5)': {
+            name: '${item.name}'
+          }
         }
-      }
+      ]
     };
 
     const iterations = 1000;

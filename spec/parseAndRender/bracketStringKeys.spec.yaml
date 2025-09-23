@@ -121,7 +121,7 @@ out:
 case: bracket notation in loops
 in:
   - results:
-      $for item in items:
+      - $for item in items:
         - name: '${item["name"]}'
           type: '${item["type"]}'
           description: '${item["meta"]["description"]}'

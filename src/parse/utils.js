@@ -158,7 +158,6 @@ export const parseObject = (obj, functions) => {
             prop.value.type === NodeType.INTERPOLATION ||
             prop.value.type === NodeType.FUNCTION ||
             prop.value.type === NodeType.CONDITIONAL ||
-            prop.value.type === NodeType.LOOP ||
             (prop.value.type === NodeType.OBJECT && !prop.value.fast) ||
             (prop.value.type === NodeType.ARRAY && !prop.value.fast)
           ) {
@@ -251,13 +250,12 @@ export const parseObject = (obj, functions) => {
       i = conditional.nextIndex;
       // Check if this is a loop structure
     } else if (/^\$for(?::\w+)?\s/.test(key)) {
-      const loop = parseLoop(key, value, functions);
-      properties.push({
-        key,
-        value: loop,
-      });
-      hasDynamicContent = true;
-      i++;
+      // $for loops are not allowed as object properties
+      const modifier = key.match(/^\$for(?::(\w+))?\s/)?.[1] || '';
+      const modifierPart = modifier ? `:${modifier}` : '';
+      throw new JemplParseError(
+        `$for loops must be inside arrays - use '- $for${modifierPart} item in items:' instead of '$for${modifierPart} item in items:'`
+      );
     } else if (key.startsWith("$elif ") || key.startsWith("$else")) {
       // Check for orphaned $elif or $else
       throw new JemplParseError(
@@ -269,11 +267,10 @@ export const parseObject = (obj, functions) => {
     } else {
       const parsedValue = parseValue(value, functions);
 
-      // Check if this property has complex dynamic content (conditionals/loops/functions/partials)
+      // Check if this property has complex dynamic content (conditionals/functions/partials)
       if (
         parsedValue.type === NodeType.FUNCTION ||
         parsedValue.type === NodeType.CONDITIONAL ||
-        parsedValue.type === NodeType.LOOP ||
         parsedValue.type === NodeType.PARTIAL ||
         (parsedValue.type === NodeType.OBJECT && !parsedValue.fast) ||
         (parsedValue.type === NodeType.ARRAY && !parsedValue.fast)

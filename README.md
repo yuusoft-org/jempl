@@ -756,34 +756,29 @@ You can explicitly specify nested behavior using the `$for:nested` syntax:
 
 ```yaml
 template:
-  - $for:nested category in categories:
-    - name: "${category.name}"
-    - $for:nested item in category.items:
+  children:
+    - id: "static-1"
+    - $for:nested item in items:
       - name: "${item.name}"
-        category: "${category.name}"
+        value: "${item.value}"
+    - id: "static-2"
 
 data:
-  categories:
-    - name: "Fruits"
-      items:
-        - { name: "Apple" }
-        - { name: "Banana" }
-    - name: "Vegetables"
-      items:
-        - { name: "Carrot" }
+  items:
+    - { name: "First", value: 1 }
+    - { name: "Second", value: 2 }
 
 output:
-  - name: "Fruits"
-  - name: "Apple"
-    category: "Fruits"
-  - name: "Banana"
-    category: "Fruits"
-  - name: "Vegetables"
-  - name: "Carrot"
-    category: "Vegetables"
+  children:
+    - id: "static-1"
+    - [                    # Nested array
+        { name: "First", value: 1 },
+        { name: "Second", value: 2 }
+      ]
+    - id: "static-2"
 ```
 
-The `$for:nested` syntax explicitly marks the loop as nested, ensuring the results are flattened into the parent array rather than creating a new nested structure.
+The `$for:nested` syntax explicitly marks the loop as nested, ensuring the results are kept as a nested array rather than being flattened into the parent array.
 
 
 ## Path References

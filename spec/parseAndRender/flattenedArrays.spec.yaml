@@ -192,3 +192,103 @@ out:
     - id: 'static'
     - id: 'a'
     - id: 'b'
+---
+case: array body - for loop with array body flattens each item
+in:
+  - menu:
+      - label: 'Home'
+        path: '/'
+      - $for item in navItems:
+        - label: '${item.label}'
+          path: '${item.path}'
+        - type: 'divider'
+      - label: 'Help'
+        path: '/help'
+  - navItems:
+      - label: 'About'
+        path: '/about'
+      - label: 'Contact'
+        path: '/contact'
+  - functions: {}
+out:
+  menu:
+    - label: 'Home'
+      path: '/'
+    - - label: 'About'
+        path: '/about'
+      - type: 'divider'
+    - - label: 'Contact'
+        path: '/contact'
+      - type: 'divider'
+    - label: 'Help'
+      path: '/help'
+---
+case: array body - nested modifier preserves array structure
+in:
+  - sections:
+      - title: 'Header'
+      - $for:nested group in groups:
+        - name: '${group.name}'
+        - type: 'separator'
+      - title: 'Footer'
+  - groups:
+      - name: 'Group 1'
+      - name: 'Group 2'
+  - functions: {}
+out:
+  sections:
+    - title: 'Header'
+    - - - name: 'Group 1'
+        - type: 'separator'
+      - - name: 'Group 2'
+        - type: 'separator'
+    - title: 'Footer'
+---
+case: array body - complex nested arrays with multiple items per iteration
+in:
+  - layout:
+      - $for section in sections:
+        - type: 'section-start'
+          name: '${section.name}'
+        - $for item in section.items:
+            content: '${item.content}'
+            section: '${section.name}'
+        - type: 'section-end'
+  - sections:
+      - name: 'Introduction'
+        items:
+          - content: 'Welcome'
+          - content: 'Overview'
+      - name: 'Content'
+        items:
+          - content: 'Main text'
+  - functions: {}
+out:
+  layout:
+    - - type: 'section-start'
+        name: 'Introduction'
+      - content: 'Welcome'
+        section: 'Introduction'
+      - content: 'Overview'
+        section: 'Introduction'
+      - type: 'section-end'
+    - - type: 'section-start'
+        name: 'Content'
+      - content: 'Main text'
+        section: 'Content'
+      - type: 'section-end'
+---
+case: array body - empty array handling with array bodies
+in:
+  - content:
+      - title: 'Start'
+      - $for item in items:
+        - name: '${item.name}'
+        - type: 'item'
+      - title: 'End'
+  - items: []
+  - functions: {}
+out:
+  content:
+    - title: 'Start'
+    - title: 'End'

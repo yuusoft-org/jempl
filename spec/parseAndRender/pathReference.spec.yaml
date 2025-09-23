@@ -9,7 +9,7 @@ exportName: default
 case: simple path reference example
 in:
   - result:
-      $for item in items:
+      - $for item in items:
         - path: "#{item}"
           value: "${item}"
   - items: ["first", "second", "third"]
@@ -26,7 +26,7 @@ out:
 case: component binding example
 in:
   - dashboard:
-      $for widget in widgets:
+      - $for widget in widgets:
         - component: "Widget"
           binding: "#{widget}"
           title: "${widget.title}"
@@ -46,10 +46,10 @@ out:
 case: nested loops real-world example
 in:
   - result:
-      $for category in categories:
+      - $for category in categories:
         - name: "${category.name}"
           products:
-            $for product in category.products:
+            - $for product in category.products:
               - div:
                   class: "product-card"
                   data-path: "#{product}"
@@ -85,7 +85,7 @@ out:
 case: mixed variables and path references
 in:
   - items:
-      $for item, i in data:
+      - $for item, i in data:
         - index: "${i}"
           indexPath: "#{i}"
           itemPath: "#{item}"
@@ -111,7 +111,7 @@ out:
 case: conditional with path reference
 in:
   - results:
-      $for item in items:
+      - $for item in items:
         - $if item.active:
             path: "#{item}"
             status: "active"
@@ -132,7 +132,7 @@ out:
 case: path reference in complex interpolation
 in:
   - logs:
-      $for entry, idx in entries:
+      - $for entry, idx in entries:
         - message: "[${idx}] Item at #{entry} has value ${entry.val} (path: #{entry.val})"
   - entries:
       - {val: "test1"}
