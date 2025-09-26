@@ -296,3 +296,67 @@ out:
       quantity: 2
       total: 4
       label: "ORANGE: 4"
+---
+case: $each with function iterable
+in:
+  - sorted:
+      - $each: item, idx in sortBy(items, 'priority')
+        rank: "${idx}"
+        name: "${item.name}"
+        priority: "${item.priority}"
+  - items:
+      - name: "Task C"
+        priority: 3
+      - name: "Task A"
+        priority: 1
+      - name: "Task B"
+        priority: 2
+out:
+  sorted:
+    - rank: 0
+      name: "Task A"
+      priority: 1
+    - rank: 1
+      name: "Task B"
+      priority: 2
+    - rank: 2
+      name: "Task C"
+      priority: 3
+---
+case: $each with mixed types and conditional properties
+in:
+  - output:
+      - $each: item, i in data
+        index: "${i}"
+        value: "${item}"
+        type:
+          $if typeof(item) == 'string': "text"
+          $elif typeof(item) == 'number': "numeric"
+          $elif typeof(item) == 'boolean': "boolean"
+          $else: "object"
+        display:
+          $if item != null: "${item}"
+          $else: "N/A"
+  - data: ["hello", 42, true, null, {"key": "value"}]
+out:
+  output:
+    - index: 0
+      value: "hello"
+      type: "text"
+      display: "hello"
+    - index: 1
+      value: 42
+      type: "numeric"
+      display: 42
+    - index: 2
+      value: true
+      type: "boolean"
+      display: true
+    - index: 3
+      value: null
+      type: "object"
+      display: "N/A"
+    - index: 4
+      value: {"key": "value"}
+      type: "object"
+      display: {"key": "value"}
