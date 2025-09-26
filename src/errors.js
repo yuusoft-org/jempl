@@ -6,7 +6,6 @@ export class JemplParseError extends Error {
   constructor(message) {
     super(`Parse Error: ${message}`);
     this.name = "JemplParseError";
-    this.code = "JEMPL_PARSE_ERROR";
   }
 }
 
