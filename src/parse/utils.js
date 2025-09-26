@@ -31,6 +31,46 @@ export const parseValue = (value, functions) => {
 };
 
 /**
+ * Transforms $each object syntax to $for array syntax
+ * @param {Object} obj - Object containing $each property
+ * @returns {Object} Transformed object with $for key
+ */
+const transformEachToFor = (obj) => {
+  const { $each, ...bodyProps } = obj;
+
+  // Validate $each value
+  if (typeof $each !== "string") {
+    throw new JemplParseError("$each value must be a non-empty string");
+  }
+
+  const trimmedEach = $each.trim();
+  if (trimmedEach === "") {
+    throw new JemplParseError("$each value must be a non-empty string");
+  }
+
+  // Check for empty body
+  if (Object.keys(bodyProps).length === 0) {
+    throw new JemplParseError("Empty $each body not allowed");
+  }
+
+  // Check for conflicting directives that would have different meaning in $each context
+  if (bodyProps.$partial !== undefined) {
+    throw new JemplParseError(
+      "Cannot use $partial with $each at the same level. " +
+        "Wrap $partial in a parent object if you need conditionals.",
+    );
+  }
+
+  // Construct the $for key
+  const forKey = `$for ${trimmedEach}`;
+
+  // Return transformed structure
+  return {
+    [forKey]: bodyProps,
+  };
+};
+
+/**
  * Parses an array template
  * @param {Array} arr - The array to parse
  * @param {Object} functions - Custom functions object
@@ -43,8 +83,36 @@ export const parseArray = (arr, functions) => {
   for (let i = 0; i < arr.length; i++) {
     const item = arr[i];
 
-    // Check if this is a loop in array syntax
+    // Check for $each objects before $for
     if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+      // Check if this object has an $each property
+      if (item.$each !== undefined) {
+        // Transform $each syntax to $for syntax
+        try {
+          const transformedItem = transformEachToFor(item);
+          const keys = Object.keys(transformedItem);
+          // Process as normal $for with isFromEach flag
+          if (keys.length === 1 && /^\$for(?::\w+)?\s/.test(keys[0])) {
+            const loop = parseLoop(
+              keys[0],
+              transformedItem[keys[0]],
+              functions,
+              true,
+            );
+            items.push(loop);
+            hasDynamicContent = true;
+            continue;
+          }
+        } catch (error) {
+          // Re-throw with $each context if it's a parse error
+          if (error instanceof JemplParseError) {
+            throw error;
+          }
+          throw new JemplParseError(error.message);
+        }
+      }
+
+      // Check if this is a loop in array syntax
       const keys = Object.keys(item);
       if (keys.length === 1 && /^\$for(?::\w+)?\s/.test(keys[0])) {
         const loop = parseLoop(keys[0], item[keys[0]], functions);
@@ -235,6 +303,11 @@ export const parseObject = (obj, functions) => {
       continue;
     }
 
+    // Check if $each is used as object property (not allowed)
+    if (key === "$each") {
+      throw new JemplParseError("$each can only be used inside arrays");
+    }
+
     // Check if this is a conditional structure
     if (
       key.startsWith("$if ") ||
@@ -254,7 +327,8 @@ export const parseObject = (obj, functions) => {
       const modifier = key.match(/^\$for(?::(\w+))?\s/)?.[1] || "";
       const modifierPart = modifier ? `:${modifier}` : "";
       throw new JemplParseError(
-        `$for loops must be inside arrays - use '- $for${modifierPart} item in items:' instead of '$for${modifierPart} item in items:'`,
+        `$for loops must be inside arrays - use '- $for${modifierPart} item in items:' instead of '$for${modifierPart} item in items:'. ` +
+          `For cleaner object generation syntax, consider using $each.`,
       );
     } else if (key.startsWith("$elif ") || key.startsWith("$else")) {
       // Check for orphaned $elif or $else
@@ -703,32 +777,60 @@ export const parseIterableExpression = (expr, functions) => {
 };
 
 /**
+ * Wrapper for validateLoopSyntax that preserves $each context in errors
+ * @param {string} loopExpr - The loop expression (e.g., "item in items")
+ * @param {boolean} isEach - Whether this came from $each syntax
+ * @throws {JemplParseError} With appropriate directive name
+ */
+const validateLoopSyntaxWithContext = (loopExpr, isEach = false) => {
+  const directive = isEach ? "$each" : "$for";
+
+  try {
+    validateLoopSyntax(loopExpr);
+  } catch (error) {
+    if (error instanceof JemplParseError) {
+      // Replace $for with $each in error message if needed
+      if (isEach) {
+        const message = error.message.replace(/\$for/g, "$each");
+        throw new JemplParseError(message.replace("Parse Error: ", ""));
+      }
+    }
+    throw error;
+  }
+};
+
+/**
  * Parses a loop structure ($for)
  * @param {string} key - The loop key (e.g., "$for p, i in people")
  * @param {any} value - The loop body
  * @param {Object} functions - Custom functions object
+ * @param {boolean} isFromEach - Whether this came from $each transformation
  * @returns {Object} Loop AST node
  */
-export const parseLoop = (key, value, functions) => {
+export const parseLoop = (key, value, functions, isFromEach = false) => {
   // Parse the loop syntax: "$for p, i in people" or "$for:nested p in people"
   // Extract modifier if present
   const forPattern = /^\$for(?::(\w+))?\s+(.+)$/;
   const match = key.match(forPattern);
   if (!match) {
-    throw new JemplParseError(`Invalid loop syntax (got: '${key}')`);
+    const directive = isFromEach ? "$each" : "$for";
+    throw new JemplParseError(
+      `Invalid loop syntax (got: '${key.replace("$for", directive)}')`,
+    );
   }
 
   const modifier = match[1]; // 'nested' or undefined
   const loopExpr = match[2].trim();
 
-  // Validate loop syntax
-  validateLoopSyntax(loopExpr);
+  // Validate loop syntax with proper context
+  validateLoopSyntaxWithContext(loopExpr, isFromEach);
 
   // Split on ' in ' to separate variables from iterable
   const inMatch = loopExpr.match(/^(.+?)\s+in\s+(.+)$/);
   if (!inMatch) {
+    const directive = isFromEach ? "$each" : "$for";
     throw new JemplParseError(
-      `Invalid loop syntax - missing 'in' keyword (got: '$for ${loopExpr}')`,
+      `Invalid loop syntax - missing 'in' keyword (got: '${directive} ${loopExpr}')`,
     );
   }
 
@@ -749,6 +851,15 @@ export const parseLoop = (key, value, functions) => {
     indexVar = vars[1];
   } else {
     itemVar = varsExpr;
+  }
+
+  // Check for reserved variable names
+  const reservedNames = ["this", "undefined", "null", "true", "false"];
+  if (reservedNames.includes(itemVar)) {
+    throw new JemplParseError(`Reserved variable name: ${itemVar}`);
+  }
+  if (indexVar && reservedNames.includes(indexVar)) {
+    throw new JemplParseError(`Reserved variable name: ${indexVar}`);
   }
 
   // Parse the iterable (variable reference or function call)

@@ -1,0 +1,197 @@
+file: '../../src/parseAndRender.js'
+group: parseAndRender
+suites: [eachErrors]
+---
+### $each Error Cases
+suite: eachErrors
+exportName: default
+---
+case: empty $each value
+in:
+  - template:
+      items:
+        - $each: ""
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: missing $each value
+in:
+  - template:
+      items:
+        - $each: 
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: numeric $each value
+in:
+  - template:
+      items:
+        - $each: 123
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: boolean $each value
+in:
+  - template:
+      items:
+        - $each: true
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: null $each value
+in:
+  - template:
+      items:
+        - $each: null
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: array $each value
+in:
+  - template:
+      items:
+        - $each: ["item", "in", "items"]
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: object $each value
+in:
+  - template:
+      items:
+        - $each: {item: "items"}
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: invalid loop syntax - missing 'in' keyword
+in:
+  - template:
+      items:
+        - $each: item items
+          name: "${item.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop syntax - missing 'in' keyword (got: '$each item items')"
+---
+case: too many variables in loop
+in:
+  - template:
+      items:
+        - $each: a, b, c in items
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop variables: a, b, c. Expected format: \"item\" or \"item, index\""
+---
+case: invalid variable name - starts with number
+in:
+  - template:
+      items:
+        - $each: 1item in items
+          name: "${1item.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop syntax (got: '$each 1item in items')"
+---
+case: invalid variable name - special characters
+in:
+  - template:
+      items:
+        - $each: item@ in items
+          name: "${item@.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop syntax (got: '$each item@ in items')"
+---
+case: $each in object context (not in array)
+in:
+  - template:
+      items:
+        $each: item in items
+        name: "${item.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each can only be used inside arrays"
+---
+case: $each with $partial in same object
+in:
+  - template:
+      items:
+        - $each: item in items
+          $partial: "somePartial"
+          name: "${item.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Cannot use $partial with $each at the same level. Wrap $partial in a parent object if you need conditionals."
+---
+case: empty loop body
+in:
+  - template:
+      items:
+        - $each: item in items
+    data: {}
+    functions: {}
+throws: "Parse Error: Empty $each body not allowed"
+---
+case: reserved variable names
+in:
+  - template:
+      items:
+        - $each: this in items
+          name: "${this.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Reserved variable name: this"
+---
+case: whitespace-only $each value
+in:
+  - template:
+      items:
+        - $each: "   "
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: $each value must be a non-empty string"
+---
+case: $each with only 'in' keyword
+in:
+  - template:
+      items:
+        - $each: in items
+          name: "test"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop syntax - missing 'in' keyword (got: '$each in items')"
+---
+case: $each with no iterable
+in:
+  - template:
+      items:
+        - $each: item in 
+          name: "${item.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Missing iterable expression after 'in' (got: '$each item in')"
+---
+case: $each with trailing comma in variables
+in:
+  - template:
+      items:
+        - $each: item, in items
+          name: "${item.name}"
+    data: {}
+    functions: {}
+throws: "Parse Error: Invalid loop variable - variable name cannot be empty (got: '$each item, in items')"

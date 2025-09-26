@@ -651,7 +651,11 @@ const renderLoopUltraFast = (node, iterable) => {
   }
 
   // Ultra-fast path: simple object with only item.property variables/interpolations
-  if (body.type === NodeType.OBJECT && body.properties.length <= 5) {
+  if (
+    body.type === NodeType.OBJECT &&
+    body.properties.length <= 5 &&
+    !body.whenCondition
+  ) {
     // Check if any property has a parsed key - if so, fall back to general path
     for (const prop of body.properties) {
       if (prop.parsedKey) {
@@ -1131,9 +1135,12 @@ const renderLoop = (node, options, data, scope) => {
       rendered.length === 1 &&
       !shouldPreserveArray
     ) {
-      results.push(rendered[0]);
+      // Convert undefined to empty object for loop-generated items with false $when
+      const item = rendered[0];
+      results.push(item === undefined ? {} : item);
     } else {
-      results.push(rendered);
+      // Convert undefined to empty object for loop-generated items with false $when
+      results.push(rendered === undefined ? {} : rendered);
     }
   }
 

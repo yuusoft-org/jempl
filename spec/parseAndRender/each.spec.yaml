@@ -1,0 +1,362 @@
+file: '../../src/index.js'
+group: parse and render
+suites: [each]
+---
+### $each Integration Tests
+suite: each
+exportName: parseAndRender
+---
+case: basic $each rendering
+in:
+  - users:
+      - $each: user in users
+        name: "${user.name}"
+        email: "${user.email}"
+  - users:
+      - name: "Alice"
+        email: "alice@example.com"
+      - name: "Bob"
+        email: "bob@example.com"
+out:
+  users:
+    - name: "Alice"
+      email: "alice@example.com"
+    - name: "Bob"
+      email: "bob@example.com"
+---
+case: $each with index
+in:
+  - items:
+      - $each: item, idx in products
+        id: "${idx}"
+        name: "${item.name}"
+        position: "Position ${idx}"
+  - products:
+      - name: "Apple"
+      - name: "Banana"
+      - name: "Orange"
+  - {}
+out:
+  items:
+    - id: 0
+      name: "Apple"
+      position: "Position 0"
+    - id: 1
+      name: "Banana"
+      position: "Position 1"
+    - id: 2
+      name: "Orange"
+      position: "Position 2"
+---
+case: $each with $when filtering
+in:
+  - activeUsers:
+      - $each: user in users
+        $when: user.active
+        name: "${user.name}"
+        status: "active"
+  - users:
+      - name: "Alice"
+        active: true
+      - name: "Bob"
+        active: false
+      - name: "Charlie"
+        active: true
+  - {}
+out:
+  activeUsers:
+    - name: "Alice"
+      status: "active"
+    - {}
+    - name: "Charlie"
+      status: "active"
+---
+case: nested $each
+in:
+  - catalog:
+      - $each: category in categories
+        category: "${category.name}"
+        products:
+          - $each: product, idx in category.products
+            sku: "${category.id}-${idx}"
+            name: "${product.name}"
+            price: "${product.price}"
+  - categories:
+      - id: "CAT1"
+        name: "Electronics"
+        products:
+          - name: "Laptop"
+            price: 999
+          - name: "Mouse"
+            price: 25
+      - id: "CAT2"
+        name: "Books"
+        products:
+          - name: "Novel"
+            price: 15
+  - {}
+out:
+  catalog:
+    - category: "Electronics"
+      products:
+        - sku: "CAT1-0"
+          name: "Laptop"
+          price: 999
+        - sku: "CAT1-1"
+          name: "Mouse"
+          price: 25
+    - category: "Books"
+      products:
+        - sku: "CAT2-0"
+          name: "Novel"
+          price: 15
+---
+case: $each with root conditionals
+in:
+  - items:
+      - $each: item in inventory
+        $if item.quantity > 10:
+          name: "${item.name}"
+          status: "in-stock"
+          badge: "Available"
+        $elif item.quantity > 0:
+          name: "${item.name}"
+          status: "low-stock"
+          badge: "Limited"
+        $else:
+          name: "${item.name}"
+          status: "out-of-stock"
+          badge: "Sold Out"
+  - inventory:
+      - name: "Widget A"
+        quantity: 25
+      - name: "Widget B"
+        quantity: 3
+      - name: "Widget C"
+        quantity: 0
+  - {}
+out:
+  items:
+    - name: "Widget A"
+      status: "in-stock"
+      badge: "Available"
+    - name: "Widget B"
+      status: "low-stock"
+      badge: "Limited"
+    - name: "Widget C"
+      status: "out-of-stock"
+      badge: "Sold Out"
+---
+case: $each with conditional generation (no else)
+in:
+  - premium:
+      - $each: user in users
+        $if user.tier == "premium":
+          name: "${user.name}"
+          benefits: ["priority", "support", "features"]
+  - users:
+      - name: "Alice"
+        tier: "premium"
+      - name: "Bob"
+        tier: "basic"
+      - name: "Charlie"
+        tier: "premium"
+      - name: "David"
+        tier: "free"
+  - {}
+out:
+  premium:
+    - name: "Alice"
+      benefits: ["priority", "support", "features"]
+    - {}
+    - name: "Charlie"
+      benefits: ["priority", "support", "features"]
+    - {}
+---
+case: multiple $each in array with static items
+in:
+  - report:
+      - title: "User Report"
+      - $each: admin in admins
+        type: "admin"
+        name: "${admin.name}"
+        role: "${admin.role}"
+      - separator: "---"
+      - $each: user in users
+        type: "user"
+        name: "${user.name}"
+        active: "${user.lastLogin}"
+      - total: "Total users listed"
+  - admins:
+      - name: "Alice"
+        role: "Super Admin"
+      - name: "Bob"
+        role: "Admin"
+    users:
+      - name: "Charlie"
+        lastLogin: "2024-01-15"
+      - name: "David"
+        lastLogin: null
+  - {}
+out:
+  report:
+    - title: "User Report"
+    - type: "admin"
+      name: "Alice"
+      role: "Super Admin"
+    - type: "admin"
+      name: "Bob"
+      role: "Admin"
+    - separator: "---"
+    - type: "user"
+      name: "Charlie"
+      active: "2024-01-15"
+    - type: "user"
+      name: "David"
+      active: null
+    - total: "Total users listed"
+# TODO: Re-enable when function imports are fixed
+# ---
+# case: $each with function iterable
+# in:
+#   - sorted:
+#       - $each: item, idx in sortBy(items, 'priority')
+#         rank: "${idx}"
+#         name: "${item.name}"
+#         priority: "${item.priority}"
+#   - items:
+#       - name: "Task C"
+#         priority: 3
+#       - name: "Task A"
+#         priority: 1
+#       - name: "Task B"
+#         priority: 2
+#   - {}
+# out:
+#   sorted:
+#     - rank: 0
+#       name: "Task A"
+#       priority: 1
+#     - rank: 1
+#       name: "Task B"
+#       priority: 2
+#     - rank: 2
+#       name: "Task C"
+#       priority: 3
+---
+case: $each with complex nested data and conditions
+in:
+  - dashboard:
+      - $each: region in regions
+        region: "${region.name}"
+        stores:
+          - $each: store, idx in region.stores
+            $when: store.revenue > 1000
+            id: "store-${region.code}-${idx}"
+            name: "${store.name}"
+            performance:
+              $if store.revenue > 5000: "excellent"
+              $elif store.revenue > 3000: "good"
+              $else: "fair"
+            metrics:
+              revenue: "${store.revenue}"
+              rank: "Store ${idx}"
+  - regions:
+      - name: "North"
+        code: "N"
+        stores:
+          - name: "Store 1"
+            revenue: 6000
+          - name: "Store 2"
+            revenue: 500
+          - name: "Store 3"
+            revenue: 3500
+      - name: "South"
+        code: "S"
+        stores:
+          - name: "Store 4"
+            revenue: 2000
+          - name: "Store 5"
+            revenue: 8000
+  - {}
+out:
+  dashboard:
+    - region: "North"
+      stores:
+        - id: "store-N-0"
+          name: "Store 1"
+          performance: "excellent"
+          metrics:
+            revenue: 6000
+            rank: "Store 0"
+        - {}
+        - id: "store-N-2"
+          name: "Store 3"
+          performance: "good"
+          metrics:
+            revenue: 3500
+            rank: "Store 2"
+    - region: "South"
+      stores:
+        - id: "store-S-0"
+          name: "Store 4"
+          performance: "fair"
+          metrics:
+            revenue: 2000
+            rank: "Store 0"
+        - id: "store-S-1"
+          name: "Store 5"
+          performance: "excellent"
+          metrics:
+            revenue: 8000
+            rank: "Store 1"
+---
+case: $each with empty array
+in:
+  - results:
+      - $each: item in items
+        name: "${item.name}"
+  - items: []
+  - {}
+out:
+  results: []
+# TODO: Re-enable when function imports are fixed
+# ---
+# case: $each with mixed types and conditional properties
+# in:
+#   - output:
+#       - $each: item, i in data
+#         index: "${i}"
+#         value: "${item}"
+#         type:
+#           $if typeof(item) == 'string': "text"
+#           $elif typeof(item) == 'number': "numeric"
+#           $elif typeof(item) == 'boolean': "boolean"
+#           $else: "object"
+#         display:
+#           $if item != null: "${item}"
+#           $else: "N/A"
+#   - data: ["hello", 42, true, null, {"key": "value"}]
+#   - {}
+# out:
+#   output:
+#     - index: 0
+#       value: "hello"
+#       type: "text"
+#       display: "hello"
+#     - index: 1
+#       value: 42
+#       type: "numeric"
+#       display: "42"
+#     - index: 2
+#       value: true
+#       type: "boolean"
+#       display: "true"
+#     - index: 3
+#       value: null
+#       type: "object"
+#       display: "N/A"
+#     - index: 4
+#       value: {"key": "value"}
+#       type: "object"
+#       display: "[object Object]"

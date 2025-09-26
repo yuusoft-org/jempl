@@ -6,6 +6,7 @@ export class JemplParseError extends Error {
   constructor(message) {
     super(`Parse Error: ${message}`);
     this.name = "JemplParseError";
+    this.code = "JEMPL_PARSE_ERROR";
   }
 }
 
@@ -90,20 +91,21 @@ export const validateLoopSyntax = (expr) => {
     );
   }
 
-  // Check for empty variable names
-  if (varsExpr.includes(",")) {
-    const vars = varsExpr.split(",").map((v) => v.trim());
-    for (const varName of vars) {
-      if (!varName) {
-        throw new JemplParseError(
-          `Invalid loop variable - variable name cannot be empty (got: '$for ${expr}')`,
-        );
-      }
+  // Check for empty variable names and validate identifiers
+  const varNames = varsExpr.includes(",")
+    ? varsExpr.split(",").map((v) => v.trim())
+    : [varsExpr.trim()];
+
+  for (const varName of varNames) {
+    if (!varName) {
+      throw new JemplParseError(
+        `Invalid loop variable - variable name cannot be empty (got: '$for ${expr}')`,
+      );
     }
-  } else if (!varsExpr.trim()) {
-    throw new JemplParseError(
-      `Invalid loop variable - variable name cannot be empty (got: '$for ${expr}')`,
-    );
+    // Check if valid identifier (starts with letter, $, or _, followed by letters, digits, $, or _)
+    if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(varName)) {
+      throw new JemplParseError(`Invalid loop syntax (got: '$for ${expr}')`);
+    }
   }
 };
 

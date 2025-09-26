@@ -1,0 +1,497 @@
+file: '../../src/parse/index.js'
+group: parse
+suites: [each]
+---
+### $each Directive
+suite: each
+exportName: default
+---
+case: basic $each transformation
+in:
+  - items:
+      - $each: item in products
+        name: "${item.name}"
+        price: "${item.price}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "products"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "item.name"
+                - key: price
+                  value:
+                    type: 1
+                    path: "item.price"
+---
+case: $each with index variable
+in:
+  - items:
+      - $each: product, idx in products
+        id: "product-${idx}"
+        name: "${product.name}"
+        position: "${idx}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "product"
+            indexVar: "idx"
+            iterable:
+              type: 1
+              path: "products"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: id
+                  value:
+                    type: 2
+                    parts:
+                      - "product-"
+                      - type: 1
+                        path: "idx"
+                - key: name
+                  value:
+                    type: 1
+                    path: "product.name"
+                - key: position
+                  value:
+                    type: 1
+                    path: "idx"
+---
+case: $each with $when condition
+in:
+  - users:
+      - $each: user in activeUsers
+        $when: user.isActive
+        name: "${user.name}"
+        email: "${user.email}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: users
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "user"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "activeUsers"
+            body:
+              type: 8
+              fast: false
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "user.name"
+                - key: email
+                  value:
+                    type: 1
+                    path: "user.email"
+              whenCondition:
+                type: 1
+                path: "user.isActive"
+---
+case: nested $each
+in:
+  - categories:
+      - $each: category in categories
+        name: "${category.name}"
+        products:
+          - $each: product, pidx in category.products
+            id: "${category.id}-${pidx}"
+            name: "${product.name}"
+            price: "${product.price}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: categories
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "category"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "categories"
+            body:
+              type: 8
+              fast: false
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "category.name"
+                - key: products
+                  value:
+                    type: 9
+                    fast: false
+                    items:
+                      - type: 7
+                        flatten: true
+                        itemVar: "product"
+                        indexVar: "pidx"
+                        iterable:
+                          type: 1
+                          path: "category.products"
+                        body:
+                          type: 8
+                          fast: true
+                          properties:
+                            - key: id
+                              value:
+                                type: 2
+                                parts:
+                                  - type: 1
+                                    path: "category.id"
+                                  - "-"
+                                  - type: 1
+                                    path: "pidx"
+                            - key: name
+                              value:
+                                type: 1
+                                path: "product.name"
+                            - key: price
+                              value:
+                                type: 1
+                                path: "product.price"
+---
+case: $each with root-level conditionals
+in:
+  - items:
+      - $each: item in items
+        $if item.type == "premium":
+          name: "${item.name}"
+          badge: "Premium"
+          price: "${item.price}"
+        $elif item.type == "standard":
+          name: "${item.name}"
+          price: "${item.price}"
+        $else:
+          name: "${item.name}"
+          price: "${item.price}"
+          discount: true
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "items"
+            body:
+              type: 8
+              fast: false
+              properties:
+                - key: "$if item.type == \"premium\""
+                  value:
+                    type: 6
+                    id: null
+                    conditions:
+                      - type: 4
+                        op: 0
+                        left:
+                          type: 1
+                          path: "item.type"
+                        right:
+                          type: 0
+                          value: "premium"
+                      - type: 4
+                        op: 0
+                        left:
+                          type: 1
+                          path: "item.type"
+                        right:
+                          type: 0
+                          value: "standard"
+                      - null
+                    bodies:
+                      - type: 8
+                        fast: true
+                        properties:
+                          - key: name
+                            value:
+                              type: 1
+                              path: "item.name"
+                          - key: badge
+                            value:
+                              type: 0
+                              value: "Premium"
+                          - key: price
+                            value:
+                              type: 1
+                              path: "item.price"
+                      - type: 8
+                        fast: true
+                        properties:
+                          - key: name
+                            value:
+                              type: 1
+                              path: "item.name"
+                          - key: price
+                            value:
+                              type: 1
+                              path: "item.price"
+                      - type: 8
+                        fast: true
+                        properties:
+                          - key: name
+                            value:
+                              type: 1
+                              path: "item.name"
+                          - key: price
+                            value:
+                              type: 1
+                              path: "item.price"
+                          - key: discount
+                            value:
+                              type: 0
+                              value: true
+---
+case: multiple $each in same array
+in:
+  - results:
+      - label: "Active Users"
+      - $each: user in activeUsers
+        type: "active"
+        name: "${user.name}"
+      - label: "Inactive Users"  
+      - $each: user in inactiveUsers
+        type: "inactive"
+        name: "${user.name}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: results
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 8
+            fast: true
+            properties:
+              - key: label
+                value:
+                  type: 0
+                  value: "Active Users"
+          - type: 7
+            flatten: true
+            itemVar: "user"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "activeUsers"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: type
+                  value:
+                    type: 0
+                    value: "active"
+                - key: name
+                  value:
+                    type: 1
+                    path: "user.name"
+          - type: 8
+            fast: true
+            properties:
+              - key: label
+                value:
+                  type: 0
+                  value: "Inactive Users"
+          - type: 7
+            flatten: true
+            itemVar: "user"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "inactiveUsers"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: type
+                  value:
+                    type: 0
+                    value: "inactive"
+                - key: name
+                  value:
+                    type: 1
+                    path: "user.name"
+---
+case: $each with function iterable
+in:
+  - filtered:
+      - $each: item in filterBy(items, 'active', true)
+        name: "${item.name}"
+        status: "active"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: filtered
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 3
+              name: "filterBy"
+              args:
+                - type: 1
+                  path: "items"
+                - type: 0
+                  value: "active"
+                - type: 0
+                  value: true
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "item.name"
+                - key: status
+                  value:
+                    type: 0
+                    value: "active"
+---
+case: $each with complex property paths
+in:
+  - data:
+      - $each: entry, i in data.entries.filtered
+        key: "${entry.metadata.key}"
+        value: "${entry.metadata.values[i]}"
+        index: "${i}"
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: data
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "entry"
+            indexVar: "i"
+            iterable:
+              type: 1
+              path: "data.entries.filtered"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: key
+                  value:
+                    type: 1
+                    path: "entry.metadata.key"
+                - key: value
+                  value:
+                    type: 1
+                    path: "entry.metadata.values[i]"
+                - key: index
+                  value:
+                    type: 1
+                    path: "i"
+---
+case: $each with literal values mixed in
+in:
+  - items:
+      - $each: item in products
+        name: "${item.name}"
+        price: 100
+        available: true
+        tags: ["sale", "new"]
+out:
+  type: 8
+  fast: false
+  properties:
+    - key: items
+      value:
+        type: 9
+        fast: false
+        items:
+          - type: 7
+            flatten: true
+            itemVar: "item"
+            indexVar: null
+            iterable:
+              type: 1
+              path: "products"
+            body:
+              type: 8
+              fast: true
+              properties:
+                - key: name
+                  value:
+                    type: 1
+                    path: "item.name"
+                - key: price
+                  value:
+                    type: 0
+                    value: 100
+                - key: available
+                  value:
+                    type: 0
+                    value: true
+                - key: tags
+                  value:
+                    type: 9
+                    fast: true
+                    items:
+                      - type: 0
+                        value: "sale"
+                      - type: 0
+                        value: "new"
