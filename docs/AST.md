@@ -126,19 +126,23 @@ id: string | null # For multiple conditionals like $if#1
 
 ### 8. Loop Node
 
-For `$for` structures.
+For `$for` and `$each` structures (both create the same node type).
 
 ```yaml
 type: 7 # LOOP
-itemVar: string # "p" in "$for p, i in people"
+itemVar: string # "p" in "$for p, i in people" or "item" in "$each: item in items"
 indexVar: string | null # "i" or null if not provided
 iterable: Node # Variable or function that evaluates to array
 body: Node # Template for each iteration
 flatten: boolean # true if loop body should be flattened into parent array
 ```
 
+**Note**: The `$each` directive is syntactic sugar that gets transformed to a Loop node during parsing:
+- `$for item in items:` → Loop node with array body
+- `$each: item in items` → Same Loop node structure (transform happens at parse time)
+
 The `iterable` field can be:
-- A variable node (type 1) for simple array references: `$for item in items`
+- A variable node (type 1) for simple array references: `$for item in items` or `$each: item in items`
 - A function node (type 3) for function calls that return arrays: `$for item in sortDate(posts)`
 
 Functions in loop iterables enable data transformation during iteration:
@@ -176,7 +180,7 @@ items: [Node]
 fast: boolean # true if no conditionals/loops/functions
 ```
 
-### 11. Partial Node
+### 10. Partial Node
 
 For partial template inclusion.
 
@@ -187,7 +191,7 @@ data: Node | null # Optional inline data to pass to the partial
 whenCondition: Node | null # Optional $when condition
 ```
 
-### 12. Path Reference Node
+### 11. Path Reference Node
 
 For path references like `#{item}` or `#{product.id}` that resolve to the path of a loop variable.
 

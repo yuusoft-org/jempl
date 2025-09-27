@@ -103,7 +103,33 @@ const customFunctions = {
     }
     return true;
   },
+  
+  // Type checking function
+  typeof: (val) => {
+    if (val === null) return 'object';
+    if (Array.isArray(val)) return 'array';
+    return typeof val;
+  },
+  
+  // Sorting function
+  sortBy: (arr, prop) => {
+    if (!Array.isArray(arr)) return [];
+    return [...arr].sort((a, b) => {
+      const aVal = a[prop];
+      const bVal = b[prop];
+      if (aVal < bVal) return -1;
+      if (aVal > bVal) return 1;
+      return 0;
+    });
+  },
 };
+
+// Export individual functions for direct import
+export const sortBy = customFunctions.sortBy;
+
+// Export typeof with a different name to avoid reserved word
+const typeofFunc = customFunctions.typeof;
+export { typeofFunc as typeof };
 
 export default (template, data, options = {}) => {
   // Merge custom functions with any functions passed from tests

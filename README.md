@@ -553,7 +553,7 @@ cases:
 
 ### Basic Array Iteration
 
-Loop through arrays using the `$for` directive:
+Loop through arrays using the `$for` directive or the cleaner `$each` syntax:
 
 ```yaml
 data:
@@ -583,6 +583,92 @@ output:
     - name: "June"
       age: 10
       index: 2
+```
+
+### Alternative $each Syntax
+
+For cleaner object generation in arrays, you can use the `$each` directive as an alternative to `$for`:
+
+```yaml
+data:
+  products:
+    - name: "Widget"
+      price: 9.99
+    - name: "Gadget"
+      price: 19.99
+
+template:
+  # Using $for (traditional syntax)
+  items:
+    - $for product in products:
+      - name: "${product.name}"
+        price: "${product.price}"
+  
+  # Using $each (cleaner syntax)
+  items:
+    - $each: product in products
+      name: "${product.name}"
+      price: "${product.price}"
+
+# Both produce the same output:
+output:
+  items:
+    - name: "Widget"
+      price: 9.99
+    - name: "Gadget"
+      price: 19.99
+```
+
+#### Key Benefits of $each
+
+1. **Reduced Nesting**: `$each` eliminates one level of indentation compared to `$for`
+2. **Cleaner Syntax**: Object properties are defined directly without wrapping in an array
+3. **Full Feature Support**: Supports all `$for` features including indexes, conditionals, and nesting
+
+#### $each with Indexes
+
+```yaml
+template:
+  products:
+    - $each: product, idx in products
+      id: "${idx}"
+      name: "${product.name}"
+      position: "Item #${idx}"
+```
+
+#### $each with Conditionals
+
+Use `$when` to filter items or conditionals within the body:
+
+```yaml
+template:
+  activeProducts:
+    - $each: product in products
+      $when: product.inStock
+      name: "${product.name}"
+      price: "${product.price}"
+      
+  # Or use $if/$else within the body
+  products:
+    - $each: product in products
+      name: "${product.name}"
+      $if product.price > 15:
+        category: "Premium"
+      $else:
+        category: "Standard"
+```
+
+#### Nested $each
+
+```yaml
+template:
+  catalog:
+    - $each: category in categories
+      name: "${category.name}"
+      products:
+        - $each: product in category.products
+          name: "${product.name}"
+          category: "${category.name}"
 ```
 
 ### Loops with Functions
