@@ -8,6 +8,7 @@ title: Jempl Playground
             - rtgl-text s="h2":
                 - "Jempl Playground"
             - rtgl-view wh="f":
+
                 - label for="example-select": "Load Example:"
                 - select#example-select:
                     - $for example in examples:
