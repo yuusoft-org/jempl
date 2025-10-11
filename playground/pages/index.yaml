@@ -1,0 +1,21 @@
+---
+template: base
+title: Jempl Playground
+---
+- body.dark:
+    - rtgl-view.container:
+        - rtgl-view.input-container:
+            - rtgl-text s="h2":
+                - "Jempl Playground"
+            - rtgl-view wh="f":
+                - label for="input-template": "Template (Jempl syntax):"
+                - textarea#input-template placeholder="Enter YAML template here..." rows="10" cols="50":
+            - rtgl-view wh="f":
+                - label for="input-data": "Data (YAML):"
+                - textarea#input-data placeholder="Enter YAML data here..." rows="10" cols="50":
+
+        - rtgl-view.preview-container:
+            - rtgl-text s="h2": "Output: "
+            - textarea#output readonly:
+
+
