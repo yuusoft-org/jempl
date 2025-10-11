@@ -8,6 +8,11 @@ title: Jempl Playground
             - rtgl-text s="h2":
                 - "Jempl Playground"
             - rtgl-view wh="f":
+                - label for="example-select": "Load Example:"
+                - select#example-select:
+                    - $for example in examples:
+                        - option value="${escapeJson(example.value)}": "${example.name}"
+            - rtgl-view wh="f":
                 - label for="input-template": "Template (Jempl syntax):"
                 - textarea#input-template placeholder="Enter YAML template here..." rows="10" cols="50":
             - rtgl-view wh="f":

@@ -1,0 +1,29 @@
+- name: "Default Example"
+  value: 
+    template: 
+      fullName: "${fullName.firstName} ${fullName.lastName}"
+      age: "${age}"
+      city: "I live in ${city}"
+      isAdult: ${isAdult}
+      firstHobby: "${hobbies[0]}"
+      allHobbies: "${hobbies}"
+    data: 
+      fullName:
+        firstName: "John"
+        lastName: "Doe"
+      age: 30
+      city: "New York"
+      isAdult: true
+      hobbies: ["reading", "writing", "coding"]
+      placeholderText: "Enter your name"
+- name: "Example 1"
+  value: 
+    template: 
+      greeting: "Hello, ${name}!"
+      details: 
+        age: ${age}
+        city: "${city}"
+    data: 
+      name: "Alice"
+      age: 25
+      city: "Los Angeles"

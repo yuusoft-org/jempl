@@ -1,6 +1,0 @@
-{
-  "type": "module",
-  "dependencies": {
-    "jempl": "^1.0.0-rc2"
-  }
-}
