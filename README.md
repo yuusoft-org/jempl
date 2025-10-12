@@ -2,6 +2,8 @@
 
 [![npm version](https://badge.fury.io/js/jempl.svg)](https://www.npmjs.com/package/jempl)
 
+**🚀 Try it live:** [Playground](https://yuusoft-org.github.io/jempl/)
+
 Jempl is a JSON templating engine with conditionals, loops, partials, and custom functions.
 
 ## Table of Contents
