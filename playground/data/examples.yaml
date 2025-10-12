@@ -1,13 +1,15 @@
-- name: "Default Example"
-  value: 
-    template: 
+# Basic Variable Replacement
+- name: "Basic Variables"
+  value:
+    template:
       fullName: "${fullName.firstName} ${fullName.lastName}"
       age: "${age}"
       city: "I live in ${city}"
       isAdult: ${isAdult}
       firstHobby: "${hobbies[0]}"
       allHobbies: "${hobbies}"
-    data: 
+      input placeholder="${placeholderText}":
+    data:
       fullName:
         firstName: "John"
         lastName: "Doe"
@@ -16,14 +18,241 @@
       isAdult: true
       hobbies: ["reading", "writing", "coding"]
       placeholderText: "Enter your name"
-- name: "Example 1"
-  value: 
-    template: 
-      greeting: "Hello, ${name}!"
-      details: 
-        age: ${age}
-        city: "${city}"
-    data: 
+
+# Conditionals
+- name: "Basic Conditionals"
+  value:
+    template:
+      name: "${name}"
+      $if isAdult:
+        status: "adult"
+        canVote: true
+      $else:
+        status: "minor"
+        canVote: false
+    data:
       name: "Alice"
       age: 25
-      city: "Los Angeles"
+      isAdult: true
+
+- name: "Complex Conditionals with Functions"
+  value:
+    template:
+      score: "${score}"
+      $if score >= 90:
+        grade: "A"
+        honorRoll: true
+      $elif score >= 80:
+        grade: "B"
+        honorRoll: false
+      $else:
+        grade: "C"
+        honorRoll: false
+    data:
+      name: "Bob"
+      score: 85
+
+- name: "Object Conditionals with $when"
+  value:
+    template:
+      user:
+        $when: showUser
+        name: "${name}"
+        email: "${email}"
+        $if isAdmin:
+          role: "Administrator"
+        $else:
+          role: "User"
+    data:
+      showUser: true
+      name: "Charlie"
+      email: "charlie@example.com"
+      isAdmin: false
+
+# Loops
+- name: "Basic $for Loop"
+  value:
+    template:
+      people:
+        - $for person, i in people:
+            - name: "${person.name}"
+              age: "${person.age}"
+              index: "${i}"
+              $if i == 0:
+                position: "first"
+              $elif i == people.length - 1:
+                position: "last"
+              $else:
+                position: "middle"
+    data:
+      people:
+        - { name: "Alice", age: 25 }
+        - { name: "Bob", age: 30 }
+        - { name: "Charlie", age: 35 }
+
+- name: "$each Syntax"
+  value:
+    template:
+      products:
+        - $each: product in products
+          name: "${product.name}"
+          price: "${product.price}"
+          $if product.price > 15:
+            category: "Premium"
+          $else:
+            category: "Standard"
+    data:
+      products:
+        - { name: "Widget", price: 9.99, inStock: true }
+        - { name: "Gadget", price: 19.99, inStock: false }
+        - { name: "Tool", price: 14.99, inStock: true }
+
+- name: "Nested Loops"
+  value:
+    template:
+      catalog:
+        - $each: category in categories
+          name: "${category.name}"
+          products:
+            - $each: product in category.products
+              name: "${product.name}"
+              category: "${category.name}"
+              price: "${product.price}"
+    data:
+      categories:
+        - name: "Electronics"
+          products:
+            - { name: "Phone", price: 699 }
+            - { name: "Laptop", price: 1299 }
+        - name: "Books"
+          products:
+            - { name: "Fiction", price: 15 }
+            - { name: "Non-Fiction", price: 20 }
+
+# Path References
+- name: "Path References"
+  value:
+    template:
+      users:
+        - $for user, i in users:
+            - name: "${user.name}"
+              binding: "#{user.name}"
+              indexBinding: "#{i}"
+              ageBinding: "#{user.age}"
+    data:
+      users:
+        - { name: "Alice", age: 25 }
+        - { name: "Bob", age: 30 }
+
+# Arrays with $when filtering
+- name: "Array Filtering with $when"
+  value:
+    template:
+      menu:
+        - $when: true
+          label: "Home"
+          path: "/"
+          public: true
+        - $when: isLoggedIn
+          label: "Dashboard"
+          path: "/dashboard"
+          public: false
+        - $when: isAdmin
+          label: "Admin Panel"
+          path: "/admin"
+          public: false
+        - $when: showHidden
+          label: "Hidden Page"
+          path: "/hidden"
+          public: false
+    data:
+      isLoggedIn: true
+      isAdmin: false
+      showHidden: false
+
+# Special Characters in Variables
+- name: "Special Characters in Variable Names"
+  value:
+    template:
+      userName: "${user-name}"
+      userId: "${user:id}"
+      userEmail: "${user@email}"
+      firstItem: "${items[0]}"
+      nestedProp: "${user.profile.settings.theme}"
+    data:
+      "user-name": "john_doe"
+      "user:id": 12345
+      "user@email": "john@example.com"
+      items: ["apple", "banana", "cherry"]
+      user:
+        profile:
+          settings:
+            theme: "dark"
+
+# Arithmetic in Conditionals
+- name: "Arithmetic in Conditionals"
+  value:
+    template:
+      baseScore: "${baseScore}"
+      bonus: "${bonus}"
+      totalScore: "${totalScore}"
+      $if baseScore + bonus >= 100:
+        grade: "Perfect"
+      $elif baseScore + bonus >= 80:
+        grade: "Excellent"
+      $else:
+        grade: "Good"
+    data:
+      baseScore: 75
+      bonus: 15
+      totalScore: 90
+
+# Built-in Functions
+- name: "Built-in Functions"
+  value:
+    template:
+      timestamp: "${now()}"
+      message: "Generated at ${now()}"
+      currentTime: ${now()}
+    data: {}
+
+# Multiple Conditionals
+- name: "Multiple Conditionals"
+  value:
+    template:
+      name: "${name}"
+      age: "${age}"
+      $if#1 age >= 18:
+        status1: "Adult"
+      $else#1:
+        status1: "Minor"
+      $if#2 age >= 65:
+        status2: "Senior"
+      $else#2:
+        status2: "Not Senior"
+      $if#3 age >= 21:
+        status3: "Can Drink"
+      $else#3:
+        status3: "Cannot Drink"
+    data:
+      name: "Diana"
+      age: 30
+
+# Custom Functions Example
+- name: "Custom Functions Example"
+  value:
+    template:
+      user: "${createUser(name, age)}"
+      stats: "${getStats(hobbies)}"
+      profile:
+        info: "${createUser(firstName, userAge)}"
+        activity: "${getStats(activities)}"
+    data:
+      name: "Alice"
+      age: 25
+      firstName: "Bob"
+      userAge: 17
+      hobbies: ["reading", "coding"]
+      activities: []
+    note: "This example demonstrates custom functions. In actual usage, you would need to provide createUser and getStats functions in the options."
+
