@@ -3,24 +3,25 @@ template: base
 title: Jempl Playground
 ---
 - body.dark:
-    - rtgl-view sm-d=v d=h wh=f g=lg p=lg:
-        - rtgl-view flex=1 w=f h=f sm-h=inherit:
-            - rtgl-text flex=1 s="h2":
-                - "Jempl Playground"
-            - rtgl-view d=h w="f" av=c:
-                - rtgl-text mr=md ellipsis: "Load Example"
-                - select#example-select:
-                    - $for example in examples:
-                        - option value="${escapeJson(example.value)}": "${example.name}"
-            - rtgl-view flex= wh=f:
-                - rtgl-view wh="f":
-                    - rtgl-text s=lg: "Template (YAML):"
-                    - textarea#input-template placeholder="Enter YAML template here..." rows="10" cols="50":
-                - rtgl-view wh="f":
-                    - rtgl-text s=lg: "Data (YAML):"
-                    - textarea#input-data placeholder="Enter YAML data here..." rows="10" cols="50":
+    - rtgl-view wh=f p=lg:
+        - rtgl-text flex=1 s="h2":
+            - "Jempl Playground"
+        - rtgl-view d=h w="f" av=c:
+            - rtgl-text mr=md ellipsis: "Load Example"
+            - select#example-select:
+                - $for example in examples:
+                    - option value="${escapeJson(example.value)}": "${example.name}"
+        - rtgl-view sm-d=v d=h wh=f g=lg:
+            - rtgl-view flex=1 w=f h=f sm-h=inherit:
+                - rtgl-view flex= wh=f:
+                    - rtgl-view wh="f":
+                        - rtgl-text s=lg: "Template (YAML):"
+                        - textarea#input-template placeholder="Enter YAML template here..." rows="10" cols="50":
+                    - rtgl-view wh="f":
+                        - rtgl-text s=lg: "Data (YAML):"
+                        - textarea#input-data placeholder="Enter YAML data here..." rows="10" cols="50":
 
-        - rtgl-view flex=1 g=lg w=f h=f sm-h=inherit:
-            - rtgl-text s="h2": "Output: "
-            - textarea#output readonly:
-            - rtgl-view sm-show hide h=120:
+            - rtgl-view flex=1 w=f h=f sm-h=inherit:
+                - rtgl-text s="lg": "Output: "
+                - textarea#output readonly:
+                - rtgl-view sm-show hide h=120:
