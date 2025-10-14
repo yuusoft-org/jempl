@@ -1,6 +1,5 @@
 import parse from "./parse/index.js";
 import render from "./render.js";
-import * as defaultFunctions from "./functions.js";
 
 /**
  * Convenience function that parses a template and renders it with data in one step
@@ -47,21 +46,18 @@ import * as defaultFunctions from "./functions.js";
 const parseAndRender = (template, data, options = {}) => {
   const { functions = {}, partials = {} } = options;
 
-  // Merge default functions with custom functions
-  const allFunctions = { ...defaultFunctions, ...functions };
-
   // Parse the template into an AST
-  const ast = parse(template, { functions: allFunctions });
+  const ast = parse(template, { functions });
 
   // Parse all partials into ASTs
   const parsedPartials = {};
   for (const [name, partialTemplate] of Object.entries(partials)) {
-    parsedPartials[name] = parse(partialTemplate, { functions: allFunctions });
+    parsedPartials[name] = parse(partialTemplate, { functions });
   }
 
   // Render the AST with the data and partials
   return render(ast, data, {
-    functions: allFunctions,
+    functions,
     partials: parsedPartials,
   });
 };
