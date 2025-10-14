@@ -282,7 +282,7 @@ export const parsePathReference = (expr) => {
 };
 
 /**
- * Parses a variable expression like ${name} or ${user.profile.name} or function calls like ${now()}
+ * Parses a variable expression like ${name} or ${user.profile.name} or function calls like ${customFunction()}
  * @param {string} expr - The expression without ${ and }
  * @param {Object} functions - Available functions for validation
  * @returns {Object} Variable or Function node

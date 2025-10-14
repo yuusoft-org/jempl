@@ -20,10 +20,13 @@ import { parseValue } from "./utils.js";
  * });
  *
  * @example
- * // Template with custom function
+ * // Template with custom functions
  * const ast = parse(
  *   { timestamp: "${formatDate(now())}" },
- *   { functions: { formatDate: (date) => new Date(date).toISOString() } }
+ *   { functions: {
+ *     formatDate: (date) => new Date(date).toISOString(),
+ *     now: () => Date.now()
+ *   }}
  * );
  */
 const parse = (template, options = {}) => {

@@ -30,7 +30,7 @@ import {
  *
  * @example
  * // Render with custom functions
- * const ast = parse({ timestamp: "${now()}" });
+ * const ast = parse({ timestamp: "${now()}" }, { functions: { now: () => Date.now() } });
  * const result = render(ast, {}, { now: () => Date.now() });
  * // result: { timestamp: 1234567890123 }
  */

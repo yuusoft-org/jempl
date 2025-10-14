@@ -12,7 +12,7 @@ in:
   - "${unknownFunc()}"
   - {}
   - functions: {}
-throws: "Render Error: Unknown function 'unknownFunc' (now)"
+throws: "Render Error: Unknown function 'unknownFunc' (no custom functions provided)"
 
 ---
 case: unknown function with available functions  
