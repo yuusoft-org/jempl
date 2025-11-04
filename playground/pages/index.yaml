@@ -16,12 +16,21 @@ title: Jempl Playground
                 - rtgl-view flex= wh=f:
                     - rtgl-view wh="f":
                         - rtgl-text s=lg: "Template (YAML):"
-                        - textarea#input-template placeholder="Enter YAML template here..." rows="10" cols="50":
+                        - div class="highlighted-textarea":
+                            - textarea#input-template spellcheck="false" placeholder="Enter YAML template here..." rows="10" cols="50":
+                            - pre#highlighted-input-template aria-hidden="true":
+                                - code#highlighted-input-template-content class="language-yaml":
                     - rtgl-view wh="f":
                         - rtgl-text s=lg: "Data (YAML):"
-                        - textarea#input-data placeholder="Enter YAML data here..." rows="10" cols="50":
+                        - div class="highlighted-textarea":
+                            - textarea#input-data spellcheck="false" placeholder="Enter YAML data here..." rows="10" cols="50":
+                            - pre#highlighted-input-data aria-hidden="true":
+                                - code#highlighted-input-data-content class="language-yaml":
 
             - rtgl-view flex=1 w=f h=f sm-h=inherit:
                 - rtgl-text s="lg": "Output: "
-                - textarea#output readonly:
+                - div class="highlighted-textarea":
+                    - textarea#output readonly:
+                    - pre#highlighted-output aria-hidden="true":
+                        - code#highlighted-output-content class="language-yaml":
                 - rtgl-view sm-show hide h=120:
