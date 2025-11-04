@@ -2,8 +2,17 @@ import { parseAndRender } from 'https://cdn.jsdelivr.net/npm/jempl@1.0.0-rc2/+es
 import jsYaml from 'https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/+esm'
 
 const templateInput = document.getElementById("input-template")
+const highlightedTemplateInput = document.getElementById("highlighted-input-template")
+const highlightedTemplateInputContent = document.getElementById("highlighted-input-template-content")
+
 const dataInput = document.getElementById("input-data")
+const highlightedDataInput = document.getElementById("highlighted-input-data")
+const highlightedDataInputContent = document.getElementById("highlighted-input-data-content")
+
 const outputContainer = document.getElementById("output")
+const highlightingOutput = document.getElementById("highlighted-output")
+const highlightedOutputContent = document.getElementById("highlighted-output-content")
+
 const exampleSelect = document.getElementById("example-select")
 
 const initDefaultExample = () => {
@@ -49,10 +58,27 @@ const customFunctions = {
   }),
 }
 
+const updateAndHighlight = (highlightedInput, input) => {
+  let text = input.value
+  if (text[text.length - 1] === "\n") {
+    text += " "
+  }
+  highlightedInput.innerHTML = text.replace(new RegExp("&", "g"), "&amp;").replace(new RegExp("<", "g"), "<")
+  Prism.highlightElement(highlightedInput)
+}
+
+const syncScroll = (highlightedElement, element) => {
+  highlightedElement.scrollTop = element.scrollTop;
+  highlightedElement.scrollLeft = element.scrollLeft;
+}
+
 const handleTextChange = () => {
   let template = {}
   let data = {}
 
+  updateAndHighlight(highlightedTemplateInputContent, templateInput)
+  updateAndHighlight(highlightedDataInputContent, dataInput)
+  
   try {
     template = jsYaml.load(templateInput.value)
   } catch (error) {
@@ -77,11 +103,15 @@ const handleTextChange = () => {
   }
 
   outputContainer.textContent = jsYaml.dump(result)
+  updateAndHighlight(highlightedOutputContent, outputContainer)
 }
 
 const injectRenderButtonListener = () => {
   templateInput.addEventListener("input", handleTextChange)
+  templateInput.addEventListener("scroll", () => syncScroll(highlightedTemplateInput, templateInput))
   dataInput.addEventListener("input", handleTextChange)
+  dataInput.addEventListener("scroll", () => syncScroll(highlightedDataInput, dataInput))
+  outputContainer.addEventListener("scroll", () => syncScroll(highlightingOutput, outputContainer))
 }
 
 const injectExampleSelectListener = () => {
