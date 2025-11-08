@@ -7,11 +7,16 @@
     "outDir": "types",
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
-    "target": "ES2020",
+    "target": "ESNext",
     "strict": false,
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.js"],
-  "exclude": ["node_modules", "types"]
+  "include": [
+    "src/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "types"
+  ]
 }
