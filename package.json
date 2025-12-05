@@ -1,8 +1,11 @@
 {
   "name": "jempl",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A JSON templating engine with conditionals, loops, and custom functions",
   "main": "src/index.js",
+  "bin": {
+    "jempl": "src/cli.js"
+  },
   "types": "types/index.d.ts",
   "type": "module",
   "files": [
@@ -14,7 +17,10 @@
     "url": "https://github.com/yuusoft-org/jempl.git"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "commander": "^14.0.2",
+    "js-yaml": "^4.1.1"
+  },
   "devDependencies": {
     "puty": "~0.0.2",
     "vitest": "~3.2.1"
