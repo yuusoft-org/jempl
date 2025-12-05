@@ -19,6 +19,7 @@ Jempl is a JSON templating engine with conditionals, loops, partials, and custom
 - [Escaping](#escaping)
 - [Performance](#performance)
 - [Development](#development)
+- [Use Cases](#use-cases)
 - [Alternative Libraries](#alternative-libraries)
 
 ## Installation
@@ -1538,6 +1539,13 @@ For developers contributing to Jempl, please refer to our [Development Guide](./
 - Testing guidelines
 - Architecture decisions and design rationale
 - Common development tasks
+
+## Use Cases
+
+Jempl is versatile and can be used in various scenarios. See [Use Cases Documentation](./docs/use-cases/README.md) for detailed examples including:
+
+- **YaHTML Templates**: Using Jempl with the YaHTML library for HTML templating
+- And more coming soon!
 
 ## Alternative libraries
 
