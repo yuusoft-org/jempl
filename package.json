@@ -16,7 +16,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "prettier": "^3.7.4",
+    "prettier": "3.7.4",
     "puty": "0.1.1",
     "vitest": "3.2.4"
   },
