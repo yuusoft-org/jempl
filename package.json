@@ -26,6 +26,6 @@
     "test:coverage": "vitest run --coverage",
     "lint": "prettier src -c",
     "lint:fix": "prettier src -w",
-    "types": "tsc"
+    "types": "bunx tsc"
   }
 }
