@@ -493,6 +493,10 @@ Primitive JSON values are treated as literals. Strings are literal strings in
 the JSON form, so use `{ var: "name" }` when you want to read from template
 data.
 
+Each semantic JSON condition object must contain exactly one condition operator.
+Use `all` or `any` to combine multiple conditions. For function calls, `args` is
+metadata for `call`, not a separate condition operator.
+
 #### Combining $when with $if
 
 You can use `$when` and `$if` together - `$when` is evaluated first:

@@ -43,6 +43,37 @@ in:
   - age: 20
 throws: "Parse Error: Condition JSON at '$when' must contain exactly one operator"
 ---
+case: semantic JSON when with operator and extra key
+in:
+  - "$when":
+      gt:
+        - var: age
+        - 18
+      label: "adult"
+    value: "test"
+  - age: 20
+throws: "Parse Error: Unexpected key 'label' in condition JSON at '$when'"
+---
+case: semantic JSON when with args without call
+in:
+  - "$when":
+      args:
+        - var: age
+    value: "test"
+  - age: 20
+throws: "Parse Error: Unknown condition JSON operator 'args' at '$when'"
+---
+case: semantic JSON when with call and another operator
+in:
+  - "$when":
+      call: isEven
+      gt:
+        - var: age
+        - 18
+    value: "test"
+  - age: 20
+throws: "Parse Error: Condition JSON at '$when' must contain exactly one operator"
+---
 case: semantic JSON when with empty all
 in:
   - "$when":
