@@ -145,6 +145,36 @@ out:
       path: "/dashboard"
       active: false
 ---
+case: partial with semantic JSON $when in array
+in:
+  - menu:
+      - $when:
+          all:
+            - var: isLoggedIn
+            - gte:
+                - var: trust
+                - 70
+        $partial: "menuItem"
+        label: "Guide Route"
+        path: "/guide"
+      - $when:
+          lt:
+            - var: trust
+            - 70
+        $partial: "menuItem"
+        label: "Neutral Route"
+        path: "/neutral"
+  - isLoggedIn: true
+    trust: 72
+  - partials:
+      menuItem:
+        label: "${label}"
+        path: "${path}"
+out:
+  menu:
+    - label: "Guide Route"
+      path: "/guide"
+---
 case: partial with escaped dollar properties
 in:
   - $partial: "pricing"

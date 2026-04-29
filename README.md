@@ -399,6 +399,52 @@ cases:
           resource: "articles"
 ```
 
+#### Semantic JSON Conditions
+
+`$when` also accepts a structured JSON condition. This is useful when a UI or
+build step wants to store conditions without preserving an expression string.
+The JSON form is parsed into the same condition AST as string expressions, so it
+uses the same runtime evaluation logic.
+
+```yaml
+template:
+  route:
+    $when:
+      all:
+        - gte:
+            - var: variables.trust
+            - 70
+        - var: variables.metGuide
+    target: guideRoute
+
+cases:
+  - data:
+      variables:
+        trust: 80
+        metGuide: true
+    output:
+      route:
+        target: guideRoute
+```
+
+Supported JSON condition operators:
+
+- `{ var: "path.to.value" }` - Read a value from template data
+- `{ literal: value }` - Use an object or array literal explicitly
+- `{ all: [condition, ...] }` - Logical AND
+- `{ any: [condition, ...] }` - Logical OR
+- `{ not: condition }` - Logical NOT
+- `{ eq: [left, right] }`, `{ neq: [left, right] }`
+- `{ gt: [left, right] }`, `{ gte: [left, right] }`
+- `{ lt: [left, right] }`, `{ lte: [left, right] }`
+- `{ in: [needle, haystack] }`
+- `{ add: [left, right] }`, `{ sub: [left, right] }`
+- `{ call: "functionName", args: [arg, ...] }`
+
+Primitive JSON values are treated as literals. Strings are literal strings in
+the JSON form, so use `{ var: "name" }` when you want to read from template
+data.
+
 #### Combining $when with $if
 
 You can use `$when` and `$if` together - `$when` is evaluated first:
