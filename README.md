@@ -497,6 +497,31 @@ Each semantic JSON condition object must contain exactly one condition operator.
 Use `all` or `any` to combine multiple conditions. For function calls, `args` is
 metadata for `call`, not a separate condition operator.
 
+#### Evaluating Conditions Directly
+
+Use `evaluateCondition` when you need Jempl's condition semantics without
+rendering a template, such as selecting the first matching branch in an action
+runner.
+
+```javascript
+import { evaluateCondition } from "jempl";
+
+const matched = evaluateCondition(
+  {
+    gte: [
+      { var: "variables.trust" },
+      70
+    ]
+  },
+  {
+    variables: {
+      trust: 80
+    }
+  }
+);
+// true
+```
+
 #### Combining $when with $if
 
 You can use `$when` and `$if` together - `$when` is evaluated first:

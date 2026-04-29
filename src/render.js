@@ -1580,4 +1580,5 @@ const renderPathReference = (node, options, data, scope) => {
   return fullPath;
 };
 
+export { evaluateCondition as evaluateConditionNode };
 export default render;
