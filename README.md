@@ -427,6 +427,54 @@ cases:
         target: guideRoute
 ```
 
+More examples:
+
+```yaml
+# Match one of several roles
+$when:
+  any:
+    - eq:
+        - var: user.role
+        - "admin"
+    - eq:
+        - var: user.role
+        - "owner"
+```
+
+```yaml
+# Exclude disabled records
+$when:
+  not:
+    var: user.disabled
+```
+
+```yaml
+# Check membership against an explicit array literal
+$when:
+  in:
+    - var: user.role
+    - literal: ["admin", "moderator"]
+```
+
+```yaml
+# Compare a calculated value
+$when:
+  gte:
+    - add:
+        - var: score
+        - var: bonus
+    - 100
+```
+
+```yaml
+# Call a custom function
+$when:
+  call: hasFeature
+  args:
+    - var: user
+    - "beta-dashboard"
+```
+
 Supported JSON condition operators:
 
 - `{ var: "path.to.value" }` - Read a value from template data
