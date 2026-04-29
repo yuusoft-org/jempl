@@ -6,6 +6,22 @@ import {
   JemplParseError,
 } from "../errors.js";
 
+const isPlainObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+const getOwnKeys = (value) => Object.keys(value);
+
+const formatConditionJsonPath = (path) => path.join(".");
+
+const assertOnlyKeys = (value, allowedKeys, path) => {
+  const extraKeys = getOwnKeys(value).filter((key) => !allowedKeys.has(key));
+  if (extraKeys.length > 0) {
+    throw new JemplParseError(
+      `Unexpected key '${extraKeys[0]}' in condition JSON at '${formatConditionJsonPath(path)}'`,
+    );
+  }
+};
+
 /**
  * Parses any value (string, number, boolean, null, object, array)
  * @param {any} value - The value to parse
@@ -247,21 +263,7 @@ export const parseObject = (obj, functions) => {
 
     // Handle $when condition if present
     if ($when !== undefined) {
-      // Parse the when condition
-      let whenCondition;
-      if (typeof $when === "string") {
-        if ($when.trim() === "") {
-          throw new JemplParseError("Empty condition expression after '$when'");
-        }
-        whenCondition = parseConditionExpression($when, functions);
-      } else {
-        // Boolean or other literal value
-        whenCondition = {
-          type: NodeType.LITERAL,
-          value: $when,
-        };
-      }
-      result.whenCondition = whenCondition;
+      result.whenCondition = parseWhenCondition($when, functions);
     }
 
     return result;
@@ -279,13 +281,7 @@ export const parseObject = (obj, functions) => {
       if (value === undefined || value === null) {
         throw new JemplParseError("Missing condition expression after '$when'");
       }
-      // Convert non-string values to string for parsing
-      const conditionStr =
-        typeof value === "string" ? value : JSON.stringify(value);
-      if (conditionStr.trim() === "") {
-        throw new JemplParseError("Empty condition expression after '$when'");
-      }
-      whenCondition = parseConditionExpression(conditionStr, functions);
+      whenCondition = parseWhenCondition(value, functions);
       hasDynamicContent = true;
     } else if (key.startsWith("$when#") || key.startsWith("$when ")) {
       throw new JemplParseError(
@@ -492,6 +488,280 @@ export const parseConditional = (entries, startIndex, functions = {}) => {
       id: conditionId,
     },
     nextIndex: currentIndex,
+  };
+};
+
+const JSON_BINARY_OPERATORS = {
+  eq: BinaryOp.EQ,
+  neq: BinaryOp.NEQ,
+  gt: BinaryOp.GT,
+  gte: BinaryOp.GTE,
+  lt: BinaryOp.LT,
+  lte: BinaryOp.LTE,
+  in: BinaryOp.IN,
+  add: BinaryOp.ADD,
+  sub: BinaryOp.SUBTRACT,
+};
+
+const JSON_LOGICAL_OPERATORS = {
+  all: BinaryOp.AND,
+  any: BinaryOp.OR,
+};
+
+const JSON_CONDITION_OPERATORS = new Set([
+  "var",
+  "literal",
+  "call",
+  "not",
+  ...Object.keys(JSON_BINARY_OPERATORS),
+  ...Object.keys(JSON_LOGICAL_OPERATORS),
+]);
+
+const parseConditionJsonOperandList = (operands, operator, path) => {
+  if (!Array.isArray(operands)) {
+    throw new JemplParseError(
+      `Condition JSON operator '${operator}' at '${formatConditionJsonPath(path)}' requires an array`,
+    );
+  }
+
+  if (operands.length !== 2) {
+    throw new JemplParseError(
+      `Condition JSON operator '${operator}' at '${formatConditionJsonPath(path)}' requires exactly 2 operands`,
+    );
+  }
+
+  return operands;
+};
+
+const parseConditionJsonLogical = (
+  conditions,
+  operator,
+  binaryOp,
+  functions,
+  path,
+) => {
+  if (!Array.isArray(conditions)) {
+    throw new JemplParseError(
+      `Condition JSON operator '${operator}' at '${formatConditionJsonPath(path)}' requires an array`,
+    );
+  }
+
+  if (conditions.length === 0) {
+    throw new JemplParseError(
+      `Condition JSON operator '${operator}' at '${formatConditionJsonPath(path)}' requires at least 1 condition`,
+    );
+  }
+
+  const parsedConditions = conditions.map((condition, index) =>
+    parseConditionJson(condition, functions, [...path, index]),
+  );
+
+  return parsedConditions.reduce((left, right) => ({
+    type: NodeType.BINARY,
+    op: binaryOp,
+    left,
+    right,
+  }));
+};
+
+const parseConditionJsonFunction = (condition, functions, path) => {
+  let name;
+  let rawArgs;
+
+  if (typeof condition.call === "string") {
+    name = condition.call;
+    rawArgs = condition.args ?? [];
+    assertOnlyKeys(condition, new Set(["call", "args"]), path);
+  } else if (isPlainObject(condition.call)) {
+    name = condition.call.name;
+    rawArgs = condition.call.args ?? [];
+    assertOnlyKeys(condition, new Set(["call"]), path);
+    assertOnlyKeys(condition.call, new Set(["name", "args"]), [
+      ...path,
+      "call",
+    ]);
+  } else {
+    throw new JemplParseError(
+      `Condition JSON call at '${formatConditionJsonPath(path)}' requires a function name`,
+    );
+  }
+
+  if (typeof name !== "string" || name.trim() === "") {
+    throw new JemplParseError(
+      `Condition JSON call at '${formatConditionJsonPath(path)}' requires a non-empty function name`,
+    );
+  }
+
+  if (!/^\w+$/.test(name)) {
+    throw new JemplParseError(
+      `Invalid condition JSON function name '${name}' at '${formatConditionJsonPath(path)}'`,
+    );
+  }
+
+  if (!Array.isArray(rawArgs)) {
+    throw new JemplParseError(
+      `Condition JSON call '${name}' at '${formatConditionJsonPath(path)}' requires args to be an array`,
+    );
+  }
+
+  return {
+    type: NodeType.FUNCTION,
+    name,
+    args: rawArgs.map((arg, index) =>
+      parseConditionJson(arg, functions, [...path, "args", index]),
+    ),
+  };
+};
+
+/**
+ * Parses a semantic JSON condition into the same condition AST used by string
+ * expressions. This keeps JSON conditions as an authoring layer instead of a
+ * separate runtime evaluator.
+ *
+ * @param {any} condition - Semantic condition JSON
+ * @param {Object} functions - Custom functions object
+ * @param {Array<string|number>} path - Error path
+ * @returns {Object} AST node representing the condition
+ */
+export const parseConditionJson = (
+  condition,
+  functions = {},
+  path = ["$when"],
+) => {
+  if (
+    typeof condition === "string" ||
+    typeof condition === "number" ||
+    typeof condition === "boolean" ||
+    condition === null
+  ) {
+    return {
+      type: NodeType.LITERAL,
+      value: condition,
+    };
+  }
+
+  if (Array.isArray(condition)) {
+    throw new JemplParseError(
+      `Condition JSON array at '${formatConditionJsonPath(path)}' must be wrapped in an operator or { literal: [...] }`,
+    );
+  }
+
+  if (!isPlainObject(condition)) {
+    throw new JemplParseError(
+      `Invalid condition JSON value at '${formatConditionJsonPath(path)}'`,
+    );
+  }
+
+  const keys = getOwnKeys(condition);
+  if (keys.length === 0) {
+    throw new JemplParseError(
+      `Condition JSON object at '${formatConditionJsonPath(path)}' must contain an operator`,
+    );
+  }
+
+  const operatorKeys = keys.filter((key) => JSON_CONDITION_OPERATORS.has(key));
+  if (operatorKeys.length === 0) {
+    throw new JemplParseError(
+      `Unknown condition JSON operator '${keys[0]}' at '${formatConditionJsonPath(path)}'`,
+    );
+  }
+
+  if (operatorKeys.length > 1) {
+    throw new JemplParseError(
+      `Condition JSON at '${formatConditionJsonPath(path)}' must contain exactly one operator`,
+    );
+  }
+
+  const operator = operatorKeys.includes("call") ? "call" : operatorKeys[0];
+
+  if (operator === "var") {
+    assertOnlyKeys(condition, new Set(["var"]), path);
+    if (typeof condition.var !== "string" || condition.var.trim() === "") {
+      throw new JemplParseError(
+        `Condition JSON var at '${formatConditionJsonPath(path)}' requires a non-empty path`,
+      );
+    }
+    return {
+      type: NodeType.VARIABLE,
+      path: condition.var,
+    };
+  }
+
+  if (operator === "literal") {
+    assertOnlyKeys(condition, new Set(["literal"]), path);
+    return {
+      type: NodeType.LITERAL,
+      value: condition.literal,
+    };
+  }
+
+  if (operator === "call") {
+    return parseConditionJsonFunction(condition, functions, path);
+  }
+
+  if (operator === "not") {
+    assertOnlyKeys(condition, new Set(["not"]), path);
+    return {
+      type: NodeType.UNARY,
+      op: UnaryOp.NOT,
+      operand: parseConditionJson(condition.not, functions, [...path, "not"]),
+    };
+  }
+
+  if (operator in JSON_LOGICAL_OPERATORS) {
+    assertOnlyKeys(condition, new Set([operator]), path);
+    return parseConditionJsonLogical(
+      condition[operator],
+      operator,
+      JSON_LOGICAL_OPERATORS[operator],
+      functions,
+      [...path, operator],
+    );
+  }
+
+  if (operator in JSON_BINARY_OPERATORS) {
+    assertOnlyKeys(condition, new Set([operator]), path);
+    const operands = parseConditionJsonOperandList(
+      condition[operator],
+      operator,
+      [...path, operator],
+    );
+    return {
+      type: NodeType.BINARY,
+      op: JSON_BINARY_OPERATORS[operator],
+      left: parseConditionJson(operands[0], functions, [...path, operator, 0]),
+      right: parseConditionJson(operands[1], functions, [...path, operator, 1]),
+    };
+  }
+
+  throw new JemplParseError(
+    `Unknown condition JSON operator '${operator}' at '${formatConditionJsonPath(path)}'`,
+  );
+};
+
+export const parseWhenCondition = (value, functions = {}) => {
+  if (value === undefined || value === null) {
+    throw new JemplParseError("Missing condition expression after '$when'");
+  }
+
+  if (typeof value === "string") {
+    if (value.trim() === "") {
+      throw new JemplParseError("Empty condition expression after '$when'");
+    }
+    return parseConditionExpression(value, functions);
+  }
+
+  if (isPlainObject(value)) {
+    return parseConditionJson(value, functions);
+  }
+
+  if (Array.isArray(value)) {
+    return parseConditionJson(value, functions);
+  }
+
+  return {
+    type: NodeType.LITERAL,
+    value,
   };
 };
 

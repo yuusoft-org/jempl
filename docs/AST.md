@@ -117,6 +117,8 @@ id: string | null # For multiple conditionals like $if#1
 **Note on $if vs $when:**
 - `$if`: Merges the body content into the parent object when condition is true
 - `$when`: Controls whether the entire object exists (stored as `whenCondition` on Object nodes)
+- `$when` accepts either a string expression or semantic JSON condition; both
+  parse into the same internal `whenCondition` node shape
 
 **Functions and arithmetic in conditionals:**
 - Conditions can contain function calls: `$if isEven(num):`

@@ -76,6 +76,69 @@ out:
         type: 0
         value: "allowed"
 ---
+case: when with semantic JSON all condition
+in:
+  - $when:
+      all:
+        - gte:
+            - var: age
+            - 18
+        - var: hasPermission
+    action: "allowed"
+out:
+  type: 8
+  fast: false
+  whenCondition:
+    type: 4
+    op: 6
+    left:
+      type: 4
+      op: 4
+      left:
+        type: 1
+        path: "age"
+      right:
+        type: 0
+        value: 18
+    right:
+      type: 1
+      path: "hasPermission"
+  properties:
+    - key: action
+      value:
+        type: 0
+        value: "allowed"
+---
+case: when with semantic JSON function condition
+in:
+  - $when:
+      gt:
+        - call: getCount
+          args:
+            - var: items
+        - 2
+    status: "enough"
+out:
+  type: 8
+  fast: false
+  whenCondition:
+    type: 4
+    op: 2
+    left:
+      type: 3
+      name: "getCount"
+      args:
+        - type: 1
+          path: "items"
+    right:
+      type: 0
+      value: 2
+  properties:
+    - key: status
+      value:
+        type: 0
+        value: "enough"
+---
 case: when with logical OR
 in:
   - $when: isAdmin || isOwner
