@@ -1152,118 +1152,120 @@ const renderLoop = (node, options, data, scope) => {
 };
 
 /**
+ * Checks deep-path eligibility without evaluating any keys or values.
+ */
+const canRenderDeepObject = (node, maxProperties, allowNested) => {
+  if (
+    node.type !== NodeType.OBJECT ||
+    node.whenCondition ||
+    node.properties.length > maxProperties
+  ) {
+    return false;
+  }
+
+  return node.properties.every(({ value }) => {
+    switch (value.type) {
+      case NodeType.LITERAL:
+      case NodeType.VARIABLE:
+        return true;
+      case NodeType.INTERPOLATION:
+        return value.parts.every(
+          (part) => typeof part === "string" || part.type === NodeType.VARIABLE,
+        );
+      case NodeType.OBJECT:
+        return allowNested && canRenderDeepObject(value, 5, false);
+      default:
+        return false;
+    }
+  });
+};
+
+/**
  * Ultra-fast path for deeply nested static structures (todo app pattern)
  */
 const renderObjectDeepUltraFast = (node, options, data, scope) => {
-  // Skip if this node has a whenCondition - let the main path handle it
-  if (node.whenCondition) {
+  // Check the whole structure before rendering; a later fallback would repeat
+  // any helpers or getters already evaluated in dynamic keys or values.
+  if (
+    node.whenCondition ||
+    node.properties.length !== 1 ||
+    !canRenderDeepObject(node.properties[0].value, 10, true)
+  ) {
     return null;
   }
 
-  // Detect todo app-like nested structure pattern
-  if (node.properties.length === 1) {
-    const prop = node.properties[0];
-    const key = prop.parsedKey
-      ? renderNode(prop.parsedKey, options, data, scope)
-      : prop.key;
-    const valueNode = prop.value;
+  const prop = node.properties[0];
+  const key = prop.parsedKey
+    ? renderNode(prop.parsedKey, options, data, scope)
+    : prop.key;
+  const valueNode = prop.value;
 
-    // Fast path for nested objects with mostly static structure
-    if (
-      valueNode.type === NodeType.OBJECT &&
-      valueNode.properties.length <= 10 &&
-      !valueNode.whenCondition // Skip if nested object has whenCondition
-    ) {
-      const result = {};
-      const nestedResult = {};
+  const result = {};
+  const nestedResult = {};
 
-      // Inline nested object rendering for common patterns
-      let canUltraOptimize = true;
-      for (const nestedProp of valueNode.properties) {
-        const nestedKey = nestedProp.parsedKey
-          ? renderNode(nestedProp.parsedKey, options, data, scope)
-          : nestedProp.key;
-        const nestedValueNode = nestedProp.value;
+  // Inline nested object rendering for common patterns
+  for (const nestedProp of valueNode.properties) {
+    const nestedKey = nestedProp.parsedKey
+      ? renderNode(nestedProp.parsedKey, options, data, scope)
+      : nestedProp.key;
+    const nestedValueNode = nestedProp.value;
 
-        if (nestedValueNode.type === NodeType.LITERAL) {
-          nestedResult[nestedKey] = nestedValueNode.value;
-        } else if (nestedValueNode.type === NodeType.VARIABLE) {
-          nestedResult[nestedKey] = getVariableValue(
-            nestedValueNode.path,
+    if (nestedValueNode.type === NodeType.LITERAL) {
+      nestedResult[nestedKey] = nestedValueNode.value;
+    } else if (nestedValueNode.type === NodeType.VARIABLE) {
+      nestedResult[nestedKey] = getVariableValue(
+        nestedValueNode.path,
+        data,
+        scope,
+      );
+    } else if (nestedValueNode.type === NodeType.INTERPOLATION) {
+      // Inline interpolation for nested objects
+      const segments = [];
+      for (const part of nestedValueNode.parts) {
+        if (typeof part === "string") {
+          segments.push(part);
+        } else if (part.type === NodeType.VARIABLE) {
+          const value = getVariableValue(part.path, data, scope);
+          segments.push(value != null ? String(value) : "");
+        }
+      }
+      nestedResult[nestedKey] = segments.join("");
+    } else if (nestedValueNode.type === NodeType.OBJECT) {
+      // Handle one more level of nesting (common in todo app)
+      const deepResult = {};
+      for (const deepProp of nestedValueNode.properties) {
+        const deepKey = deepProp.parsedKey
+          ? renderNode(deepProp.parsedKey, options, data, scope)
+          : deepProp.key;
+        const deepValueNode = deepProp.value;
+
+        if (deepValueNode.type === NodeType.LITERAL) {
+          deepResult[deepKey] = deepValueNode.value;
+        } else if (deepValueNode.type === NodeType.VARIABLE) {
+          deepResult[deepKey] = getVariableValue(
+            deepValueNode.path,
             data,
             scope,
           );
-        } else if (nestedValueNode.type === NodeType.INTERPOLATION) {
-          // Inline interpolation for nested objects
+        } else if (deepValueNode.type === NodeType.INTERPOLATION) {
           const segments = [];
-          for (const part of nestedValueNode.parts) {
+          for (const part of deepValueNode.parts) {
             if (typeof part === "string") {
               segments.push(part);
             } else if (part.type === NodeType.VARIABLE) {
               const value = getVariableValue(part.path, data, scope);
               segments.push(value != null ? String(value) : "");
-            } else {
-              canUltraOptimize = false;
-              break;
             }
           }
-          if (!canUltraOptimize) break;
-          nestedResult[nestedKey] = segments.join("");
-        } else if (
-          nestedValueNode.type === NodeType.OBJECT &&
-          !nestedValueNode.whenCondition &&
-          nestedValueNode.properties.length <= 5
-        ) {
-          // Handle one more level of nesting (common in todo app)
-          const deepResult = {};
-          for (const deepProp of nestedValueNode.properties) {
-            const deepKey = deepProp.key;
-            const deepValueNode = deepProp.value;
-
-            if (deepValueNode.type === NodeType.LITERAL) {
-              deepResult[deepKey] = deepValueNode.value;
-            } else if (deepValueNode.type === NodeType.VARIABLE) {
-              deepResult[deepKey] = getVariableValue(
-                deepValueNode.path,
-                data,
-                scope,
-              );
-            } else if (deepValueNode.type === NodeType.INTERPOLATION) {
-              const segments = [];
-              for (const part of deepValueNode.parts) {
-                if (typeof part === "string") {
-                  segments.push(part);
-                } else if (part.type === NodeType.VARIABLE) {
-                  const value = getVariableValue(part.path, data, scope);
-                  segments.push(value != null ? String(value) : "");
-                } else {
-                  canUltraOptimize = false;
-                  break;
-                }
-              }
-              if (!canUltraOptimize) break;
-              deepResult[deepKey] = segments.join("");
-            } else {
-              canUltraOptimize = false;
-              break;
-            }
-          }
-          if (!canUltraOptimize) break;
-          nestedResult[nestedKey] = deepResult;
-        } else {
-          canUltraOptimize = false;
-          break;
+          deepResult[deepKey] = segments.join("");
         }
       }
-
-      if (canUltraOptimize) {
-        result[key] = nestedResult;
-        return result;
-      }
+      nestedResult[nestedKey] = deepResult;
     }
   }
 
-  return null; // Can't ultra-optimize
+  result[key] = nestedResult;
+  return result;
 };
 
 /**
@@ -1384,6 +1386,9 @@ const renderObject = (node, options, data, scope) => {
       // The parent object property should get the loop result
       // Skip this - it will be handled by the parent context
     } else {
+      const renderedKey = prop.parsedKey
+        ? renderNode(prop.parsedKey, options, data, scope)
+        : prop.key;
       const propValue = prop.value;
 
       // Check if this property contains a loop
@@ -1399,19 +1404,15 @@ const renderObject = (node, options, data, scope) => {
           // This property contains a loop - render the loop and assign the result
           const loopResult = renderNode(loopProp.value, options, data, scope);
           if (loopResult !== undefined) {
-            result[prop.key] = loopResult;
+            result[renderedKey] = loopResult;
           }
         } else {
           const renderedValue = renderNode(prop.value, options, data, scope);
           if (renderedValue !== undefined) {
-            result[prop.key] = renderedValue;
+            result[renderedKey] = renderedValue;
           }
         }
       } else {
-        // Render the key if it contains variables
-        const renderedKey = prop.parsedKey
-          ? renderNode(prop.parsedKey, options, data, scope)
-          : prop.key;
         const renderedValue = renderNode(prop.value, options, data, scope);
 
         // Whole-value bindings retain their own property even when undefined,
