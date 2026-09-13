@@ -416,6 +416,8 @@ const renderConditionalUltraFast = (node, options, data, scope) => {
         const trueBody = node.bodies[0];
         if (
           trueBody.type === NodeType.OBJECT &&
+          trueBody.fast === true &&
+          !trueBody.whenCondition &&
           trueBody.properties.length <= 5
         ) {
           const result = {};
@@ -457,6 +459,8 @@ const renderConditionalUltraFast = (node, options, data, scope) => {
         const falseBody = node.bodies[1];
         if (
           falseBody.type === NodeType.OBJECT &&
+          falseBody.fast === true &&
+          !falseBody.whenCondition &&
           falseBody.properties.length <= 5
         ) {
           const result = {};
@@ -1207,6 +1211,7 @@ const renderObjectDeepUltraFast = (node, options, data, scope) => {
           nestedResult[nestedKey] = segments.join("");
         } else if (
           nestedValueNode.type === NodeType.OBJECT &&
+          !nestedValueNode.whenCondition &&
           nestedValueNode.properties.length <= 5
         ) {
           // Handle one more level of nesting (common in todo app)
@@ -1409,8 +1414,13 @@ const renderObject = (node, options, data, scope) => {
           : prop.key;
         const renderedValue = renderNode(prop.value, options, data, scope);
 
-        // Only add the property if the value is not undefined
-        if (renderedValue !== undefined) {
+        // Whole-value bindings retain their own property even when undefined,
+        // just as in the fast path. Structural $when exclusions still omit it.
+        if (
+          renderedValue !== undefined ||
+          propValue?.type === NodeType.VARIABLE ||
+          propValue?.type === NodeType.FUNCTION
+        ) {
           result[renderedKey] = renderedValue;
         }
       }
