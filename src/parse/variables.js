@@ -334,21 +334,33 @@ export const parseStringValue = (str, functions = {}) => {
   // Handle escaping: first handle double escapes, then single escapes
   let processedStr = str;
   const escapedParts = [];
+  let escapeMarkerPrefix;
+  const escapedPlaceholder = (index) => `${escapeMarkerPrefix}${index}__`;
 
   // Handle escaped sequences for both ${} and #{}
   if (str.includes("\\${") || str.includes("\\#{")) {
+    escapeMarkerPrefix = "__JEMPL_ESCAPE_";
+    while (str.includes(escapeMarkerPrefix)) {
+      escapeMarkerPrefix += "_";
+    }
+    const doubleEscapedVariable = `${escapeMarkerPrefix}DOUBLE_VAR__`;
+    const doubleEscapedPath = `${escapeMarkerPrefix}DOUBLE_PATH__`;
+
     // First replace \\${ and \\#{ (double escape) with special markers
-    processedStr = str.replace(/\\\\(\$\{[^}]*\})/g, "\\DOUBLE_ESC_VAR$1");
+    processedStr = str.replace(
+      /\\\\(\$\{[^}]*\})/g,
+      (_, expr) => `\\${doubleEscapedVariable}${expr}`,
+    );
     processedStr = processedStr.replace(
       /\\\\(#\{[^}]*\})/g,
-      "\\DOUBLE_ESC_PATH$1",
+      (_, expr) => `\\${doubleEscapedPath}${expr}`,
     );
 
     // Then replace \${ and \#{ (single escape) with placeholders
     processedStr = processedStr.replace(
       /\\(\$\{[^}]*\})/g,
       (match, dollarExpr) => {
-        const placeholder = `__ESCAPED_${escapedParts.length}__`;
+        const placeholder = escapedPlaceholder(escapedParts.length);
         escapedParts.push(dollarExpr);
         return placeholder;
       },
@@ -356,15 +368,15 @@ export const parseStringValue = (str, functions = {}) => {
     processedStr = processedStr.replace(
       /\\(#\{[^}]*\})/g,
       (match, hashExpr) => {
-        const placeholder = `__ESCAPED_${escapedParts.length}__`;
+        const placeholder = escapedPlaceholder(escapedParts.length);
         escapedParts.push(hashExpr);
         return placeholder;
       },
     );
 
     // Restore double escapes as literal backslash + syntax
-    processedStr = processedStr.replace(/\\DOUBLE_ESC_VAR/g, "\\");
-    processedStr = processedStr.replace(/\\DOUBLE_ESC_PATH/g, "\\");
+    processedStr = processedStr.replaceAll(`\\${doubleEscapedVariable}`, "\\");
+    processedStr = processedStr.replaceAll(`\\${doubleEscapedPath}`, "\\");
   }
 
   // Don't validate incomplete variables - let them be treated as literals
@@ -383,7 +395,7 @@ export const parseStringValue = (str, functions = {}) => {
     // No variables or path references, return literal (restore escapes)
     let finalValue = processedStr;
     for (let i = 0; i < escapedParts.length; i++) {
-      finalValue = finalValue.replace(`__ESCAPED_${i}__`, escapedParts[i]);
+      finalValue = finalValue.replace(escapedPlaceholder(i), escapedParts[i]);
     }
     return {
       type: NodeType.LITERAL,
@@ -430,7 +442,10 @@ export const parseStringValue = (str, functions = {}) => {
       let literalPart = processedStr.substring(lastIndex, index);
       // Restore escaped parts in this literal section
       for (let i = 0; i < escapedParts.length; i++) {
-        literalPart = literalPart.replace(`__ESCAPED_${i}__`, escapedParts[i]);
+        literalPart = literalPart.replace(
+          escapedPlaceholder(i),
+          escapedParts[i],
+        );
       }
       if (literalPart) {
         parts.push(literalPart);
@@ -464,7 +479,7 @@ export const parseStringValue = (str, functions = {}) => {
     let literalPart = processedStr.substring(lastIndex);
     // Restore escaped parts in this literal section
     for (let i = 0; i < escapedParts.length; i++) {
-      literalPart = literalPart.replace(`__ESCAPED_${i}__`, escapedParts[i]);
+      literalPart = literalPart.replace(escapedPlaceholder(i), escapedParts[i]);
     }
     if (literalPart) {
       parts.push(literalPart);
