@@ -1433,7 +1433,10 @@ Jempl provides clear error messages for common partial issues:
 
 ## Escaping
 
-To output literal `${` or `#{` in strings, use backslash escaping:
+To render a complete `${...}` or `#{...}` expression literally, prefix it
+with one backslash in the decoded template string. Jempl applies this rule after
+JSON or YAML has parsed the source. Quoting an expression alone does not disable
+interpolation.
 
 ```yaml
 data:
@@ -1462,6 +1465,18 @@ output:
       pathActual: "Path is items[0]"
       pathDouble: "Backslash and path: \\items[0]"
 ```
+
+The example uses YAML double-quoted strings, which require two backslashes in
+the source to pass one backslash to Jempl. These source values all render the
+literal `${price}`:
+
+| Source format | Value in the file |
+| --- | --- |
+| YAML single-quoted | `'\${price}'` |
+| YAML double-quoted | `"\\${price}"` |
+| JSON | `"\\${price}"` |
+
+The same rule applies to `#{item}`.
 
 ## Functions
 
