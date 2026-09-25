@@ -339,10 +339,13 @@ export const parseStringValue = (str, functions = {}) => {
 
   // Handle escaped sequences for both ${} and #{}
   if (str.includes("\\${") || str.includes("\\#{")) {
-    escapeMarkerPrefix = "__JEMPL_ESCAPE_";
-    while (str.includes(escapeMarkerPrefix)) {
-      escapeMarkerPrefix += "_";
+    const usedMarkerIds = new Set();
+    for (const match of str.matchAll(/(?=__JEMPL_ESCAPE_(\d+)_)/g)) {
+      usedMarkerIds.add(match[1]);
     }
+    let markerId = 0;
+    while (usedMarkerIds.has(String(markerId))) markerId++;
+    escapeMarkerPrefix = `__JEMPL_ESCAPE_${markerId}_`;
     const doubleEscapedVariable = `${escapeMarkerPrefix}DOUBLE_VAR__`;
     const doubleEscapedPath = `${escapeMarkerPrefix}DOUBLE_PATH__`;
 

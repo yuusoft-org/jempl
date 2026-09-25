@@ -27,4 +27,22 @@ describe("string escaping", () => {
       text: "Use #{item} literally",
     });
   });
+
+  it(
+    "handles a long marker-like literal with an escaped variable",
+    () => {
+      const literal = `__JEMPL_ESCAPE_${"_".repeat(200_000)}`;
+      expect(parseAndRender({ text: literal + "\\${name}" }, {})).toStrictEqual({
+        text: literal + "${name}",
+      });
+    },
+    2_000,
+  );
+
+  it("preserves overlapping marker-like literals", () => {
+    const literal = "__JEMPL_ESCAPE_0__JEMPL_ESCAPE_1_0__";
+    expect(parseAndRender({ text: literal + "\\${name}" }, {})).toStrictEqual({
+      text: literal + "${name}",
+    });
+  });
 });
