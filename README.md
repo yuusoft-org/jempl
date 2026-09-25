@@ -19,6 +19,7 @@ Jempl is a JSON templating engine with conditionals, loops, partials, and custom
 - [Escaping](#escaping)
 - [Performance](#performance)
 - [Development](#development)
+- [Use Cases](#use-cases)
 - [Alternative Libraries](#alternative-libraries)
 
 ## Installation
@@ -396,6 +397,129 @@ cases:
           resource: "products"
         - action: "comment"
           resource: "articles"
+```
+
+#### Semantic JSON Conditions
+
+`$when` also accepts a structured JSON condition. This is useful when a UI or
+build step wants to store conditions without preserving an expression string.
+The JSON form is parsed into the same condition AST as string expressions, so it
+uses the same runtime evaluation logic.
+
+```yaml
+template:
+  route:
+    $when:
+      all:
+        - gte:
+            - var: variables.trust
+            - 70
+        - var: variables.metGuide
+    target: guideRoute
+
+cases:
+  - data:
+      variables:
+        trust: 80
+        metGuide: true
+    output:
+      route:
+        target: guideRoute
+```
+
+More examples:
+
+```yaml
+# Match one of several roles
+$when:
+  any:
+    - eq:
+        - var: user.role
+        - "admin"
+    - eq:
+        - var: user.role
+        - "owner"
+```
+
+```yaml
+# Exclude disabled records
+$when:
+  not:
+    var: user.disabled
+```
+
+```yaml
+# Check membership against an explicit array literal
+$when:
+  in:
+    - var: user.role
+    - literal: ["admin", "moderator"]
+```
+
+```yaml
+# Compare a calculated value
+$when:
+  gte:
+    - add:
+        - var: score
+        - var: bonus
+    - 100
+```
+
+```yaml
+# Call a custom function
+$when:
+  call: hasFeature
+  args:
+    - var: user
+    - "beta-dashboard"
+```
+
+Supported JSON condition operators:
+
+- `{ var: "path.to.value" }` - Read a value from template data
+- `{ literal: value }` - Use an object or array literal explicitly
+- `{ all: [condition, ...] }` - Logical AND
+- `{ any: [condition, ...] }` - Logical OR
+- `{ not: condition }` - Logical NOT
+- `{ eq: [left, right] }`, `{ neq: [left, right] }`
+- `{ gt: [left, right] }`, `{ gte: [left, right] }`
+- `{ lt: [left, right] }`, `{ lte: [left, right] }`
+- `{ in: [needle, haystack] }`
+- `{ add: [left, right] }`, `{ sub: [left, right] }`
+- `{ call: "functionName", args: [arg, ...] }`
+
+Primitive JSON values are treated as literals. Strings are literal strings in
+the JSON form, so use `{ var: "name" }` when you want to read from template
+data.
+
+Each semantic JSON condition object must contain exactly one condition operator.
+Use `all` or `any` to combine multiple conditions. For function calls, `args` is
+metadata for `call`, not a separate condition operator.
+
+#### Evaluating Conditions Directly
+
+Use `evaluateCondition` when you need Jempl's condition semantics without
+rendering a template, such as selecting the first matching branch in an action
+runner.
+
+```javascript
+import { evaluateCondition } from "jempl";
+
+const matched = evaluateCondition(
+  {
+    gte: [
+      { var: "variables.trust" },
+      70
+    ]
+  },
+  {
+    variables: {
+      trust: 80
+    }
+  }
+);
+// true
 ```
 
 #### Combining $when with $if
@@ -1309,7 +1433,10 @@ Jempl provides clear error messages for common partial issues:
 
 ## Escaping
 
-To output literal `${` or `#{` in strings, use backslash escaping:
+To render a complete `${...}` or `#{...}` expression literally, prefix it
+with one backslash in the decoded template string. Jempl applies this rule after
+JSON or YAML has parsed the source. Quoting an expression alone does not disable
+interpolation.
 
 ```yaml
 data:
@@ -1338,6 +1465,18 @@ output:
       pathActual: "Path is items[0]"
       pathDouble: "Backslash and path: \\items[0]"
 ```
+
+The example uses YAML double-quoted strings, which require two backslashes in
+the source to pass one backslash to Jempl. These source values all render the
+literal `${price}`:
+
+| Source format | Value in the file |
+| --- | --- |
+| YAML single-quoted | `'\${price}'` |
+| YAML double-quoted | `"\\${price}"` |
+| JSON | `"\\${price}"` |
+
+The same rule applies to `#{item}`.
 
 ## Functions
 
@@ -1538,6 +1677,13 @@ For developers contributing to Jempl, please refer to our [Development Guide](./
 - Testing guidelines
 - Architecture decisions and design rationale
 - Common development tasks
+
+## Use Cases
+
+Jempl is versatile and can be used in various scenarios. See [Use Cases Documentation](./docs/use-cases/README.md) for detailed examples including:
+
+- **YaHTML Templates**: Using Jempl with the YaHTML library for HTML templating
+- And more coming soon!
 
 ## Alternative libraries
 

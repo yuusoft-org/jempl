@@ -20,6 +20,102 @@ in:
   - {}
 throws: "Parse Error: Empty condition expression after '$when'"
 ---
+case: semantic JSON when with unknown operator
+in:
+  - "$when":
+      unknown:
+        - var: age
+        - 18
+    value: "test"
+  - age: 20
+throws: "Parse Error: Unknown condition JSON operator 'unknown' at '$when'"
+---
+case: semantic JSON when with multiple operators
+in:
+  - "$when":
+      gt:
+        - var: age
+        - 18
+      lt:
+        - var: age
+        - 65
+    value: "test"
+  - age: 20
+throws: "Parse Error: Condition JSON at '$when' must contain exactly one operator"
+---
+case: semantic JSON when with operator and extra key
+in:
+  - "$when":
+      gt:
+        - var: age
+        - 18
+      label: "adult"
+    value: "test"
+  - age: 20
+throws: "Parse Error: Unexpected key 'label' in condition JSON at '$when'"
+---
+case: semantic JSON when with args without call
+in:
+  - "$when":
+      args:
+        - var: age
+    value: "test"
+  - age: 20
+throws: "Parse Error: Unknown condition JSON operator 'args' at '$when'"
+---
+case: semantic JSON when with call and another operator
+in:
+  - "$when":
+      call: isEven
+      gt:
+        - var: age
+        - 18
+    value: "test"
+  - age: 20
+throws: "Parse Error: Condition JSON at '$when' must contain exactly one operator"
+---
+case: semantic JSON when with empty all
+in:
+  - "$when":
+      all: []
+    value: "test"
+  - {}
+throws: "Parse Error: Condition JSON operator 'all' at '$when.all' requires at least 1 condition"
+---
+case: semantic JSON when with invalid comparison operand count
+in:
+  - "$when":
+      gte:
+        - var: age
+    value: "test"
+  - age: 20
+throws: "Parse Error: Condition JSON operator 'gte' at '$when.gte' requires exactly 2 operands"
+---
+case: semantic JSON when with empty variable path
+in:
+  - "$when":
+      var: ""
+    value: "test"
+  - {}
+throws: "Parse Error: Condition JSON var at '$when' requires a non-empty path"
+---
+case: semantic JSON when with invalid function args
+in:
+  - "$when":
+      call: isEven
+      args:
+        value: 2
+    value: "test"
+  - {}
+throws: "Parse Error: Condition JSON call 'isEven' at '$when' requires args to be an array"
+---
+case: semantic JSON when with direct array
+in:
+  - "$when": []
+    value: "test"
+  - {}
+throws: "Parse Error: Condition JSON array at '$when' must be wrapped in an operator or { literal: [...] }"
+---
 case: when with invalid operator (parser doesn't validate)
 in:
   - "$when": "age === 18"

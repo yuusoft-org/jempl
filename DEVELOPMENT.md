@@ -55,7 +55,7 @@ bun run types
 │   ├── parse/            # Parser tests
 │   ├── parseAndRender/   # Integration tests
 │   └── render/           # Renderer tests
-├── test/                  # Performance tests
+├── test/                  # JavaScript Vitest tests and profiling
 │   └── performance/      # Performance profiling tools
 ├── docs/                  # Documentation
 │   └── AST.md           # AST structure documentation
@@ -174,25 +174,18 @@ bun test -u
 
 ### Writing Tests
 
-1. **Unit Tests**: YAML specifications in `spec/` directory
-2. **Performance Tests**: JavaScript tests in `test/performance.test.js`
-3. **Integration Tests**: YAML specifications in `spec/parseAndRender/`
+For every behavior-changing PR, add or update Puty YAML specs as the primary
+functional regression coverage. Put parser behavior and errors in
+`spec/parse/*.spec.yaml`, AST rendering behavior and errors in
+`spec/render/*.spec.yaml`, and end-to-end template behavior in
+`spec/parseAndRender/*.spec.yaml`. Follow a nearby spec's `file`, `group`, and
+`suites` header and its `case`/`in`/`out` format.
 
-Example YAML test:
-```yaml
-template:
-  name: "${user.name}"
-  $if isAdmin:
-    role: "admin"
-
-cases:
-  - data:
-      user: { name: "John" }
-      isAdmin: true
-    output:
-      name: "John"
-      role: "admin"
-```
+When practical, run the new spec before the fix to demonstrate the failure,
+then run `bun test` after the fix. A Puty spec can reference a small JavaScript
+fixture when inputs need getters or custom prototypes. Use standalone JavaScript
+Vitest tests in `test/` for performance measurements or behavior that cannot
+reasonably be asserted through a Puty spec.
 
 ## Performance
 

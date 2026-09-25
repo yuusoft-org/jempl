@@ -42,6 +42,98 @@ out:
     - status: "adult"
       canVote: true
 ---
+case: when with semantic JSON all condition
+in:
+  - access:
+      $when:
+        all:
+          - gte:
+              - var: user.trust
+              - 70
+          - var: user.metGuide
+      route: "guide"
+  - user:
+      trust: 72
+      metGuide: true
+  - functions: {}
+out:
+  access:
+    route: "guide"
+---
+case: when with semantic JSON all condition false
+in:
+  - access:
+      $when:
+        all:
+          - gte:
+              - var: user.trust
+              - 70
+          - var: user.metGuide
+      route: "guide"
+  - user:
+      trust: 72
+      metGuide: false
+  - functions: {}
+out: {}
+---
+case: when with semantic JSON any and not conditions
+in:
+  - menu:
+      - $when:
+          any:
+            - eq:
+                - var: role
+                - "admin"
+            - eq:
+                - var: role
+                - "owner"
+        label: "Admin"
+      - $when:
+          not:
+            var: disabled
+        label: "Enabled"
+  - role: "member"
+    disabled: false
+  - functions: {}
+out:
+  menu:
+    - label: "Enabled"
+---
+case: when with semantic JSON literal array membership
+in:
+  - menu:
+      - $when:
+          in:
+            - var: role
+            - literal: ["admin", "owner"]
+        label: "Privileged"
+      - $when:
+          in:
+            - var: role
+            - literal: ["guest"]
+        label: "Guest"
+  - role: "owner"
+  - functions: {}
+out:
+  menu:
+    - label: "Privileged"
+---
+case: when with semantic JSON function and arithmetic conditions
+in:
+  - status:
+      $when:
+        gte:
+          - add:
+              - call: getCount
+              - var: bonus
+          - 5
+      value: "qualified"
+  - bonus: 2
+  - functions: {}
+out:
+  status:
+    value: "qualified"
+---
 case: when in array filtering
 in:
   - products:
