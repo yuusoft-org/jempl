@@ -331,6 +331,18 @@ out:
         type: 0
         value: "${one} and ${two}"
 ---
+case: escaped variable beside overlapping marker-like literals
+in:
+  - text: "__JEMPL_ESCAPE_0__JEMPL_ESCAPE_1_0__ \\${name}"
+out:
+  type: 8
+  fast: true
+  properties:
+    - key: text
+      value:
+        type: 0
+        value: "__JEMPL_ESCAPE_0__JEMPL_ESCAPE_1_0__ ${name}"
+---
 case: numeric and boolean values
 in:
   - number: 42
