@@ -1,326 +1,390 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { execSync, spawn } from "child_process";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const CLI_PATH = path.resolve(__dirname, "../../src/cli.js");
-const FIXTURES_PATH = path.resolve(__dirname, "fixtures");
-const OUTPUT_PATH = path.resolve(__dirname, "output.tmp");
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const cliPath = path.resolve(testDir, "../../src/cli.js");
+const packagePath = path.resolve(testDir, "../../package.json");
+const fixture = (name) => path.join(testDir, "fixtures", name);
 
-// Helper to run CLI command
-function runCLI(args, input = null) {
-  try {
-    const result = execSync(`node ${CLI_PATH} ${args}`, {
-      encoding: "utf8",
-      input: input,
-    });
-    return { stdout: result, stderr: "", exitCode: 0 };
-  } catch (error) {
-    return {
-      stdout: error.stdout || "",
-      stderr: error.stderr || "",
-      exitCode: error.status || 1,
-    };
-  }
-}
-
-// Helper to run CLI with stdin (using spawn for better stdin handling)
-function runCLIWithStdin(args, input) {
-  return new Promise((resolve, reject) => {
-    const child = spawn("node", [CLI_PATH, ...args.split(" ")], {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
-
-    child.stderr.on("data", (data) => {
-      stderr += data.toString();
-    });
-
-    child.on("close", (code) => {
-      resolve({ stdout, stderr, exitCode: code });
-    });
-
-    child.on("error", reject);
-
-    if (input) {
-      child.stdin.write(input);
-      child.stdin.end();
-    }
+function runCLI(args, options = {}) {
+  const result = spawnSync(process.execPath, [cliPath, ...args], {
+    encoding: "utf8",
+    input: options.input,
+    cwd: options.cwd,
   });
+  if (result.error) throw result.error;
+  return {
+    stdout: result.stdout,
+    stderr: result.stderr,
+    exitCode: result.status,
+  };
 }
 
 describe("CLI", () => {
+  let tempDir;
+
   beforeEach(() => {
-    // Clean up output file before each test
-    if (fs.existsSync(OUTPUT_PATH)) {
-      fs.unlinkSync(OUTPUT_PATH);
-    }
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "jempl-cli-"));
   });
 
   afterEach(() => {
-    // Clean up output file after each test
-    if (fs.existsSync(OUTPUT_PATH)) {
-      fs.unlinkSync(OUTPUT_PATH);
-    }
+    fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
   describe("Basic usage", () => {
-    it("should render template with data (both files)", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json ${FIXTURES_PATH}/data.json`
+    it("renders template and data files", () => {
+      const result = runCLI([fixture("template.json"), fixture("data.json")]);
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({
+        greeting: "Hello, World!",
+        age: 25,
+        items: ["apple", "banana", "cherry"],
+      });
+    });
+
+    it("reads existing extensionless template and data filenames", () => {
+      fs.writeFileSync(
+        path.join(tempDir, "template"),
+        '{"message":"Hi ${name}"}',
       );
+      fs.writeFileSync(path.join(tempDir, "data"), '{"name":"World"}');
+      const result = runCLI(["template", "data"], { cwd: tempDir });
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, World!");
-      expect(output.age).toBe(25);
-      expect(output.items).toEqual(["apple", "banana", "cherry"]);
+      expect(JSON.parse(result.stdout)).toEqual({ message: "Hi World" });
     });
 
-    it("should render template with raw string data", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json '{"name":"Alice","age":30,"items":["one","two"]}'`
-      );
+    it("renders a template file with raw JSON data", () => {
+      const result = runCLI([
+        fixture("template.json"),
+        '{"name":"Alice","age":30,"items":["one","two"]}',
+      ]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, Alice!");
-      expect(output.age).toBe(30);
-      expect(output.items).toEqual(["one", "two"]);
+      expect(JSON.parse(result.stdout)).toEqual({
+        greeting: "Hello, Alice!",
+        age: 30,
+        items: ["one", "two"],
+      });
     });
 
-    it("should render raw template with file data", () => {
-      const template = '{"message":"Hi ${name}"}';
-      const result = runCLI(`'${template}' ${FIXTURES_PATH}/data.json`);
+    it("renders a raw template with file data", () => {
+      const result = runCLI(['{"message":"Hi ${name}"}', fixture("data.json")]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.message).toBe("Hi World");
+      expect(JSON.parse(result.stdout)).toEqual({ message: "Hi World" });
     });
 
-    it("should render both raw template and data", () => {
-      const template = '{"message":"${msg}"}';
-      const data = '{"msg":"test"}';
-      const result = runCLI(`'${template}' '${data}'`);
+    it("renders both raw template and data", () => {
+      const result = runCLI(['{"message":"${msg}"}', '{"msg":"test"}']);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.message).toBe("test");
+      expect(JSON.parse(result.stdout)).toEqual({ message: "test" });
     });
 
-    it("should render template without data argument", () => {
-      const template = '{"message":"static"}';
-      const result = runCLI(`'${template}'`);
+    it("renders a template without a data argument", () => {
+      const result = runCLI(['{"message":"static"}']);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.message).toBe("static");
+      expect(JSON.parse(result.stdout)).toEqual({ message: "static" });
     });
   });
 
   describe("Format detection and conversion", () => {
-    it("should handle JSON template with YAML data", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json ${FIXTURES_PATH}/data.yaml`
-      );
+    it.each([
+      ["template.json", "data.yaml"],
+      ["template.yaml", "data.json"],
+      ["template.yaml", "data.yaml"],
+    ])("renders %s with %s", (template, data) => {
+      const result = runCLI([fixture(template), fixture(data)]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, World!");
+      expect(JSON.parse(result.stdout).greeting).toBe("Hello, World!");
     });
 
-    it("should handle YAML template with JSON data", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.yaml ${FIXTURES_PATH}/data.json`
-      );
+    it("parses raw YAML whose final scalar resembles a JSON filename", () => {
+      const result = runCLI([
+        '{"file":"${file}"}',
+        "name: Alice\nfile: report.json",
+      ]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, World!");
-    });
-
-    it("should handle YAML template with YAML data", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.yaml ${FIXTURES_PATH}/data.yaml`
-      );
-      expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, World!");
+      expect(JSON.parse(result.stdout)).toEqual({ file: "report.json" });
     });
   });
 
   describe("Output options", () => {
-    it("should write to output file", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json ${FIXTURES_PATH}/data.json -o ${OUTPUT_PATH}`
-      );
+    it("writes to an output file", () => {
+      const outputPath = path.join(tempDir, "output.json");
+      const result = runCLI([
+        fixture("template.json"),
+        fixture("data.json"),
+        "-o",
+        outputPath,
+      ]);
       expect(result.exitCode).toBe(0);
-      expect(fs.existsSync(OUTPUT_PATH)).toBe(true);
-      const output = JSON.parse(fs.readFileSync(OUTPUT_PATH, "utf8"));
-      expect(output.greeting).toBe("Hello, World!");
+      expect(JSON.parse(fs.readFileSync(outputPath, "utf8")).greeting).toBe(
+        "Hello, World!",
+      );
     });
 
-    it("should output pretty JSON", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json ${FIXTURES_PATH}/data.json --pretty`
-      );
+    it("outputs pretty JSON", () => {
+      const result = runCLI([
+        fixture("template.json"),
+        fixture("data.json"),
+        "--pretty",
+      ]);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("\n");
       expect(result.stdout).toContain("  ");
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, World!");
+      expect(JSON.parse(result.stdout).greeting).toBe("Hello, World!");
     });
 
-    it("should output YAML format", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json ${FIXTURES_PATH}/data.json --format yaml`
-      );
+    it("outputs YAML", () => {
+      const result = runCLI([
+        fixture("template.json"),
+        fixture("data.json"),
+        "--format",
+        "yaml",
+      ]);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("greeting:");
       expect(result.stdout).toContain("Hello, World!");
     });
 
-    it("should use custom indentation", () => {
-      const result = runCLI(
-        `${FIXTURES_PATH}/template.json ${FIXTURES_PATH}/data.json --pretty --indent 4`
-      );
+    it("writes exactly one trailing newline for YAML stdout", () => {
+      const result = runCLI(['{"x":1}', "--format", "yaml"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe("x: 1\n");
+    });
+
+    it("rejects an unsupported output format", () => {
+      const result = runCLI([
+        fixture("template.json"),
+        fixture("data.json"),
+        "--format",
+        "toml",
+      ]);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toMatch(/format/i);
+    });
+
+    it("uses custom indentation", () => {
+      const result = runCLI([
+        fixture("template.json"),
+        fixture("data.json"),
+        "--pretty",
+        "--indent",
+        "4",
+      ]);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("    ");
+    });
+
+    it("rejects invalid indentation", () => {
+      const result = runCLI([
+        fixture("template.json"),
+        fixture("data.json"),
+        "--pretty",
+        "--indent",
+        "abc",
+      ]);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toMatch(/indent/i);
     });
   });
 
   describe("Stdin support", () => {
-    it("should read data from stdin with - argument", async () => {
-      const data = JSON.stringify({
+    it("reads a template from stdin", () => {
+      const result = runCLI(["-", '{"name":"Ada"}'], {
+        input: '{"greeting":"Hello ${name}"}',
+      });
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({ greeting: "Hello Ada" });
+    });
+
+    it("reads JSON data from stdin", () => {
+      const input = JSON.stringify({
         name: "StdinUser",
         age: 35,
         items: ["x", "y"],
       });
-      const result = await runCLIWithStdin(
-        `${FIXTURES_PATH}/template.json -`,
-        data
-      );
+      const result = runCLI([fixture("template.json"), "-"], { input });
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, StdinUser!");
-      expect(output.age).toBe(35);
+      expect(JSON.parse(result.stdout).greeting).toBe("Hello, StdinUser!");
     });
 
-    it("should read YAML data from stdin", async () => {
-      const data = `name: YamlUser
-age: 40
-items:
-  - a
-  - b`;
-      const result = await runCLIWithStdin(
-        `${FIXTURES_PATH}/template.json -`,
-        data
-      );
+    it("reads YAML data from stdin", () => {
+      const input = "name: YamlUser\nage: 40\nitems:\n  - a\n  - b";
+      const result = runCLI([fixture("template.json"), "-"], { input });
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.greeting).toBe("Hello, YamlUser!");
-      expect(output.age).toBe(40);
+      expect(JSON.parse(result.stdout).age).toBe(40);
+    });
+
+    it("rejects using stdin for both template and data", () => {
+      const result = runCLI(["-", "-"], { input: "{}" });
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toMatch(/cannot both read from stdin/i);
     });
   });
 
-  describe("Partials", () => {
-    it("should load partials from file", () => {
-      const template = '{"header":{"$partial":"header"},"footer":{"$partial":"footer"}}';
-      const result = runCLI(
-        `'${template}' '{}' -p ${FIXTURES_PATH}/partials.json`
-      );
+  describe("Partials and custom functions", () => {
+    it("loads partials from a file", () => {
+      const template =
+        '{"header":{"$partial":"header"},"footer":{"$partial":"footer"}}';
+      const result = runCLI([template, "{}", "-p", fixture("partials.json")]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.header).toBe("Welcome Header");
-      expect(output.footer).toBe("Copyright 2024");
+      expect(JSON.parse(result.stdout)).toEqual({
+        header: "Welcome Header",
+        footer: "Copyright 2024",
+      });
     });
-  });
 
-  describe("Custom functions", () => {
-    it("should load custom functions from file", () => {
+    it("loads custom functions from a file", () => {
       const template = '{"upper":"${upper(name)}","doubled":"${double(age)}"}';
-      const data = '{"name":"hello","age":5}';
-      const result = runCLI(
-        `'${template}' '${data}' --functions ${FIXTURES_PATH}/functions.js`
-      );
+      const result = runCLI([
+        template,
+        '{"name":"hello","age":5}',
+        "--functions",
+        fixture("functions.js"),
+      ]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.upper).toBe("HELLO");
-      expect(output.doubled).toBe(10);
+      expect(JSON.parse(result.stdout)).toEqual({
+        upper: "HELLO",
+        doubled: 10,
+      });
+    });
+
+    it("loads a functions module whose path contains # and spaces", () => {
+      const functionsPath = path.join(tempDir, "functions #1.mjs");
+      fs.copyFileSync(fixture("functions.js"), functionsPath);
+      const result = runCLI([
+        '{"upper":"${upper(name)}"}',
+        '{"name":"hello"}',
+        "--functions",
+        functionsPath,
+      ]);
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({ upper: "HELLO" });
     });
   });
 
   describe("Complex scenarios", () => {
-    it("should handle conditionals", () => {
-      const template = '{"$if show":{"result":"${value}"},"$else":{"result":"hidden"}}';
-      const data1 = '{"show":true,"value":"visible"}';
-      const result1 = runCLI(`'${template}' '${data1}'`);
-      expect(result1.exitCode).toBe(0);
-      expect(JSON.parse(result1.stdout).result).toBe("visible");
-
-      const data2 = '{"show":false,"value":"visible"}';
-      const result2 = runCLI(`'${template}' '${data2}'`);
-      expect(result2.exitCode).toBe(0);
-      expect(JSON.parse(result2.stdout).result).toBe("hidden");
+    it("handles conditionals", () => {
+      const template =
+        '{"$if show":{"result":"${value}"},"$else":{"result":"hidden"}}';
+      const visible = runCLI([template, '{"show":true,"value":"visible"}']);
+      const hidden = runCLI([template, '{"show":false,"value":"visible"}']);
+      expect(visible.exitCode).toBe(0);
+      expect(hidden.exitCode).toBe(0);
+      expect(JSON.parse(visible.stdout).result).toBe("visible");
+      expect(JSON.parse(hidden.stdout).result).toBe("hidden");
     });
 
-    it("should handle loops", () => {
+    it("handles loops", () => {
       const template = '[{"$each":"user in users","name":"${user.name}"}]';
       const data = '{"users":[{"name":"Alice"},{"name":"Bob"}]}';
-      const result = runCLI(`'${template}' '${data}'`);
+      const result = runCLI([template, data]);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(Array.isArray(output)).toBe(true);
-      expect(output[0].name).toBe("Alice");
-      expect(output[1].name).toBe("Bob");
+      expect(JSON.parse(result.stdout)).toEqual([
+        { name: "Alice" },
+        { name: "Bob" },
+      ]);
     });
 
-    it("should handle nested templates", () => {
-      const template = '{"user":{"greeting":"Hello ${user.name}","age":"${user.age}"}}';
-      const data = '{"user":{"name":"John","age":25}}';
-      const result = runCLI(`'${template}' '${data}'`);
+    it("handles nested templates", () => {
+      const template =
+        '{"user":{"greeting":"Hello ${user.name}","age":"${user.age}"}}';
+      const result = runCLI([template, '{"user":{"name":"John","age":25}}']);
       expect(result.exitCode).toBe(0);
-      const output = JSON.parse(result.stdout);
-      expect(output.user.greeting).toBe("Hello John");
-      expect(output.user.age).toBe(25);
+      expect(JSON.parse(result.stdout).user).toEqual({
+        greeting: "Hello John",
+        age: 25,
+      });
     });
 
-    it("should handle all options together", () => {
-      const template = '{"header":{"$partial":"header"},"name":"${upper(name)}"}';
-      const data = '{"name":"test"}';
-      const result = runCLI(
-        `'${template}' '${data}' -p ${FIXTURES_PATH}/partials.json --functions ${FIXTURES_PATH}/functions.js --pretty -o ${OUTPUT_PATH}`
-      );
+    it("handles all options together", () => {
+      const outputPath = path.join(tempDir, "output.json");
+      const template =
+        '{"header":{"$partial":"header"},"name":"${upper(name)}"}';
+      const result = runCLI([
+        template,
+        '{"name":"test"}',
+        "-p",
+        fixture("partials.json"),
+        "--functions",
+        fixture("functions.js"),
+        "--pretty",
+        "-o",
+        outputPath,
+      ]);
       expect(result.exitCode).toBe(0);
-      expect(fs.existsSync(OUTPUT_PATH)).toBe(true);
-      const output = JSON.parse(fs.readFileSync(OUTPUT_PATH, "utf8"));
-      expect(output.header).toBe("Welcome Header");
-      expect(output.name).toBe("TEST");
+      expect(JSON.parse(fs.readFileSync(outputPath, "utf8"))).toEqual({
+        header: "Welcome Header",
+        name: "TEST",
+      });
     });
   });
 
-  describe("Error handling", () => {
-    it("should handle invalid JSON", () => {
-      const result = runCLI("'[invalid' '{}'");
-      expect(result.exitCode).toBe(1);
+  describe("Errors and metadata", () => {
+    it("reports invalid template input", () => {
+      const result = runCLI(["[invalid", "{}"]);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("Error:");
     });
 
-    it("should handle missing template file", () => {
-      // When file doesn't exist, it's treated as raw string, so it will try to parse "nonexistent.json" as JSON
-      const result = runCLI("'[invalid json' '{}'");
-      expect(result.exitCode).toBe(1);
+    it("reports an explicitly named missing template file", () => {
+      const missingPath = path.join(tempDir, "missing-template.json");
+      const result = runCLI([missingPath, "{}"]);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(missingPath);
+      expect(result.stderr).toMatch(/not found|does not exist|ENOENT/i);
     });
 
-    it("should handle invalid partials file", () => {
-      const result = runCLI(`'{}' '{}' -p nonexistent.json`);
-      expect(result.exitCode).toBe(1);
+    it("rejects an empty YAML template", () => {
+      const templatePath = path.join(tempDir, "empty.yaml");
+      fs.writeFileSync(templatePath, "");
+      const result = runCLI([templatePath]);
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Error:");
     });
 
-    it("should handle invalid functions file", () => {
-      const result = runCLI(`'{}' '{}' --functions nonexistent.js`);
-      expect(result.exitCode).toBe(1);
+    it("serializes a missing root binding as valid JSON", () => {
+      const result = runCLI(["${missing}"]);
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({});
+    });
+
+    it("reports an invalid partials file", () => {
+      const result = runCLI([
+        "{}",
+        "{}",
+        "-p",
+        path.join(tempDir, "missing.json"),
+      ]);
+      expect(result.exitCode).not.toBe(0);
+    });
+
+    it("reports an invalid functions file", () => {
+      const result = runCLI([
+        "{}",
+        "{}",
+        "--functions",
+        path.join(tempDir, "missing.mjs"),
+      ]);
+      expect(result.exitCode).not.toBe(0);
+    });
+
+    it("reports the package version", () => {
+      const expectedVersion = JSON.parse(
+        fs.readFileSync(packagePath, "utf8"),
+      ).version;
+      const result = runCLI(["--version"]);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toBe(expectedVersion);
+      expect(result.stderr).toBe("");
     });
   });
 });

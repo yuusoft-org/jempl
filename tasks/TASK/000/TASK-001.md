@@ -1,12 +1,15 @@
 ---
 title: Implement CLI version for jempl library
-status: todo
+status: done
 priority: medium
 ---
 
 # Description
 
 Create a command-line interface for the jempl templating library that allows users to render templates from the terminal. The CLI should support both file inputs and raw strings for templates and data, with support for JSON and YAML formats.
+
+This is the original implementation plan. The CLI is implemented in version
+1.2.0; see [the CLI guide](../../../docs/CLI.md) for its current interface.
 
 # CLI Design & Interface
 
@@ -865,4 +868,3 @@ jempl template.json '{"x": "value"}'       # Mixed
 - [ ] Template formatting/linting
 - [ ] Interactive mode
 - [ ] Shell completion scripts (bash, zsh, fish)
-

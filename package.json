@@ -10,7 +10,8 @@
   "type": "module",
   "files": [
     "src",
-    "types"
+    "types",
+    "docs/CLI.md"
   ],
   "repository": {
     "type": "git",

@@ -16,17 +16,17 @@ jempl [options] <template> [data]
 
 ## Arguments
 
-- `template` - Template file path or raw template string (JSON or YAML)
-- `data` - Data file path, raw data string, or `-` for stdin (optional)
+- `template` - Existing template file path, raw JSON/YAML template string, or `-` for stdin
+- `data` - Existing data file path, raw JSON/YAML data string, or `-` for stdin (optional; defaults to `{}`)
 
 ## Options
 
 - `-o, --output <file>` - Output file path (default: stdout)
-- `-f, --format <format>` - Output format: `json` or `yaml` (default: `json`)
+- `-f, --format <format>` - Output format: `json` or `yaml` (default: `json`; other values fail)
 - `-p, --partials <file>` - Partials file path (JSON or YAML)
 - `--functions <file>` - Custom functions file path (JS module)
 - `--pretty` - Pretty-print JSON output
-- `--indent <number>` - Indentation spaces for pretty output (default: 2)
+- `--indent <number>` - Indentation spaces for pretty JSON or YAML output: integer from 1 to 10 (default: 2)
 - `-h, --help` - Display help
 - `-V, --version` - Output version number
 
@@ -37,6 +37,12 @@ jempl [options] <template> [data]
 **With files:**
 ```bash
 jempl template.json data.json
+```
+
+Existing files can have any name, including names without an extension:
+
+```bash
+jempl ./template ./data
 ```
 
 **With raw strings:**
@@ -80,6 +86,8 @@ jempl template.yaml data.yaml --format json
 ```bash
 jempl template.yaml data.yaml --format yaml
 ```
+
+`--format` selects the output format only. JSON and YAML input can each produce either output format.
 
 ### Output to File
 
@@ -236,27 +244,29 @@ jempl template.yaml data.yaml \
 }
 ```
 
-## File vs String Detection
+## File Paths and Raw Strings
 
-The CLI automatically detects whether arguments are file paths or raw strings:
+An existing path is read as a file, even when its name has no extension. A
+missing argument that looks like a path (for example, a path with separators
+or an extension such as `./missing.json` or `missing.yaml`) fails instead of
+being parsed as inline content. Other arguments are parsed as raw JSON or YAML
+strings:
 
-**Treated as files:**
-- Contains path separators (`/` or `\`)
-- Has a file extension (`.json`, `.yaml`, `.yml`)
-- Example: `template.json`, `./data.yaml`, `/path/to/file.json`
+```bash
+jempl '{"file":"${file}"}' 'file: report.json'
+# Output: {"file":"report.json"}
+```
 
-**Treated as raw strings:**
-- Starts with `{` or `[`
-- No path separators or extensions
-- Example: `'{"x":1}'`, `'[1,2,3]'`
+Either `template` or `data` can be `-` to read from stdin, but not both in
+the same command. Quote inline strings so the shell passes them intact.
 
 ## Format Detection
 
-Input formats are auto-detected from file extensions:
+For files with recognized extensions, the extension selects the input parser:
 - `.json` → JSON
 - `.yaml`, `.yml` → YAML
 
-For raw strings, the CLI tries JSON first, then YAML.
+For files with other extensions or no extension, and for all raw strings, the CLI tries JSON first, then YAML. A filename or extension in raw YAML content, as in `file: report.json` above, does not select its parser.
 
 ## Error Handling
 
@@ -267,6 +277,18 @@ The CLI provides clear error messages for common issues:
 jempl '[invalid' '{}'
 # Error: Failed to parse data as JSON or YAML
 
+# Missing explicit input path
+jempl ./missing.json '{}'
+# Error: Input file not found: ./missing.json
+
+# Unsupported output format
+jempl '{"ok":true}' --format toml
+# Error: --format must be json or yaml
+
+# Invalid indentation
+jempl '{"ok":true}' --indent abc
+# Error: --indent must be an integer from 1 to 10
+
 # Missing partials file
 jempl template.json data.json -p nonexistent.json
 # Error: ENOENT: no such file or directory
@@ -275,6 +297,8 @@ jempl template.json data.json -p nonexistent.json
 jempl template.json data.json --functions nonexistent.js
 # Error: Cannot find module
 ```
+
+An empty template also fails. `-V` prints the version from the installed package.
 
 ## Tips
 
