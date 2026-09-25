@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.3
+
+### Fixed
+
+- Escaped variable and path expressions preserve literal marker-like text
+  without slowing sharply on long strings.
+- Variable, condition, loop, and path-reference lookups ignore inherited
+  properties while retaining explicitly supplied properties with those names.
+- Optimized conditional loops preserve getter evaluation order and render
+  missing values as empty text in highlighted messages.
+
 ## 1.1.2
 
 ### Fixed

@@ -128,6 +128,10 @@ const renderNode = (node, options, data, scope) => {
 
 // Path cache for variable resolution performance
 const pathCache = new Map();
+const hasOwn = (object, key) =>
+  object != null && Object.prototype.hasOwnProperty.call(object, key);
+const getOwnPropertyValue = (object, key) =>
+  hasOwn(object, key) ? object[key] : undefined;
 
 /**
  * Parses a path segment that may contain array indices
@@ -188,7 +192,7 @@ const getVariableValue = (path, data, scope) => {
   if (!path) return undefined;
 
   // Check local scope first (for loop variables)
-  if (path in scope) {
+  if (hasOwn(scope, path)) {
     return scope[path];
   }
 
@@ -239,7 +243,7 @@ const getVariableValue = (path, data, scope) => {
     const accessor = parsedPath[i];
 
     // For property access, check scope first
-    if (accessor.type === "property" && accessor.value in scope) {
+    if (accessor.type === "property" && hasOwn(scope, accessor.value)) {
       current = scope[accessor.value];
       continue;
     }
@@ -250,11 +254,8 @@ const getVariableValue = (path, data, scope) => {
       return undefined;
     }
 
-    if (accessor.type === "property") {
-      current = current[accessor.value];
-    } else if (accessor.type === "index") {
-      current = current[accessor.value];
-    }
+    if (!hasOwn(current, accessor.value)) return undefined;
+    current = current[accessor.value];
   }
 
   return current;
@@ -573,7 +574,7 @@ const renderLoopConditionalUltraFast = (node, iterable) => {
           const item = iterable[i];
 
           // Inline condition evaluation
-          if (item[condProp]) {
+          if (getOwnPropertyValue(item, condProp)) {
             const result = {};
 
             // Inline object property rendering
@@ -589,7 +590,7 @@ const renderLoopConditionalUltraFast = (node, iterable) => {
                   result[key] = item;
                 } else if (path.startsWith(itemVar + ".")) {
                   const propName = path.substring(itemVar.length + 1);
-                  result[key] = item[propName];
+                  result[key] = getOwnPropertyValue(item, propName);
                 } else {
                   // Fall back for complex paths
                   return null;
@@ -608,7 +609,7 @@ const renderLoopConditionalUltraFast = (node, iterable) => {
                       segments.push(item != null ? String(item) : "");
                     } else if (path.startsWith(itemVar + ".")) {
                       const propName = path.substring(itemVar.length + 1);
-                      const value = item[propName];
+                      const value = getOwnPropertyValue(item, propName);
                       segments.push(value != null ? String(value) : "");
                     } else {
                       canOptimize = false;
@@ -743,10 +744,11 @@ const renderLoopUltraFast = (node, iterable) => {
         // Super-specialized loop for the common todo pattern: { id: item.id, title: '${item.title}', completed: item.completed }
         for (let i = 0; i < iterable.length; i++) {
           const item = iterable[i];
+          const title = getOwnPropertyValue(item, "title");
           results[i] = {
-            id: item.id,
-            title: item.title != null ? String(item.title) : "",
-            completed: item.completed,
+            id: getOwnPropertyValue(item, "id"),
+            title: title != null ? String(title) : "",
+            completed: getOwnPropertyValue(item, "completed"),
           };
         }
       } else {
@@ -762,11 +764,11 @@ const renderLoopUltraFast = (node, iterable) => {
             } else if (accessor.type === "item") {
               result[accessor.key] = item;
             } else if (accessor.type === "prop") {
-              result[accessor.key] = item[accessor.prop];
+              result[accessor.key] = getOwnPropertyValue(item, accessor.prop);
             } else if (accessor.type === "item_string") {
               result[accessor.key] = item != null ? String(item) : "";
             } else if (accessor.type === "prop_string") {
-              const value = item[accessor.prop];
+              const value = getOwnPropertyValue(item, accessor.prop);
               result[accessor.key] = value != null ? String(value) : "";
             }
           }
@@ -815,7 +817,7 @@ const renderLoopFastPath = (node, options, data, scope, iterable) => {
       if (scope && scope.__paths__ && iterablePath) {
         const parts = iterablePath.split(".");
         const base = parts[0];
-        if (base in scope.__paths__) {
+        if (hasOwn(scope.__paths__, base)) {
           // Replace the base with its full path
           iterablePath = scope.__paths__[base];
           if (parts.length > 1) {
@@ -852,7 +854,7 @@ const renderLoopFastPath = (node, options, data, scope, iterable) => {
             const propName = path.substring(itemVar.length + 1);
             if (!propName.includes(".") && !propName.includes("[")) {
               // Single property access without arrays - fastest path
-              result[key] = item[propName];
+              result[key] = getOwnPropertyValue(item, propName);
             } else {
               // Multi-level property access or array indices
               // Use the full getVariableValue logic but with item in scope
@@ -887,7 +889,7 @@ const renderLoopFastPath = (node, options, data, scope, iterable) => {
               } else if (path.startsWith(itemVar + ".")) {
                 const propName = path.substring(itemVar.length + 1);
                 if (!propName.includes(".") && !propName.includes("[")) {
-                  value = item[propName];
+                  value = getOwnPropertyValue(item, propName);
                 } else {
                   // Use the full getVariableValue logic for complex paths
                   value = getVariableValue(path, data, {
@@ -982,18 +984,19 @@ const renderConditionalTestPatternNuclear = (node, iterable, itemVar) => {
             const item = iterable[i];
 
             // Inline visibility check
-            if (item.visible) {
+            if (getOwnPropertyValue(item, "visible")) {
               const result = {
-                id: item.id, // Direct property access, no template overhead
+                id: getOwnPropertyValue(item, "id"),
               };
 
               // Inline highlighted check with direct object creation
-              if (item.highlighted) {
+              if (getOwnPropertyValue(item, "highlighted")) {
                 result.highlight = true;
-                result.message = `This item is highlighted: ${item.name}`;
+                const name = getOwnPropertyValue(item, "name");
+                result.message = `This item is highlighted: ${name != null ? String(name) : ""}`;
               } else {
                 result.highlight = false;
-                result.message = item.name;
+                result.message = getOwnPropertyValue(item, "name");
               }
 
               results.push(result);
@@ -1083,7 +1086,7 @@ const renderLoop = (node, options, data, scope) => {
   if (scope && scope.__paths__ && iterablePath) {
     const parts = iterablePath.split(".");
     const base = parts[0];
-    if (base in scope.__paths__) {
+    if (hasOwn(scope.__paths__, base)) {
       // Replace the base with its full path
       iterablePath = scope.__paths__[base];
       if (parts.length > 1) {
@@ -1549,21 +1552,21 @@ const renderPathReference = (node, options, data, scope) => {
   const properties = parts.slice(1);
 
   // Check if it's in scope (loop variable)
-  if (!scope || !(base in scope)) {
+  if (!hasOwn(scope, base)) {
     throw new JemplRenderError(
       `Path reference '#{${path}}' refers to '${base}' which is not a loop variable in the current scope`,
     );
   }
 
   // Enable path tracking if not already enabled
-  if (!scope.__paths__) {
+  if (!hasOwn(scope, "__paths__")) {
     // We need to reconstruct the path for the current scope
     // This is a fallback that shouldn't normally happen
     scope.__paths__ = {};
   }
 
   // Check if we have the path for this variable
-  if (!(base in scope.__paths__)) {
+  if (!hasOwn(scope.__paths__, base)) {
     // This shouldn't happen in normal operation but handle gracefully
     throw new JemplRenderError(
       `Path reference '#{${path}}' cannot be resolved - path tracking may not be initialized properly`,
