@@ -10,6 +10,7 @@ Jempl is a JSON templating engine with conditionals, loops, partials, and custom
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Command Line Interface](#command-line-interface)
 - [Variable Replacement](#variable-replacement)
 - [Conditionals](#conditionals)
 - [Loops](#loops)
@@ -51,6 +52,25 @@ const data = {
 const result = parseAndRender(template, data);
 // Output: { name: "John", greeting: "Hello John!", status: "adult" }
 ```
+
+## Command Line Interface
+
+Install globally to use the `jempl` command:
+
+```bash
+npm install -g jempl
+jempl template.json data.json --pretty
+```
+
+The CLI accepts existing JSON or YAML files, including files without an extension, and quoted raw JSON or YAML strings. Use `-` as the data argument to read stdin:
+
+```bash
+jempl '{"greeting":"Hello ${name}"}' '{"name":"Ada"}'
+# Output: {"greeting":"Hello Ada"}
+cat data.yaml | jempl template.yaml - --format json
+```
+
+`--format` accepts `json` or `yaml` for output. Missing explicit input paths and invalid format or indentation options fail with an error. See the [CLI guide](./docs/CLI.md) for all options and input rules.
 
 ## Objectives
 

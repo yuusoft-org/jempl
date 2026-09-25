@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- Command-line rendering from JSON/YAML files, raw strings, or stdin, with
+  partials, custom functions, JSON/YAML output, pretty printing, and file output.
+
+### Fixed
+
+- Existing input files are read even without extensions, while missing explicit
+  paths report an error. Raw input is parsed as JSON or YAML without inferring
+  its format from text that resembles a file extension.
+- Unsupported output formats and indentation outside the 1–10 integer range
+  report errors. Empty templates fail clearly.
+- The CLI version follows the installed package version.
+
 ## 1.1.3
 
 ### Fixed
