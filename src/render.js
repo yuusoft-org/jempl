@@ -990,13 +990,13 @@ const renderConditionalTestPatternNuclear = (node, iterable, itemVar) => {
               };
 
               // Inline highlighted check with direct object creation
-              const name = getOwnPropertyValue(item, "name");
               if (getOwnPropertyValue(item, "highlighted")) {
                 result.highlight = true;
-                result.message = `This item is highlighted: ${name}`;
+                const name = getOwnPropertyValue(item, "name");
+                result.message = `This item is highlighted: ${name != null ? String(name) : ""}`;
               } else {
                 result.highlight = false;
-                result.message = name;
+                result.message = getOwnPropertyValue(item, "name");
               }
 
               results.push(result);

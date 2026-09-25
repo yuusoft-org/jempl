@@ -1,0 +1,77 @@
+file: "../observableItem.js"
+group: parseAndRender
+suites: [conditionalLoopOwnProperties]
+---
+suite: conditionalLoopOwnProperties
+exportName: default
+---
+case: optimized conditional loop interpolates an absent own name as empty text
+in:
+  - items:
+      - $for item in items:
+          $if item.visible:
+            id: "${item.id}"
+            $if item.highlighted:
+              highlight: true
+              message: "This item is highlighted: ${item.name}"
+            $else:
+              highlight: false
+              message: "${item.name}"
+  - visible: true
+    id: 7
+    highlighted: true
+out:
+  rendered:
+    items:
+      - id: 7
+        highlight: true
+        message: "This item is highlighted: "
+  reads: [visible, id, highlighted]
+---
+case: optimized conditional loop reads highlighted before name
+in:
+  - items:
+      - $for item in items:
+          $if item.visible:
+            id: "${item.id}"
+            $if item.highlighted:
+              highlight: true
+              message: "This item is highlighted: ${item.name}"
+            $else:
+              highlight: false
+              message: "${item.name}"
+  - visible: true
+    id: 8
+    highlighted: true
+    name: "featured"
+out:
+  rendered:
+    items:
+      - id: 8
+        highlight: true
+        message: "This item is highlighted: featured"
+  reads: [visible, id, highlighted, name]
+---
+case: indexed conditional loop reads highlighted before name on general path
+in:
+  - items:
+      - $for item, idx in items:
+          $if item.visible:
+            id: "${item.id}"
+            $if item.highlighted:
+              highlight: true
+              message: "This item is highlighted: ${item.name}"
+            $else:
+              highlight: false
+              message: "${item.name}"
+  - visible: true
+    id: 8
+    highlighted: true
+    name: "featured"
+out:
+  rendered:
+    items:
+      - id: 8
+        highlight: true
+        message: "This item is highlighted: featured"
+  reads: [visible, id, highlighted, name]
