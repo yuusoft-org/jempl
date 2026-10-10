@@ -644,3 +644,90 @@ out:
     content:
       warning: "Too many notifications!"
       count: 7
+---
+# Complete operands that resemble incomplete expressions stay valid.
+case: when with negative number on the right
+in:
+  - items:
+      - $when: score > -1
+        label: "kept"
+      - $when: score < -1
+        label: "dropped"
+  - score: 0
+  - functions: {}
+out:
+  items:
+    - label: "kept"
+---
+case: when with negative number on the left
+in:
+  - $when: -5 < score
+    label: "kept"
+  - score: 0
+  - functions: {}
+out:
+  label: "kept"
+---
+case: when with operator characters inside string literals
+in:
+  - items:
+      - $when: label == "!"
+        value: "bang"
+      - $when: label != "!"
+        value: "not bang"
+      - $when: label == "-"
+        value: "dash"
+  - label: "!"
+  - functions: {}
+out:
+  items:
+    - value: "bang"
+---
+case: when with double negation and negation followed by a space
+in:
+  - items:
+      - $when: "!!flag"
+        value: "double"
+      - $when: "! flag"
+        value: "spaced"
+  - flag: true
+  - functions: {}
+out:
+  items:
+    - value: "double"
+---
+case: when with negated and redundantly grouped expressions
+in:
+  - items:
+      - $when: "!(a && b)"
+        value: "negated group"
+      - $when: "((a))"
+        value: "grouped"
+  - a: true
+    b: false
+  - functions: {}
+out:
+  items:
+    - value: "negated group"
+    - value: "grouped"
+---
+case: when with arithmetic and membership operands
+in:
+  - items:
+      - $when: count - 1 > 0
+        value: "subtraction"
+      - $when: a + b == 3
+        value: "addition"
+      - $when: role in roles
+        value: "membership"
+  - count: 2
+    a: 1
+    b: 2
+    role: "editor"
+    roles: ["admin", "editor"]
+  - functions: {}
+out:
+  items:
+    - value: "subtraction"
+    - value: "addition"
+    - value: "membership"

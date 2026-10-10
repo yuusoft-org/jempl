@@ -124,14 +124,13 @@ in:
 # Parser doesn't validate operators, === evaluates as false
 out: {}
 ---
-case: when with incomplete comparison (parser doesn't validate)
+case: when with incomplete comparison
 in:
   - "$when": "age >"
     value: "test"
   - age: 20
-# Parser doesn't validate expression completeness, evaluates as truthy
-out:
-  value: "test"
+# A missing operand used to parse as 0, so this rendered as age > 0
+throws: "Parse Error: Incomplete condition expression - missing right operand for '>' (got: 'age >')"
 ---
 case: when combined with if at same level (both work)
 in:
@@ -164,13 +163,13 @@ in:
 # $else without $if throws its own error
 throws: "Parse Error: '$else' without matching '$if'"
 ---
-case: when with malformed logical expression (parser doesn't validate)
+case: when with malformed logical expression
 in:
   - "$when": "isActive && "
     value: "test"
   - isActive: true
-# Parser doesn't validate expression completeness
-out: {}
+# A missing operand used to parse as 0, so this rendered as isActive && 0
+throws: "Parse Error: Incomplete condition expression - missing right operand for '&&' (got: 'isActive && ')"
 ---
 case: when with unbalanced parentheses (parser doesn't validate)
 in:
@@ -181,14 +180,13 @@ in:
 # Parser doesn't validate parentheses balance
 out: {}
 ---
-case: when with invalid negation syntax (parser doesn't validate)
+case: when with invalid negation syntax
 in:
   - "$when": "! "
     value: "test"
   - {}
-# Parser doesn't validate negation syntax, evaluates as truthy
-out:
-  value: "test"
+# A missing operand used to parse as 0, so this rendered as !0
+throws: "Parse Error: Incomplete condition expression - missing operand for '!' (got: '! ')"
 ---
 case: when in array of objects (valid)
 in:
@@ -273,3 +271,121 @@ in:
   - values: ["a", "b"]
 # Parser doesn't validate 'in' operator syntax
 out: {}
+---
+# Incomplete condition expressions: each case below used to parse the
+# missing operand as the number 0.
+case: when with missing left comparison operand
+in:
+  - "$when": "> age"
+    value: "test"
+  - age: -5
+throws: "Parse Error: Incomplete condition expression - missing left operand for '>' (got: '> age')"
+---
+case: when with missing right operand for >=
+in:
+  - "$when": "age >="
+    value: "test"
+  - age: 20
+throws: "Parse Error: Incomplete condition expression - missing right operand for '>=' (got: 'age >=')"
+---
+case: when with missing left operand for <=
+in:
+  - "$when": "<= age"
+    value: "test"
+  - age: 20
+throws: "Parse Error: Incomplete condition expression - missing left operand for '<=' (got: '<= age')"
+---
+case: when with missing right operand for <
+in:
+  - "$when": "age <"
+    value: "test"
+  - age: -1
+throws: "Parse Error: Incomplete condition expression - missing right operand for '<' (got: 'age <')"
+---
+case: when with missing right operand for ==
+in:
+  - "$when": "flag =="
+    value: "test"
+  - flag: false
+throws: "Parse Error: Incomplete condition expression - missing right operand for '==' (got: 'flag ==')"
+---
+case: when with missing left operand for !=
+in:
+  - "$when": "!= flag"
+    value: "test"
+  - flag: 1
+throws: "Parse Error: Incomplete condition expression - missing left operand for '!=' (got: '!= flag')"
+---
+case: when with missing right operand for ||
+in:
+  - "$when": "isAdmin ||"
+    value: "test"
+  - isAdmin: false
+throws: "Parse Error: Incomplete condition expression - missing right operand for '||' (got: 'isAdmin ||')"
+---
+case: when with missing left operand for ||
+in:
+  - "$when": "|| isAdmin"
+    value: "test"
+  - isAdmin: false
+throws: "Parse Error: Incomplete condition expression - missing left operand for '||' (got: '|| isAdmin')"
+---
+case: when with missing left operand for &&
+in:
+  - "$when": "&& isActive"
+    value: "test"
+  - isActive: true
+throws: "Parse Error: Incomplete condition expression - missing left operand for '&&' (got: '&& isActive')"
+---
+case: when with missing operand inside parentheses
+in:
+  - "$when": "isActive && (age >)"
+    value: "test"
+  - isActive: true
+    age: 20
+throws: "Parse Error: Incomplete condition expression - missing right operand for '>' (got: 'isActive && (age >)')"
+---
+case: when with missing operand in a deeply nested group
+in:
+  - "$when": "a || (b && (c == ))"
+    value: "test"
+  - a: false
+    b: true
+    c: 0
+throws: "Parse Error: Incomplete condition expression - missing right operand for '==' (got: 'a || (b && (c == ))')"
+---
+case: when with negation missing its operand after a logical operator
+in:
+  - "$when": "isActive && !"
+    value: "test"
+  - isActive: true
+throws: "Parse Error: Incomplete condition expression - missing operand for '!' (got: 'isActive && !')"
+---
+case: when with empty parentheses
+in:
+  - "$when": "()"
+    value: "test"
+  - {}
+throws: "Parse Error: Incomplete condition expression - missing operand (got: '()')"
+---
+case: when with empty parentheses inside an expression
+in:
+  - "$when": "isActive && ( )"
+    value: "test"
+  - isActive: true
+throws: "Parse Error: Incomplete condition expression - missing operand (got: 'isActive && ( )')"
+---
+case: when with a doubled comparison operator
+in:
+  - "$when": "age > > 18"
+    value: "test"
+  - age: 20
+throws: "Parse Error: Incomplete condition expression - missing left operand for '>' (got: 'age > > 18')"
+---
+case: when with incomplete condition inside an array item
+in:
+  - - "$when": "score >"
+      label: "high"
+    - label: "always"
+  - score: 5
+throws: "Parse Error: Incomplete condition expression - missing right operand for '>' (got: 'score >')"

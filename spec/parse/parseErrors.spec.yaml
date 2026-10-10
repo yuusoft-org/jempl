@@ -193,3 +193,59 @@ throws: "Parse Error: $for loops must be inside arrays - use '- $for:nested item
 
 
 
+---
+# Incomplete $if/$elif expressions that the trailing-operator check misses.
+# These used to parse the missing operand as the number 0.
+case: if with missing left comparison operand
+in:
+  - template:
+      "$if > user.age": "adult"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete condition expression - missing left operand for '>' (got: '> user.age')"
+
+---
+case: if with dangling logical and
+in:
+  - template:
+      "$if user.isActive &&": "active"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete condition expression - missing right operand for '&&' (got: 'user.isActive &&')"
+
+---
+case: if with missing left operand for logical or
+in:
+  - template:
+      "$if || user.isAdmin": "admin"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete condition expression - missing left operand for '||' (got: '|| user.isAdmin')"
+
+---
+case: if with negation missing its operand
+in:
+  - template:
+      "$if !": "negated"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete condition expression - missing operand for '!' (got: '!')"
+
+---
+case: if with incomplete comparison inside a group
+in:
+  - template:
+      "$if (user.age >) && user.isActive": "adult"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete condition expression - missing right operand for '>' (got: '(user.age >) && user.isActive')"
+
+---
+case: elif with missing left operand for logical and
+in:
+  - template:
+      "$if user.isAdmin": "admin"
+      "$elif && user.isActive": "active"
+    data: {}
+    functions: {}
+throws: "Parse Error: Incomplete condition expression - missing left operand for '&&' (got: '&& user.isActive')"
