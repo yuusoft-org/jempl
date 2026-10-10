@@ -766,12 +766,55 @@ export const parseWhenCondition = (value, functions = {}) => {
 };
 
 /**
+ * Parses both sides of a binary operator, rejecting a missing operand.
+ * @param {string} expr - The trimmed expression containing the operator
+ * @param {number} index - Position of the operator in expr
+ * @param {string} operator - The operator text as matched
+ * @param {Object} functions - Available functions
+ * @param {string} source - The full condition, for error messages
+ * @returns {{left: Object, right: Object}} Parsed operand nodes
+ */
+const parseBinaryOperands = (expr, index, operator, functions, source) => {
+  const left = expr.substring(0, index).trim();
+  const right = expr.substring(index + operator.length).trim();
+
+  for (const [side, operand] of [
+    ["left", left],
+    ["right", right],
+  ]) {
+    if (operand === "") {
+      throw new JemplParseError(
+        `Incomplete condition expression - missing ${side} operand for '${operator.trim()}' (got: '${source}')`,
+      );
+    }
+  }
+
+  return {
+    left: parseConditionExpression(left, functions, source),
+    right: parseConditionExpression(right, functions, source),
+  };
+};
+
+/**
  * Parses a condition expression into an AST node
  * @param {string} expr - The condition expression
+ * @param {Object} [functions] - Available functions
+ * @param {string} [source] - The full condition, for error messages
  * @returns {Object} AST node representing the condition
  */
-export const parseConditionExpression = (expr, functions = {}) => {
+export const parseConditionExpression = (
+  expr,
+  functions = {},
+  source = expr,
+) => {
   expr = expr.trim();
+
+  // An empty operand would otherwise parse as Number(""), which is 0.
+  if (expr === "") {
+    throw new JemplParseError(
+      `Incomplete condition expression - missing operand (got: '${source}')`,
+    );
+  }
 
   // Handle parentheses first - but only if they are balanced
   if (expr.startsWith("(") && expr.endsWith(")")) {
@@ -791,7 +834,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
     }
 
     if (valid && depth === 0) {
-      return parseConditionExpression(inner, functions);
+      return parseConditionExpression(inner, functions, source);
     }
   }
 
@@ -801,14 +844,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
     return {
       type: NodeType.BINARY,
       op: BinaryOp.OR,
-      left: parseConditionExpression(
-        expr.substring(0, orMatch).trim(),
-        functions,
-      ),
-      right: parseConditionExpression(
-        expr.substring(orMatch + 2).trim(),
-        functions,
-      ),
+      ...parseBinaryOperands(expr, orMatch, "||", functions, source),
     };
   }
 
@@ -818,14 +854,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
     return {
       type: NodeType.BINARY,
       op: BinaryOp.AND,
-      left: parseConditionExpression(
-        expr.substring(0, andMatch).trim(),
-        functions,
-      ),
-      right: parseConditionExpression(
-        expr.substring(andMatch + 2).trim(),
-        functions,
-      ),
+      ...parseBinaryOperands(expr, andMatch, "&&", functions, source),
     };
   }
 
@@ -846,14 +875,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
       return {
         type: NodeType.BINARY,
         op: type,
-        left: parseConditionExpression(
-          expr.substring(0, opMatch).trim(),
-          functions,
-        ),
-        right: parseConditionExpression(
-          expr.substring(opMatch + op.length).trim(),
-          functions,
-        ),
+        ...parseBinaryOperands(expr, opMatch, op, functions, source),
       };
     }
   }
@@ -888,13 +910,12 @@ export const parseConditionExpression = (expr, functions = {}) => {
     return {
       type: NodeType.BINARY,
       op: lastArithOp.type,
-      left: parseConditionExpression(
-        expr.substring(0, lastArithMatch).trim(),
+      ...parseBinaryOperands(
+        expr,
+        lastArithMatch,
+        lastArithOp.op,
         functions,
-      ),
-      right: parseConditionExpression(
-        expr.substring(lastArithMatch + lastArithOp.op.length).trim(),
-        functions,
+        source,
       ),
     };
   }
@@ -911,10 +932,17 @@ export const parseConditionExpression = (expr, functions = {}) => {
 
   // Handle unary NOT (!)
   if (expr.startsWith("!")) {
+    const operand = expr.substring(1).trim();
+    if (operand === "") {
+      throw new JemplParseError(
+        `Incomplete condition expression - missing operand for '!' (got: '${source}')`,
+      );
+    }
+
     return {
       type: NodeType.UNARY,
       op: UnaryOp.NOT,
-      operand: parseConditionExpression(expr.substring(1).trim(), functions),
+      operand: parseConditionExpression(operand, functions, source),
     };
   }
 

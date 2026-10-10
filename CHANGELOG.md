@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+
+- Condition expressions with a missing operand, such as `age >`, `&& isActive`,
+  `!`, or `()`, are parse errors in `$if`, `$elif`, `$when`,
+  `evaluateCondition`, and `parseConditionExpression`. The missing operand was
+  previously read as `0`, so `$when: "age >"` silently rendered as `age > 0`.
+  Errors name the operator, the missing side, and the full condition.
+
 ## 1.2.0
 
 ### Added

@@ -387,7 +387,9 @@ cases:
 
 #### Complex Conditions
 
-`$when` supports all the same operators and expressions as `$if`:
+`$when` supports all the same operators and expressions as `$if`. In both, a
+condition with a missing operand, such as `age >` or `&& isActive`, is a parse
+error:
 
 ```yaml
 template:
