@@ -623,6 +623,14 @@ cases:
 - `<=` - Less than or equal to
 - `in` - Array/string contains value
 
+In a string condition, a double-quoted comparison value accepts JSON escapes.
+For example, `name == "She said \"Hi\""` compares against the text
+`She said "Hi"`. A single-quoted value keeps backslashes literal, so
+`path == 'C:\temp'` compares against the path with a backslash before `temp`.
+In earlier versions, a double-quoted `\t` was two literal characters. To
+keep that meaning, use a single-quoted value or write `\\t` inside double
+quotes. Operators and parentheses inside a quoted value are part of its text.
+
 #### Logical Operators
 
 - `&&` - Logical AND

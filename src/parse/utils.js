@@ -1,3 +1,4 @@
+import { maskConditionStrings } from "./quotedConditions.js";
 import { NodeType, BinaryOp, UnaryOp } from "./constants.js";
 import { parseStringValue, parseVariable } from "./variables.js";
 import {
@@ -772,17 +773,18 @@ export const parseWhenCondition = (value, functions = {}) => {
  */
 export const parseConditionExpression = (expr, functions = {}) => {
   expr = expr.trim();
+  const syntax = maskConditionStrings(expr);
 
   // Handle parentheses first - but only if they are balanced
-  if (expr.startsWith("(") && expr.endsWith(")")) {
+  if (syntax.startsWith("(") && syntax.endsWith(")")) {
     // Check if removing outer parentheses leaves a valid expression
     const inner = expr.slice(1, -1);
     let depth = 0;
     let valid = true;
 
-    for (let i = 0; i < inner.length; i++) {
-      if (inner[i] === "(") depth++;
-      else if (inner[i] === ")") depth--;
+    for (let i = 1; i < syntax.length - 1; i++) {
+      if (syntax[i] === "(") depth++;
+      else if (syntax[i] === ")") depth--;
 
       if (depth < 0) {
         valid = false;
@@ -796,7 +798,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
   }
 
   // Handle logical OR (||) - lowest precedence
-  const orMatch = findOperatorOutsideParens(expr, "||");
+  const orMatch = findOperatorOutsideParens(syntax, "||");
   if (orMatch !== -1) {
     return {
       type: NodeType.BINARY,
@@ -813,7 +815,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
   }
 
   // Handle logical AND (&&)
-  const andMatch = findOperatorOutsideParens(expr, "&&");
+  const andMatch = findOperatorOutsideParens(syntax, "&&");
   if (andMatch !== -1) {
     return {
       type: NodeType.BINARY,
@@ -841,7 +843,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
   ];
 
   for (const { op, type } of compOps) {
-    const opMatch = findOperatorOutsideParens(expr, op);
+    const opMatch = findOperatorOutsideParens(syntax, op);
     if (opMatch !== -1) {
       return {
         type: NodeType.BINARY,
@@ -872,7 +874,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
   for (const { op, type } of arithmeticOps) {
     let pos = 0;
     while (pos < expr.length) {
-      const match = findOperatorOutsideParens(expr.substring(pos), op);
+      const match = findOperatorOutsideParens(syntax.substring(pos), op);
       if (match === -1) break;
 
       const actualPos = pos + match;
@@ -902,7 +904,7 @@ export const parseConditionExpression = (expr, functions = {}) => {
   // Check for unsupported arithmetic operators
   const blockedArithmeticOps = [" * ", " / ", " % "];
   for (const op of blockedArithmeticOps) {
-    if (findOperatorOutsideParens(expr, op) !== -1) {
+    if (findOperatorOutsideParens(syntax, op) !== -1) {
       throw new JemplParseError(
         `Arithmetic operations are not allowed in conditionals: "${op}"`,
       );
@@ -919,6 +921,13 @@ export const parseConditionExpression = (expr, functions = {}) => {
   }
 
   // Handle literals and variables (including functions)
+  if (expr.startsWith('"') && expr.endsWith('"') && expr.includes("\\")) {
+    try {
+      return { type: NodeType.LITERAL, value: JSON.parse(expr) };
+    } catch {
+      // Older templates may use raw text with non-JSON escapes.
+    }
+  }
   return parseIterableExpression(expr, functions);
 };
 
