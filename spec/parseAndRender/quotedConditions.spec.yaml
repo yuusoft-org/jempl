@@ -1,0 +1,68 @@
+file: '../customFunctions.js'
+group: parseAndRender
+suites: [quotedConditions]
+---
+suite: quotedConditions
+exportName: default
+---
+case: double quoted comparisons decode JSON escapes exactly once
+in:
+  - - $when: 'value == "She said \"Hi\" at C:\\temp\\" && enabled'
+      id: equal
+    - $when: 'value != "She said \"Hi\" at C:\\temp\\"'
+      id: different
+    - $when: 'value != "She said \"Bye\" at C:\\temp\\"'
+      id: different-value
+    - $when: 'line == "a\nb\u0021"'
+      id: escaped
+    - $when: 'raw == "a\\nb"'
+      id: raw
+  - value: 'She said "Hi" at C:\temp\'
+    enabled: true
+    line: "a\nb!"
+    raw: 'a\nb'
+out:
+  - id: equal
+  - id: different-value
+  - id: escaped
+  - id: raw
+---
+case: quoted operators and parentheses are text in when if and elif
+in:
+  - - $when: '(value != "Calm && Quiet") && (enabled || disabled)'
+      id: different
+    - $when: 'value == "Calm && Quiet"'
+      id: equal
+    - $if (value == "Quiet || )") || disabled:
+        id: wrong
+      $elif (label == "=== or !== (") && enabled:
+        id: elif
+    - $when: (label == '=== or !== (') && enabled
+      id: single
+    - $when: 'label == "=== or !== (" && !enabled'
+      id: wrong
+    - $when: 'value == "Other" && score - 2 + 1 == 3'
+      id: arithmetic
+  - value: Other
+    label: '=== or !== ('
+    enabled: true
+    disabled: false
+    score: 4
+out:
+  - id: different
+  - id: elif
+  - id: single
+  - id: arithmetic
+---
+case: single quoted strings and legacy non-JSON escapes retain literal backslashes
+in:
+  - - $when: path == 'C:\temp\' && enabled
+      id: single
+    - $when: 'other == "C:\projects"'
+      id: legacy
+  - path: 'C:\temp\'
+    other: 'C:\projects'
+    enabled: true
+out:
+  - id: single
+  - id: legacy

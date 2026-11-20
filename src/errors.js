@@ -1,3 +1,5 @@
+import { maskConditionStrings } from "./parse/quotedConditions.js";
+
 /**
  * Custom error classes for Jempl templating engine
  */
@@ -45,10 +47,13 @@ export const validateConditionExpression = (expr) => {
   }
 
   // Check for invalid triple equals first (before incomplete check)
-  if (expr.includes("===") || expr.includes("!==")) {
-    const suggestion = expr.includes("===") ? "==" : "!=";
+  const syntax = maskConditionStrings(expr);
+  const invalidOperator = syntax.match(/===|!==/);
+  if (invalidOperator) {
+    const operator = invalidOperator[0];
+    const suggestion = operator === "===" ? "==" : "!=";
     throw new JemplParseError(
-      `Invalid comparison operator '${expr.includes("===") ? "===" : "!=="}' - did you mean '${suggestion}'? (got: '${expr}')`,
+      `Invalid comparison operator '${operator}' - did you mean '${suggestion}'? (got: '${expr}')`,
     );
   }
 

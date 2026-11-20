@@ -193,3 +193,9 @@ throws: "Parse Error: $for loops must be inside arrays - use '- $for:nested item
 
 
 
+---
+case: a quoted triple equals does not hide an invalid operator outside the literal
+in:
+  - $if label == "===" && other !== "value":
+      visible: true
+throws: "Parse Error: Invalid comparison operator '!==' - did you mean '!='? (got: 'label == \"===\" && other !== \"value\"')"
